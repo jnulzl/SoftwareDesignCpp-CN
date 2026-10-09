@@ -48,7 +48,12 @@ latex_source/
 ## 编译
 
 需要 **TeX Live 2026**（自带 `latexminted` 0.7+）与 **Python 3**（`latexminted` 是一个被
-`xelatex` 调起的 Python 脚本，代码块用它与 Pygments 做语法高亮）：
+`xelatex` 调起的 Python 脚本，代码块用它与 Pygments 做语法高亮）。
+
+正文中文使用**思源宋体（Source Han Serif SC）**，需自行安装
+（[官方发布页](https://github.com/adobe-fonts/source-han-serif/releases)下载 Windows 版 OTF 即可）；
+未安装时 `ccs.tex` 里的 `\IfFontExistsTF` 会自动回退到系统自带的华文宋体（STSong），
+编译不会中断，仅字形与字重略有差异。
 
 ```bat
 build.bat                          REM Windows 双击即可

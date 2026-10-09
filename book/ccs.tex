@@ -65,8 +65,8 @@
 % -----------------------------------------------------------------------------
 \usepackage[
   paperwidth=531bp, paperheight=666bp,   % 原书实测 7.375in × 9.25in
-  left=65bp, right=55bp,                % 版心宽 = 531 − 102 − 54 = 375bp（原书实测）
-  top=45bp, bottom=45bp,                 % 正文首/末行基线 ≈ y=60 / y=602
+  left=70bp, right=55bp,                % 版心宽 = 531 − 102 − 54 = 375bp（原书实测）
+  top=60bp, bottom=75bp,                 % 正文首/末行基线 ≈ y=60 / y=602
   headheight=15bp, headsep=13.74bp,
   footskip=12bp]{geometry}
 
@@ -78,9 +78,16 @@
 \usepackage[fontsize=10bp]{fontsize}     % 正文字号（与原书一致：原书正文实测 10bp）
 \linespread{1.1667}                      % 正文行距 13bp（原书实测 10bp/13bp）1.0833(13bp)/1.1250(13.5bp)/1.1667(14bp)
 
-% 中文字体（本机未装思源宋体，用华文宋体/微软雅黑代替；都是 TrueType，可正常嵌入 PDF）
-% 备选：Source Han Serif / SourceHanSerifSC-SemiBold（模板默认）、Noto Serif CJK SC、SimSun
-\setCJKmainfont[AutoFakeBold=true,AutoFakeSlant=true]{STSong}            % 中文正文（衬线）
+% 中文字体：正文用思源宋体（Source Han Serif SC —— 模板默认字体）
+%   依赖：本机需安装思源宋体（Windows 版 SourceHanSerifSC-*.otf）；若缺失则自动
+%         回退到系统自带的华文宋体 STSong，不会中断编译。
+%   真粗体：思源宋体的 Bold（SourceHanSerifSC-Bold）由 fontspec 按字族自动匹配，
+%           因此不再设 AutoFakeBold（避免合成粗体顶替真粗体）；
+%   斜体：思源宋体没有意大利体，用 AutoFakeSlant 合成。
+\IfFontExistsTF{Source Han Serif SC}
+  {\setCJKmainfont[AutoFakeSlant=true]{Source Han Serif SC}}              % 中文正文（思源宋体）
+  {\setCJKmainfont[AutoFakeBold=true,AutoFakeSlant=true]{STSong}         % 回退：华文宋体
+   \PackageWarning{ccs}{未找到思源宋体（Source Han Serif SC），中文正文已回退到 STSong}}
 \setCJKsansfont[AutoFakeBold=true,AutoFakeSlant=true]{Microsoft YaHei}   % 中文标题（无衬线）
 \setCJKmonofont[AutoFakeBold=true,AutoFakeSlant=true]{Microsoft YaHei}   % 代码块中的中文注释
 % 拉丁字体：原书正文 New Baskerville（商用字体）以 Cambria 代替 ——
@@ -282,7 +289,7 @@
 % 图注字形：
 %   \myGraphicCapBoldtrue  = 加粗（当前设置）
 %   \myGraphicCapBoldfalse = 常规字重
-% 中文走 STSong 的 AutoFakeBold 合成粗体，拉丁走 Cambria Bold。
+% 中文走思源宋体的真粗体（SourceHanSerifSC-Bold），拉丁走 Cambria Bold。
 \newif\ifmyGraphicCapBold
 \myGraphicCapBoldtrue
 \ExplSyntaxOn
@@ -577,13 +584,16 @@
 % ---------------------------------------------------------------------------
 %  ★ 本项目补充：带圈数字 ①–⑳（U+2460–U+24FF）与 ㉑–㉟（U+3251–U+325F）
 %    代码清单里的 ① 是行标记，等宽字体 JetBrainsMonoNL 没有这些字形。
-%    把这些区间声明成 CJK 字符类后：正文走宋体（STSong 有 ①–⑳），
-%    代码里走 CJKmonofont（微软雅黑，①–⑳ 与 ㉑–㉟ 都有）。
+%    把这些区间声明成 CJK 字符类后：正文走思源宋体（①–⑳、㉑–㉚ 都有），
+%    代码里走 CJKmonofont（微软雅黑，①–⑩ 与 ㉑–㉟ 都有）。
 %    正文中偶现的 ㉑–㉚ 用 \newCJKfontfamily 显式切到雅黑。
 % ---------------------------------------------------------------------------
 \xeCJKDeclareCharClass{CJK}{"2460 -> "24FF, "3251 -> "325F}
 \newCJKfontfamily\cjkcompat{Microsoft YaHei}
-% ①–⑩ 宋体/雅黑都有；⑪–⑳ 两者都没有，回退到蒙古文 Baiti（含完整 ⑪–⑳）
+% ①–⑩ 思源宋体/雅黑都有；⑪–⑳ 雅黑没有（思源宋体有，但代码块用不上它），
+% 而 ⑪–⑳ 目前只出现在代码清单里，故统一回退到蒙古文 Baiti（含完整 ⑪–⑳）。
+% 注意：\newunicodechar 是全局的——若日后正文里也要用 ⑪–⑳，删掉下面十行即可，
+%       它们会改走思源宋体（字形比 Baiti 更贴正文）。
 \newCJKfontfamily\cjknum{monbaiti.ttf}[Path=C:/Windows/Fonts/]
 \newunicodechar{⑪}{{\cjknum ⑪}}
 \newunicodechar{⑫}{{\cjknum ⑫}}
