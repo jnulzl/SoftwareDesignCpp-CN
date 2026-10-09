@@ -29,7 +29,7 @@
 \begin{itemize}
 \item \texttt{READY}——机器已就绪，可以接受顾客的信用卡。
 \item \texttt{VALIDATING}——机器正在验证顾客的信用卡。
-\item \texttt{TICKET\_SOLD}——机器已向顾客售出一张票。
+\item \texttt{TICKET\_\allowbreak{}SOLD}——机器已向顾客售出一张票。
 \item \texttt{SOLD\_OUT}——比赛门票已售罄，机器无法再售出任何票。
 \end{itemize}
 
@@ -37,11 +37,11 @@
 
 \begin{itemize}
 \item \texttt{count}——机器中剩余的票数（整数）
-\item \texttt{card\_inserted}——是否已插入顾客的信用卡（true 或 false）
-\item \texttt{card\_validity}——信用卡的有效性（YES、NO 或 UNKNOWN）
+\item \texttt{card\_\allowbreak{}inserted}——是否已插入顾客的信用卡（true 或 false）
+\item \texttt{card\_\allowbreak{}validity}——信用卡的有效性（YES、NO 或 UNKNOWN）
 \end{itemize}
 
-顾客的动作可以改变成员变量的取值，从而引发状态转换。但有时，机器本身也能引发状态转换。如果售票机处于 \texttt{READY} 状态，顾客插入信用卡的动作会使机器转换到 \texttt{VALIDATING} 状态。在该状态下，机器可以执行检查信用卡是否通过验证的动作。如果卡有效，机器便转换到 \texttt{TICKET\_SOLD} 状态，此时顾客可以执行取票的动作。但如果卡无效，机器就转换回 \texttt{READY} 状态。顾客可以在卡通过验证之前将其取出，这会迫使机器回到 \texttt{READY} 状态。顾客取走已售出的票同样会使机器转换回 \texttt{READY} 状态。但如果顾客取走的是最后一张票，机器就转换到 \texttt{SOLD\_OUT} 状态。回到 \texttt{READY} 状态后，顾客可以执行取出信用卡的动作。没有任何转换可以离开 \texttt{SOLD\_OUT} 状态。
+顾客的动作可以改变成员变量的取值，从而引发状态转换。但有时，机器本身也能引发状态转换。如果售票机处于 \texttt{READY} 状态，顾客插入信用卡的动作会使机器转换到 \texttt{VALIDATING} 状态。在该状态下，机器可以执行检查信用卡是否通过验证的动作。如果卡有效，机器便转换到 \texttt{TICKET\_\allowbreak{}SOLD} 状态，此时顾客可以执行取票的动作。但如果卡无效，机器就转换回 \texttt{READY} 状态。顾客可以在卡通过验证之前将其取出，这会迫使机器回到 \texttt{READY} 状态。顾客取走已售出的票同样会使机器转换回 \texttt{READY} 状态。但如果顾客取走的是最后一张票，机器就转换到 \texttt{SOLD\_OUT} 状态。回到 \texttt{READY} 状态后，顾客可以执行取出信用卡的动作。没有任何转换可以离开 \texttt{SOLD\_OUT} 状态。
 
 因此，顾客和售票机可能的动作有
 
@@ -56,7 +56,7 @@
 
 \myGraphic{0.980}{images/CH13_F01_Mak.png}{图 13.1 展示自动售票机四种状态及其状态转换的 UML 状态图。机器会跟踪它剩余的票数、是否插入了信用卡，以及信用卡的验证状态。顾客与机器的动作（带编号；例如 \textbf{1: insert card}）或某些条件（放在方括号中；例如 \textbf{[card invalid]}）可以引发从一种状态到另一种状态的转换。本图只展示会引发转换的动作。}
 
-为了尽可能保持简单，该图只展示会引发转换的动作。它不展示不合理的动作，例如当机器处于 \texttt{TICKET\_SOLD} 状态、卡仍插在机器中时又把一张信用卡插入机器。我们可以假定，不合理的动作不会导致状态转换；因此，机器会停留在当前状态。
+为了尽可能保持简单，该图只展示会引发转换的动作。它不展示不合理的动作，例如当机器处于 \texttt{TICKET\_\allowbreak{}SOLD} 状态、卡仍插在机器中时又把一张信用卡插入机器。我们可以假定，不合理的动作不会导致状态转换；因此，机器会停留在当前状态。
 
 我们的示例应用是售票机的一个简单模拟。机器只有三张票。为了与应用交互，我们通过扮演顾客或机器的角色来触发各种动作。对于每一次 \texttt{Command?} 提示，我们可以输入 1 来插入信用卡，输入 2 来验证信用卡，输入 3 来取票，或者输入 4 来取出信用卡。应用会在内部跟踪其当前状态，并且必须根据该状态对每个动作做出正确的行为。输入 0 会终止程序。
 
@@ -66,7 +66,7 @@
 [TICKET_SOLD 2 true yes] Command?
 \end{codebox}
 
-表示售票机处于 \texttt{TICKET\_SOLD} 状态，还剩两张票，已插入信用卡，且卡有效。
+表示售票机处于 \texttt{TICKET\_\allowbreak{}SOLD} 状态，还剩两张票，已插入信用卡，且卡有效。
 
 以下是与售票机应用交互的示例。应用必须能够在每一种状态下处理所有动作。我们的输入（\texttt{1}、\texttt{2}、\texttt{3}、\texttt{4} 或 \texttt{0}）以粗体显示。
 
@@ -96,9 +96,9 @@
 
 对于最初的版本，我们可以用直截了当的方式设计售票机模拟应用。我们会看到它具备多少项期望的设计特性。之后，我们将采用一个仿照状态设计模式构建的设计来重构该应用。
 
-类 \texttt{TicketMachine} 是我们应用第一个版本的核心（图 13.2）。
+类 \texttt{Ticket\allowbreak{}Machine} 是我们应用第一个版本的核心（图 13.2）。
 
-\myGraphic{0.526}{images/CH13_F02_Mak.png}{图 13.2 类 \texttt{TicketMachine} 是售票机应用第一个版本的核心。它的成员变量跟踪票数、是否插入了信用卡、信用卡的有效性，以及当前状态的名称。公有成员函数实现了顾客与机器的动作。}
+\myGraphic{0.526}{images/CH13_F02_Mak.png}{图 13.2 类 \texttt{Ticket\allowbreak{}Machine} 是售票机应用第一个版本的核心。它的成员变量跟踪票数、是否插入了信用卡、信用卡的有效性，以及当前状态的名称。公有成员函数实现了顾客与机器的动作。}
 
 枚举类 \texttt{State} 和 \texttt{Validity} 分别表示售票机的状态和信用卡的有效性。它们各自都有一个重载的输出 \texttt{<<} 运算符。
 
@@ -143,9 +143,9 @@ inline ostream& operator <<(ostream& ostr, const Validity& valid)
 }
 \end{codeboxt}
 
-类 \texttt{TicketMachine} 的私有成员变量跟踪票数、是否插入了信用卡、信用卡的有效性，以及机器的当前状态。它的成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 实现了顾客与机器的动作（图 13.1）。机器的初始状态是 \texttt{READY}。
+类 \texttt{Ticket\allowbreak{}Machine} 的私有成员变量跟踪票数、是否插入了信用卡、信用卡的有效性，以及机器的当前状态。它的成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}、\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}、\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 和 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 实现了顾客与机器的动作（图 13.1）。机器的初始状态是 \texttt{READY}。
 
-\begin{codeboxt}{代码清单 13.2（程序 13.1 Tickets）：\texttt{TicketMachine.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 13.2（程序 13.1 Tickets）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}h}（使用设计模式之前）}
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -186,25 +186,25 @@ private:
 
 无论售票机处于何种状态，每个成员函数都必须处理全部四种动作，即便某个动作对某一特定状态并无意义。这些动作会使机器依据其当前状态表现出不同的行为。有些动作可以引发状态转换。
 
-表 13.1 展示了由动作函数 \texttt{insert\_credit\_card()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+表 13.1 展示了由动作函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
 
 \begin{center}
-{\bfseries 表 13.1 动作函数 1：\texttt{insert\_credit\_card()}}\par\vspace{3bp}
+{\bfseries 表 13.1 动作函数 1：\texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 售票机状态 & 机器在每种状态下的行为 \\
 \midrule
 \texttt{READY} & 如果尚未插入卡，\par 否则，如果已插入的卡无效，\par 否则， \\
 \texttt{VALIDATING} & 如果已插入的卡无效，\par 否则， \\
-\texttt{TICKET\_SOLD} & 输出“取走你已经购买的票。”\par 将 \texttt{card\_inserted} 设为 true。\par 将 \texttt{card\_validity} 设为 unknown。 \\
-\texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 输出“请取出你的卡。”\par 将 \texttt{card\_inserted} 设为 true。\par 将 \texttt{card\_validity} 设为 unknown。 \\
+\texttt{TICKET\_\allowbreak{}SOLD} & 输出“取走你已经购买的票。”\par 将 \texttt{card\_\allowbreak{}inserted} 设为 true。\par 将 \texttt{card\_\allowbreak{}validity} 设为 unknown。 \\
+\texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 输出“请取出你的卡。”\par 将 \texttt{card\_\allowbreak{}inserted} 设为 true。\par 将 \texttt{card\_\allowbreak{}validity} 设为 unknown。 \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-当售票机处于 \texttt{READY} 状态、顾客将信用卡插入售票机时，成员函数 \texttt{insert\_credit\_card()} 是购票流程的起始函数。但该函数应处理所有状态下的所有动作。如果机器处于 \texttt{READY} 状态，并且我们在机器中尚未有卡时插入一张信用卡，机器就转换到 \texttt{VALIDATING} 状态。
+当售票机处于 \texttt{READY} 状态、顾客将信用卡插入售票机时，成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 是购票流程的起始函数。但该函数应处理所有状态下的所有动作。如果机器处于 \texttt{READY} 状态，并且我们在机器中尚未有卡时插入一张信用卡，机器就转换到 \texttt{VALIDATING} 状态。
 
-\begin{codeboxt}{代码清单 13.3（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 1 部分，共 5 部分）（使用设计模式之前）}
+\begin{codeboxt}{代码清单 13.3（程序 13.1 Tickets）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}cpp}（第 1 部分，共 5 部分）（使用设计模式之前）}
 #include <iostream>
 #include "Enums.h"
 #include "TicketMachine.h"
@@ -283,25 +283,25 @@ void TicketMachine::insert_credit_card()  //动作 1
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 转换到 VALIDATING 状态。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 转换到 READY 状态。}\par
 
-表 13.2 展示了由动作函数 \texttt{check\_validity()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+表 13.2 展示了由动作函数 \texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
 
 \begin{center}
-{\bfseries 表 13.2 动作函数 2：\texttt{check\_validity()}}\par\vspace{3bp}
+{\bfseries 表 13.2 动作函数 2：\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 售票机状态 & 机器在每种状态下的行为 \\
 \midrule
 \texttt{READY} & 如果未插入卡，\par 否则，如果卡有效，\par 否则， \\
 \texttt{VALIDATING} & 如果卡的有效性未知，\par 如果卡有效，\par 否则， \\
-\texttt{TICKET\_SOLD} & 输出“取走你已经购买的票。” \\
+\texttt{TICKET\_\allowbreak{}SOLD} & 输出“取走你已经购买的票。” \\
 \texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 如果已插入卡 \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-在我们插入信用卡、售票机处于 \texttt{VALIDATING} 状态之后，成员函数 \texttt{check\_validity()} 是机器检查信用卡是否通过验证的动作。但如下面的代码清单所示，该函数应处理所有状态下的所有动作。如果卡有效，机器就转换到 \texttt{TICKET\_SOLD} 状态；否则，它返回 \texttt{READY} 状态。
+在我们插入信用卡、售票机处于 \texttt{VALIDATING} 状态之后，成员函数 \texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}} 是机器检查信用卡是否通过验证的动作。但如下面的代码清单所示，该函数应处理所有状态下的所有动作。如果卡有效，机器就转换到 \texttt{TICKET\_\allowbreak{}SOLD} 状态；否则，它返回 \texttt{READY} 状态。
 
-\begin{codeboxt}{代码清单 13.4（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 2 部分，共 5 部分）（使用设计模式之前）}
+\begin{codeboxt}{代码清单 13.4（程序 13.1 Tickets）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}cpp}（第 2 部分，共 5 部分）（使用设计模式之前）}
 void TicketMachine::check_validity()  //动作 2
 {
     switch (state)
@@ -376,25 +376,25 @@ void TicketMachine::check_validity()  //动作 2
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 转换到 TICKET\_SOLD 状态。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 转换回 READY 状态。}\par
 
-表 13.3 展示了由动作函数 \texttt{take\_ticket()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+表 13.3 展示了由动作函数 \texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
 
 \begin{center}
-{\bfseries 表 13.3 动作函数 3：\texttt{take\_ticket()}}\par\vspace{3bp}
+{\bfseries 表 13.3 动作函数 3：\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}}}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 售票机状态 & 机器在每种状态下的行为 \\
 \midrule
 \texttt{READY} & 如果未插入卡，\par 否则，如果卡的有效性未知，\par 否则，如果卡有效，\par 否则， \\
 \texttt{VALIDATING} & 如果卡的有效性未知，\par 否则，如果卡有效，\par 否则， \\
-\texttt{TICKET\_SOLD} & 输出“请取出你的信用卡。”\par 输出“祝你看比赛愉快！”\par 将票数减一。\par 如果票数 > 0，\par 否则， \\
+\texttt{TICKET\_\allowbreak{}SOLD} & 输出“请取出你的信用卡。”\par 输出“祝你看比赛愉快！”\par 将票数减一。\par 如果票数 > 0，\par 否则， \\
 \texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 如果已插入卡， \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-当机器处于 \texttt{TICKET\_SOLD} 状态时，成员函数 \texttt{take\_ticket()} 是顾客取走刚购买的票的动作，但它应处理所有状态下的所有动作。如果还有余票，机器就转换回 \texttt{READY} 状态。否则，它转换到 \texttt{SOLD\_OUT} 状态。
+当机器处于 \texttt{TICKET\_\allowbreak{}SOLD} 状态时，成员函数 \texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 是顾客取走刚购买的票的动作，但它应处理所有状态下的所有动作。如果还有余票，机器就转换回 \texttt{READY} 状态。否则，它转换到 \texttt{SOLD\_OUT} 状态。
 
-\begin{codeboxt}{代码清单 13.5（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 3 部分，共 5 部分）（使用设计模式之前）}
+\begin{codeboxt}{代码清单 13.5（程序 13.1 Tickets）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}cpp}（第 3 部分，共 5 部分）（使用设计模式之前）}
 void TicketMachine::take_ticket()  //动作 3
 {
     switch (state)
@@ -478,25 +478,25 @@ void TicketMachine::take_ticket()  //动作 3
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 转换回 READY 状态。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 转换到 SOLD\_OUT 状态。}\par
 
-表 13.4 展示了由动作函数 \texttt{remove\_credit\_card()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+表 13.4 展示了由动作函数 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
 
 \begin{center}
-{\bfseries 表 13.4 动作函数 4：\texttt{remove\_credit\_card()}}\par\vspace{3bp}
+{\bfseries 表 13.4 动作函数 4：\texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 售票机状态 & 机器在每种状态下的行为 \\
 \midrule
-\texttt{READY} & 如果已插入卡，\par 否则，\par 将 \texttt{card\_inserted} 设为 false。\par 将 \texttt{card\_validity} 设为 unknown。 \\
-\texttt{VALIDATING} & 如果未插入卡，\par 否则，如果卡无效，\par 否则，\par 将 \texttt{card\_inserted} 设为 false。\par 将 \texttt{card\_validity} 设为 unknown。\par \textbf{转换到 READY 状态}。 \\
-\texttt{TICKET\_SOLD} & 输出“请先取走你的票。” \\
+\texttt{READY} & 如果已插入卡，\par 否则，\par 将 \texttt{card\_\allowbreak{}inserted} 设为 false。\par 将 \texttt{card\_\allowbreak{}validity} 设为 unknown。 \\
+\texttt{VALIDATING} & 如果未插入卡，\par 否则，如果卡无效，\par 否则，\par 将 \texttt{card\_\allowbreak{}inserted} 设为 false。\par 将 \texttt{card\_\allowbreak{}validity} 设为 unknown。\par \textbf{转换到 READY 状态}。 \\
+\texttt{TICKET\_\allowbreak{}SOLD} & 输出“请先取走你的票。” \\
 \texttt{SOLD\_OUT} & 如果已插入卡，\par 否则， \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-当我们从售票机中取出信用卡、机器处于 \texttt{READY} 或 \texttt{VALIDATING} 状态时，成员函数 \texttt{remove\_credit\_card()} 就是相应的动作。但一如既往，它应处理所有状态下的所有动作。如果我们在机器处于 \texttt{VALIDATING} 状态（机器尚未验证信用卡）时取出卡，机器就转换回 \texttt{READY} 状态。
+当我们从售票机中取出信用卡、机器处于 \texttt{READY} 或 \texttt{VALIDATING} 状态时，成员函数 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 就是相应的动作。但一如既往，它应处理所有状态下的所有动作。如果我们在机器处于 \texttt{VALIDATING} 状态（机器尚未验证信用卡）时取出卡，机器就转换回 \texttt{READY} 状态。
 
-\begin{codeboxt}{代码清单 13.6（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 4 部分，共 5 部分）（使用设计模式之前）}
+\begin{codeboxt}{代码清单 13.6（程序 13.1 Tickets）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}cpp}（第 4 部分，共 5 部分）（使用设计模式之前）}
 void TicketMachine::remove_credit_card()  //动作 4
 {
     switch (state)
@@ -568,7 +568,7 @@ void TicketMachine::remove_credit_card()  //动作 4
 
 最后，成员函数 \texttt{run()} 运行模拟。
 
-\begin{codeboxt}{代码清单 13.7（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 5 部分，共 5 部分）（使用设计模式之前）}
+\begin{codeboxt}{代码清单 13.7（程序 13.1 Tickets）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}cpp}（第 5 部分，共 5 部分）（使用设计模式之前）}
 void TicketMachine::run()
 {
     int command;
@@ -602,9 +602,9 @@ void TicketMachine::run()
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 从用户处读取 1、2、3、4 或 0。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 执行顾客与机器的动作。}\par
 
-测试程序创建一个带有三张票的 \texttt{TicketMachine} 对象，并调用 \texttt{run()} 成员函数。
+测试程序创建一个带有三张票的 \texttt{Ticket\allowbreak{}Machine} 对象，并调用 \texttt{run()} 成员函数。
 
-\begin{codeboxt}{代码清单 13.8（程序 13.1 Tickets）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 13.8（程序 13.1 Tickets）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "TicketMachine.h"
 
@@ -624,31 +624,31 @@ int main()
 这个版本的售票机应用能够正确运行。我们可以与之交互，并看到正确的行为。但它存在重大缺陷，包括以下几项：
 
 \begin{itemize}
-\item \emph{多重职责}——类 \texttt{TicketMachine} 不仅要跟踪机器的状态，还要负责所有状态中发生的所有动作。全部应用逻辑都集中在这一个类中。
+\item \emph{多重职责}——类 \texttt{Ticket\allowbreak{}Machine} 不仅要跟踪机器的状态，还要负责所有状态中发生的所有动作。全部应用逻辑都集中在这一个类中。
 \item \emph{封装不佳}——各状态及其行为没有得到良好的封装。
-\item \emph{代码缺乏灵活性}——如果我们需要修改、添加或删除售票机状态及其动作，就必须改动 \texttt{TicketMachine} 类。
+\item \emph{代码缺乏灵活性}——如果我们需要修改、添加或删除售票机状态及其动作，就必须改动 \texttt{Ticket\allowbreak{}Machine} 类。
 \end{itemize}
 
 \subsection{13.1.3 使用状态设计模式之后}
 
-状态设计模式为能够消除这些缺陷的软件架构提供了模型（图 13.3）。超类 \texttt{State} 的每一个子类都表示售票机的一种状态，而每个 \texttt{State} 子类都封装了对其状态下的所有顾客与机器动作的处理。类 \texttt{StatesBlock} 以私有方式聚合所有 \texttt{State} 子类，其公有成员函数 \texttt{get\_initial\_state()} 返回售票机的初始状态。类 \texttt{StatesBlock} 使各个 \texttt{State} 子类之间松耦合，也使类 \texttt{TicketMachine} 与各个 \texttt{State} 子类之间松耦合。
+状态设计模式为能够消除这些缺陷的软件架构提供了模型（图 13.3）。超类 \texttt{State} 的每一个子类都表示售票机的一种状态，而每个 \texttt{State} 子类都封装了对其状态下的所有顾客与机器动作的处理。类 \texttt{States\allowbreak{}Block} 以私有方式聚合所有 \texttt{State} 子类，其公有成员函数 \texttt{get\_\allowbreak{}initial\_\allowbreak{}state(\allowbreak{})\allowbreak{}} 返回售票机的初始状态。类 \texttt{States\allowbreak{}Block} 使各个 \texttt{State} 子类之间松耦合，也使类 \texttt{Ticket\allowbreak{}Machine} 与各个 \texttt{State} 子类之间松耦合。
 
-类 \texttt{TicketMachine} 的成员变量 \texttt{state} 指向表示机器当前状态的 \texttt{State} 对象。通过多态，该类把各个动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 的处理委托给当前 \texttt{State} 对象中对应的动作成员函数。每个 \texttt{State} 子类的动作成员函数都返回一个 \texttt{State} 对象，即机器接下来应转换到的状态。
+类 \texttt{Ticket\allowbreak{}Machine} 的成员变量 \texttt{state} 指向表示机器当前状态的 \texttt{State} 对象。通过多态，该类把各个动作成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}、\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}、\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 和 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 的处理委托给当前 \texttt{State} 对象中对应的动作成员函数。每个 \texttt{State} 子类的动作成员函数都返回一个 \texttt{State} 对象，即机器接下来应转换到的状态。
 
 \begin{mySidebar}{状态设计模式}
 
 “允许一个对象在其内部状态改变时改变自身的行为。对象看起来似乎改变了它的类”（GoF 305）。
 \end{mySidebar}
 
-\myGraphic{0.980}{images/CH13_F03_Mak.png}{图 13.3 超类 \texttt{State} 的各子类封装了对售票机每种状态下的顾客与机器动作的处理。子类的每个动作成员函数都返回一个 \texttt{State} 对象，即售票机接下来要转换到的状态。通过在类 \texttt{StatesBlock} 中聚合这些子类，各子类之间松耦合，而类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间也松耦合。类 \texttt{TicketMachine} 的每个动作成员函数都委托给私有成员变量 \texttt{state} 所指向的当前 \texttt{State} 对象中对应的成员函数。}
+\myGraphic{0.980}{images/CH13_F03_Mak.png}{图 13.3 超类 \texttt{State} 的各子类封装了对售票机每种状态下的顾客与机器动作的处理。子类的每个动作成员函数都返回一个 \texttt{State} 对象，即售票机接下来要转换到的状态。通过在类 \texttt{States\allowbreak{}Block} 中聚合这些子类，各子类之间松耦合，而类 \texttt{Ticket\allowbreak{}Machine} 与各 \texttt{State} 子类之间也松耦合。类 \texttt{Ticket\allowbreak{}Machine} 的每个动作成员函数都委托给私有成员变量 \texttt{state} 所指向的当前 \texttt{State} 对象中对应的成员函数。}
 
-在这个版本的应用中，类 \texttt{TicketMachine} 要简单得多，因为它不再负责管理各种状态及其顾客与机器动作（代码清单 13.9）。构造函数通过按引用传递 \texttt{count}、\texttt{card\_inserted} 和 \texttt{card\_validity} 成员变量来创建 \texttt{StatesBlock} 对象，以便各 \texttt{State} 子类在执行运行时行为时可以访问并修改它们的值。构造函数还通过调用类 \texttt{StatesBlock} 的 \texttt{get\_initial\_state()} 成员函数来设置 \texttt{state} 成员变量的初始值。
+在这个版本的应用中，类 \texttt{Ticket\allowbreak{}Machine} 要简单得多，因为它不再负责管理各种状态及其顾客与机器动作（代码清单 13.9）。构造函数通过按引用传递 \texttt{count}、\texttt{card\_\allowbreak{}inserted} 和 \texttt{card\_\allowbreak{}validity} 成员变量来创建 \texttt{States\allowbreak{}Block} 对象，以便各 \texttt{State} 子类在执行运行时行为时可以访问并修改它们的值。构造函数还通过调用类 \texttt{States\allowbreak{}Block} 的 \texttt{get\_\allowbreak{}initial\_\allowbreak{}state(\allowbreak{})\allowbreak{}} 成员函数来设置 \texttt{state} 成员变量的初始值。
 
 \myGraphic{0.787}{images/CH13_F03_UN03_Mak.png}{}
 
-成员变量 \texttt{state} 始终指向表示机器当前状态的 \texttt{State} 对象。类 \texttt{TicketMachine} 把各个动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 的处理委托给当前 \texttt{State} 对象。因此，正是指当前的 \texttt{State} 对象决定了售票机对每个顾客动作的行为方式。每个动作成员函数都返回一个 \texttt{State} 对象，即机器接下来应转换到的状态。如果顾客执行了一个不需要转换的不合理动作，动作函数只需返回当前状态对应的 \texttt{State} 对象。
+成员变量 \texttt{state} 始终指向表示机器当前状态的 \texttt{State} 对象。类 \texttt{Ticket\allowbreak{}Machine} 把各个动作成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}、\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}、\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 和 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 的处理委托给当前 \texttt{State} 对象。因此，正是指当前的 \texttt{State} 对象决定了售票机对每个顾客动作的行为方式。每个动作成员函数都返回一个 \texttt{State} 对象，即机器接下来应转换到的状态。如果顾客执行了一个不需要转换的不合理动作，动作函数只需返回当前状态对应的 \texttt{State} 对象。
 
-\begin{codeboxt}{代码清单 13.9（程序 13.2 Tickets-StateDP）：\texttt{TicketMachine.h}}
+\begin{codeboxt}{代码清单 13.9（程序 13.2 Tickets-StateDP）：\texttt{Ticket\allowbreak{}Machine.\allowbreak{}h}}
 #include <time.h>
 
 #include "Enums.h"
@@ -713,9 +713,9 @@ private:
              << " " << card_validity << "] ";
 \end{codebox}
 
-类 \texttt{StatesBlock} 的构造函数按引用从类 \texttt{TicketMachine} 接收 \texttt{count}、\texttt{card\_inserted} 和 \texttt{card\_validity} 参数。接着，它又按引用依次传递这些参数，以创建并聚合 \texttt{State} 子类的 \texttt{READY}、\texttt{VALIDATING}、\texttt{TICKET\_SOLD} 和 \texttt{SOLD\_OUT} 对象。
+类 \texttt{States\allowbreak{}Block} 的构造函数按引用从类 \texttt{Ticket\allowbreak{}Machine} 接收 \texttt{count}、\texttt{card\_\allowbreak{}inserted} 和 \texttt{card\_\allowbreak{}validity} 参数。接着，它又按引用依次传递这些参数，以创建并聚合 \texttt{State} 子类的 \texttt{READY}、\texttt{VALIDATING}、\texttt{TICKET\_\allowbreak{}SOLD} 和 \texttt{SOLD\_OUT} 对象。
 
-\begin{codeboxt}{代码清单 13.10（程序 13.2 Tickets-StateDP）：\texttt{StatesBlock.h}}
+\begin{codeboxt}{代码清单 13.10（程序 13.2 Tickets-StateDP）：\texttt{States\allowbreak{}Block.\allowbreak{}h}}
 #include "State.h"
 
 class StatesBlock
@@ -766,9 +766,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 初始 READY 状态}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 聚合的 State 对象}\par
 
-类 \texttt{State} 是子类 \texttt{READY}、\texttt{VALIDATING}、\texttt{TICKET\_SOLD} 和 \texttt{SOLD\_OUT} 的超类（代码清单 13.11）。它的构造函数按引用从各子类的构造函数接收参数。它把这些引用存储到其受保护的引用成员变量 \texttt{count}、\texttt{card\_inserted} 和 \texttt{card\_validity} 中。这样，各个子类在执行各自的行为时，就能够访问并修改类 \texttt{TicketMachine} 中对应的成员变量。
+类 \texttt{State} 是子类 \texttt{READY}、\texttt{VALIDATING}、\texttt{TICKET\_\allowbreak{}SOLD} 和 \texttt{SOLD\_OUT} 的超类（代码清单 13.11）。它的构造函数按引用从各子类的构造函数接收参数。它把这些引用存储到其受保护的引用成员变量 \texttt{count}、\texttt{card\_\allowbreak{}inserted} 和 \texttt{card\_\allowbreak{}validity} 中。这样，各个子类在执行各自的行为时，就能够访问并修改类 \texttt{Ticket\allowbreak{}Machine} 中对应的成员变量。
 
-受保护的成员变量 \texttt{states} 是一个对类 \texttt{StatesBlock} 的引用，而该类聚合了各 \texttt{State} 子类。通过在类 \texttt{StatesBlock} 中聚合这些子类，各子类之间松耦合，而类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间也松耦合。
+受保护的成员变量 \texttt{states} 是一个对类 \texttt{States\allowbreak{}Block} 的引用，而该类聚合了各 \texttt{State} 子类。通过在类 \texttt{States\allowbreak{}Block} 中聚合这些子类，各子类之间松耦合，而类 \texttt{Ticket\allowbreak{}Machine} 与各 \texttt{State} 子类之间也松耦合。
 
 \begin{codeboxt}{代码清单 13.11（程序 13.2 Tickets-StateDP）：\texttt{State.h}（第 1 部分，共 2 部分）}
 #include <string>
@@ -810,7 +810,7 @@ protected:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 使各子类能够访问并修改 TicketMachine 成员变量的引用变量。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 由每个子类来实现}\par
 
-每个 \texttt{State} 子类都必须实现顾客动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()}，以执行我们为每种状态定义的顾客与机器动作行为。每个成员函数都返回一个 \texttt{State} 对象，即售票机接下来要转换到的状态。
+每个 \texttt{State} 子类都必须实现顾客动作成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}、\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}、\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 和 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}，以执行我们为每种状态定义的顾客与机器动作行为。每个成员函数都返回一个 \texttt{State} 对象，即售票机接下来要转换到的状态。
 
 \begin{codeboxt}{代码清单 13.12（程序 13.2 Tickets-StateDP）：\texttt{State.h}（第 2 部分，共 2 部分）}
 class READY : public State
@@ -879,7 +879,7 @@ private:
 
 要体会应用从第一个版本到当前版本在架构上的变化，请把下面这些 \texttt{State} 子类实现的代码清单与代码清单 13.2–13.7 进行比较。
 
-\texttt{State} 子类 \texttt{READY} 封装了机器处于 \texttt{READY} 状态时的所有顾客与机器动作（代码清单 13.13）。每个动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 都执行 \texttt{READY} 状态下该动作的行为，然后返回售票机接下来要转换到的状态。例如，
+\texttt{State} 子类 \texttt{READY} 封装了机器处于 \texttt{READY} 状态时的所有顾客与机器动作（代码清单 13.13）。每个动作成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}、\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}、\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 和 \texttt{remove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} 都执行 \texttt{READY} 状态下该动作的行为，然后返回售票机接下来要转换到的状态。例如，
 
 \begin{codebox}
 return states.VALIDATING_state;
@@ -989,7 +989,7 @@ State *READY::remove_credit_card()  //动作 4
 
 State 子类 \texttt{VALIDATING} 封装了机器处于 \texttt{VALIDATING} 状态时的所有顾客与机器动作。
 
-\begin{codeboxt}{代码清单 13.14（程序 13.2 Tickets-StateDP）：\texttt{VALIDATING.cpp}}
+\begin{codeboxt}{代码清单 13.14（程序 13.2 Tickets-StateDP）：\texttt{VALIDATING.\allowbreak{}cpp}}
 #include <iostream>
 #include "Enums.h"
 #include "State.h"
@@ -1082,9 +1082,9 @@ State *VALIDATING::remove_credit_card()  //动作 4
 }
 \end{codeboxt}
 
-\texttt{State} 子类 \texttt{TICKET\_SOLD} 封装了机器处于 \texttt{TICKET\_SOLD} 状态时的所有顾客与机器动作。
+\texttt{State} 子类 \texttt{TICKET\_\allowbreak{}SOLD} 封装了机器处于 \texttt{TICKET\_\allowbreak{}SOLD} 状态时的所有顾客与机器动作。
 
-\begin{codeboxt}{代码清单 13.15（程序 13.2 Tickets-StateDP）：\texttt{TICKET\_SOLD.cpp}}
+\begin{codeboxt}{代码清单 13.15（程序 13.2 Tickets-StateDP）：\texttt{TICKET\_\allowbreak{}SOLD.\allowbreak{}cpp}}
 #include <iostream>
 #include "Enums.h"
 #include "State.h"
@@ -1136,7 +1136,7 @@ State *TICKET_SOLD::remove_credit_card()  //动作 4
 
 \texttt{State} 子类 \texttt{SOLD\_OUT} 封装了机器处于 \texttt{SOLD\_OUT} 状态时的所有顾客与机器动作。没有任何转换可以离开 \texttt{SOLD\_OUT} 状态。
 
-\begin{codeboxt}{代码清单 13.16（程序 13.2 Tickets-StateDP）：\texttt{SOLD\_OUT.cpp}}
+\begin{codeboxt}{代码清单 13.16（程序 13.2 Tickets-StateDP）：\texttt{SOLD\_\allowbreak{}OUT.\allowbreak{}cpp}}
 #include <iostream>
 #include "Enums.h"
 #include "State.h"
@@ -1197,16 +1197,16 @@ State *SOLD_OUT::remove_credit_card()  //动作 4
 这个版本的售票机应用与第一个版本运行效果类似。但仿照状态设计模式为其建模带来了以下好处：
 
 \begin{itemize}
-\item \emph{封装了顾客动作}——当售票机处于相应状态时，每个 \texttt{State} 子类都封装了所有的顾客动作。这样，就能够在修改某种状态的行为、或者删除或添加状态时，不改动其他 \texttt{State} 子类或类 \texttt{TicketMachine}。这就是封装变化（Encapsulate What Varies）原则（2.3.2 节）。
-\item \emph{单一职责的类}——类 \texttt{TicketMachine} 只负责跟踪其当前 \texttt{state} 及其他成员变量的取值。它不再负责每种状态的顾客动作。这就是单一职责原则（2.3 节）。
-\item \emph{松耦合的类}——各 \texttt{State} 子类之间松耦合，并且类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间松耦合。遵循最少知识原则（2.3.2 节），类 \texttt{TicketMachine} 不依赖任何 \texttt{State} 子类。
+\item \emph{封装了顾客动作}——当售票机处于相应状态时，每个 \texttt{State} 子类都封装了所有的顾客动作。这样，就能够在修改某种状态的行为、或者删除或添加状态时，不改动其他 \texttt{State} 子类或类 \texttt{Ticket\allowbreak{}Machine}。这就是封装变化（Encapsulate What Varies）原则（2.3.2 节）。
+\item \emph{单一职责的类}——类 \texttt{Ticket\allowbreak{}Machine} 只负责跟踪其当前 \texttt{state} 及其他成员变量的取值。它不再负责每种状态的顾客动作。这就是单一职责原则（2.3 节）。
+\item \emph{松耦合的类}——各 \texttt{State} 子类之间松耦合，并且类 \texttt{Ticket\allowbreak{}Machine} 与各 \texttt{State} 子类之间松耦合。遵循最少知识原则（2.3.2 节），类 \texttt{Ticket\allowbreak{}Machine} 不依赖任何 \texttt{State} 子类。
 \end{itemize}
 
 \subsection{13.1.4 状态的通用模型}
 
 图 13.4 展示了状态设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
 
-\myGraphic{0.590}{images/CH13_F04_Mak.png}{图 13.4 状态设计模式的通用模型。请将其与图 13.3 进行比较。上图展示的是 \texttt{Context} 类聚合各 \texttt{State} 子类；与之不同，图 13.3 展示的是把 \texttt{State} 子类封装在 \texttt{StatesBlock} 类中，这样就能使各 \texttt{State} 子类之间松耦合，并使类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间松耦合。此外，在图 13.3 中，每个顾客动作成员函数都返回售票机将要转换到的 \texttt{State} 对象。}
+\myGraphic{0.590}{images/CH13_F04_Mak.png}{图 13.4 状态设计模式的通用模型。请将其与图 13.3 进行比较。上图展示的是 \texttt{Context} 类聚合各 \texttt{State} 子类；与之不同，图 13.3 展示的是把 \texttt{State} 子类封装在 \texttt{States\allowbreak{}Block} 类中，这样就能使各 \texttt{State} 子类之间松耦合，并使类 \texttt{Ticket\allowbreak{}Machine} 与各 \texttt{State} 子类之间松耦合。此外，在图 13.3 中，每个顾客动作成员函数都返回售票机将要转换到的 \texttt{State} 对象。}
 
 表 13.5 展示了示例应用如何应用该模式。
 
@@ -1216,10 +1216,10 @@ State *SOLD_OUT::remove_credit_card()  //动作 4
 \toprule
 设计模式 & 示例应用的应用方式 \\
 \midrule
-类 \texttt{Context} & 类 \texttt{TicketMachine}（使用了类 \texttt{StatesBlock}） \\
+类 \texttt{Context} & 类 \texttt{Ticket\allowbreak{}Machine}（使用了类 \texttt{States\allowbreak{}Block}） \\
 超类 \texttt{State} & 超类 \texttt{State} \\
-\texttt{子类 ConcreteStateA、ConcreteStateB 等} & 子类 \texttt{READY}、\texttt{VALIDATING,\allowbreak{} TICKET\_\allowbreak{}SOLD} 和 \texttt{SOLD\_OUT} \\
-成员函数 \texttt{handle()} & 成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{r}\texttt{emove\_credit\_card()} \\
+\texttt{子类 Concrete\allowbreak{}State\allowbreak{}A、Concrete\allowbreak{}State\allowbreak{}B 等} & 子类 \texttt{READY}、\texttt{VALIDATING,\allowbreak{} TICKET\_\allowbreak{}SOLD} 和 \texttt{SOLD\_OUT} \\
+成员函数 \texttt{handle()} & 成员函数 \texttt{insert\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}}、\texttt{check\_\allowbreak{}validity(\allowbreak{})\allowbreak{}}、\texttt{take\_\allowbreak{}ticket(\allowbreak{})\allowbreak{}} 和 \texttt{r}\texttt{emove\_\allowbreak{}credit\_\allowbreak{}card(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}

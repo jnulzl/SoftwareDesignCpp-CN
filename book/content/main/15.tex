@@ -30,9 +30,9 @@ for (int i = INITIAL_VALUE; i < LIMIT_VALUE; i++) ...
 \begin{tabularx}{\textwidth}{XXX}
 \toprule
  & \texttt{for} 循环 & 递归 \\
-初始条件 & \texttt{i = INITIAL\_VALUE} & 原始问题 \\
+初始条件 & \texttt{i =\allowbreak{} INITIAL\_\allowbreak{}VALUE} & 原始问题 \\
 重复更新 & \texttt{i++} & 不断把问题分解为更小但相似的问题。 \\
-终止条件 & \texttt{i >= LIMIT\_VALUE} & 问题小到其解显而易见、唾手可得（一个基例）。 \\
+终止条件 & \texttt{i >=\allowbreak{} LIMIT\_\allowbreak{}VALUE} & 问题小到其解显而易见、唾手可得（一个基例）。 \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -51,7 +51,7 @@ for (int i = INITIAL_VALUE; i < LIMIT_VALUE; i++) ...
 \item \emph{终止条件}——基例：vector 只包含单个元素（或根本不包含任何元素）。
 \end{itemize}
 
-图 15.1 展示了递归的工作过程。我们首先把原始取值 vector 传给递归函数 \texttt{largest()}。该函数把 vector 第一个元素的值记录到变量 \texttt{first\_value} 中，然后移除第一个元素，得到一个更短的 vector，即原 vector 的其余部分。函数把 \texttt{first\_value} 与其余部分中的最大值作比较，两者中较大者就是原问题的解。
+图 15.1 展示了递归的工作过程。我们首先把原始取值 vector 传给递归函数 \texttt{largest()}。该函数把 vector 第一个元素的值记录到变量 \texttt{first\_\allowbreak{}value} 中，然后移除第一个元素，得到一个更短的 vector，即原 vector 的其余部分。函数把 \texttt{first\_\allowbreak{}value} 与其余部分中的最大值作比较，两者中较大者就是原问题的解。
 
 可是函数 \texttt{largest()} 怎么知道 vector 其余部分中的最大值呢？那正是以更短 vector 递归调用该函数所得的结果。每次递归调用接收到的 vector 实参都比原先少一个元素，因此这些调用逐步逼近基例。每次递归调用返回其问题的解。最后一次调用收到的 vector 实参只包含一个元素，这就是该调用立即、显而易见的返回值。最后一次调用不再发起递归调用，从而终止了递归调用链。这个立即返回的值使基例的调用者得以完成比较并返回一个值。随着递归展开，每次递归调用的返回值都使调用者得以完成比较并返回结果，直到最初的调用返回整个 vector 的最大值。
 
@@ -59,7 +59,7 @@ for (int i = INITIAL_VALUE; i < LIMIT_VALUE; i++) ...
 
 递归函数 \texttt{largest()} 的工作方式正如图 15.1 所示。
 
-\begin{codeboxt}{代码清单 15.1（程序 15.1 Largest）：\texttt{largest.cpp}（仅用于演示递归）}
+\begin{codeboxt}{代码清单 15.1（程序 15.1 Largest）：\texttt{largest.\allowbreak{}cpp}（仅用于演示递归）}
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -135,7 +135,7 @@ is 92
 
 递归函数 \texttt{reverse()} 的工作方式正如图 15.2 所示。
 
-\begin{codeboxt}{代码清单 15.2（程序 15.2 Reverse）：\texttt{reverse.cpp}（仅用于演示递归）}
+\begin{codeboxt}{代码清单 15.2（程序 15.2 Reverse）：\texttt{reverse.\allowbreak{}cpp}（仅用于演示递归）}
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -237,7 +237,7 @@ Reverse of 10 20 30 40 50
 
 现在我们知道可以求解四圆盘的难题了——递归地把三个圆盘从柱 L 移到柱 M，递归地把一个圆盘从柱 L 移到柱 R（基例），再递归地把三个圆盘从柱 M 移到柱 R。事实上，要解出 \emph{N} 个圆盘的难题，我们递归地利用 \emph{N}-1 个圆盘和一个圆盘的解法。
 
-\begin{codeboxt}{代码清单 15.3（程序 15.3 Towers）：\texttt{towers.cpp}}
+\begin{codeboxt}{代码清单 15.3（程序 15.3 Towers）：\texttt{towers.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -445,7 +445,7 @@ void BST::remove(const Node * const link) const
 
 测试程序生成随机整数值，把它们插入 BST，并按有序顺序打印树中的值。
 
-\begin{codeboxt}{代码清单 15.9（程序 15.4-BST）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 15.9（程序 15.4-BST）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include <stdlib.h>
@@ -625,9 +625,9 @@ Inserting: 75 56 60 38 22  9 98 58 10 98 30 55 27 58 95 42 71 80 29 52
 
 \subsection{15.6.3 快速排序的实现}
 
-类 \texttt{Quicksort} 实现了快速排序算法，如下面的代码清单所示。重要的成员函数有递归的 \texttt{sort()} 函数，以及 \texttt{partition()} 和 \texttt{swap\_values()} 函数。
+类 \texttt{Quicksort} 实现了快速排序算法，如下面的代码清单所示。重要的成员函数有递归的 \texttt{sort()} 函数，以及 \texttt{partition(\allowbreak{})\allowbreak{}} 和 \texttt{swap\_\allowbreak{}values(\allowbreak{})\allowbreak{}} 函数。
 
-\begin{codeboxt}{代码清单 15.10（程序 15.5 Quicksort）：\texttt{Quicksort.h}}
+\begin{codeboxt}{代码清单 15.10（程序 15.5 Quicksort）：\texttt{Quicksort.\allowbreak{}h}}
 #include <iostream>
 #include <iomanip>
 
@@ -656,9 +656,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 待排序的数据}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 递归排序函数}\par
 
-成员函数 \texttt{sort()} 实现基例，以及划分后对两个子数组的递归调用。待排序子数组最左边和最右边元素的下标分别是 \texttt{left\_index} 和 \texttt{right\_index}。
+成员函数 \texttt{sort()} 实现基例，以及划分后对两个子数组的递归调用。待排序子数组最左边和最右边元素的下标分别是 \texttt{left\_\allowbreak{}index} 和 \texttt{right\_\allowbreak{}index}。
 
-\begin{codeboxt}{代码清单 15.11（程序 15.5 Quicksort）：\texttt{Quicksort.cpp}（第 1 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 15.11（程序 15.5 Quicksort）：\texttt{Quicksort.\allowbreak{}cpp}（第 1 部分，共 3 部分）}
 #include <iostream>
 #include <iomanip>
 #include "Quicksort.h"
@@ -694,9 +694,9 @@ void Quicksort::sort(const int left_index, const int right_index)
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 获取基准元素的下标。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 递归地对基准元素两侧的两个子数组排序。}\par
 
-成员函数 \texttt{partition()} 实现划分一个子数组的各个步骤，该子数组最左边和最右边元素的下标分别是 \texttt{left\_index} 和 \texttt{right\_index}。
+成员函数 \texttt{partition(\allowbreak{})\allowbreak{}} 实现划分一个子数组的各个步骤，该子数组最左边和最右边元素的下标分别是 \texttt{left\_\allowbreak{}index} 和 \texttt{right\_\allowbreak{}index}。
 
-\begin{codeboxt}{代码清单 15.12（程序 15.5 Quicksort）：\texttt{Quicksort.cpp}（第 2 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 15.12（程序 15.5 Quicksort）：\texttt{Quicksort.\allowbreak{}cpp}（第 2 部分，共 3 部分）}
 ...
 
 int Quicksort::partition(const int left_index, const int right_index)
@@ -738,7 +738,7 @@ int Quicksort::partition(const int left_index, const int right_index)
 
 其余的成员函数负责交换值，并验证数组已正确排序。重载的输出运算符 \texttt{<<} 打印该数组。
 
-\begin{codeboxt}{代码清单 15.13（程序 15.5 Quicksort）：\texttt{Quicksort.cpp}（第 3 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 15.13（程序 15.5 Quicksort）：\texttt{Quicksort.\allowbreak{}cpp}（第 3 部分，共 3 部分）}
 ...
 
 void Quicksort::swap_values_at(const int index1, const int index2)
@@ -768,7 +768,7 @@ ostream& operator <<(ostream& ostr, const Quicksort& q)
 
 测试程序生成一个随机取值数组用于快速排序。
 
-\begin{codeboxt}{代码清单 15.14（程序 15.5 Quicksort）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 15.14（程序 15.5 Quicksort）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <stdlib.h>
 #include <time.h>
@@ -814,7 +814,7 @@ SORTED
 
 我们可能会忍不住照搬这个递归的数学定义，写出一个递归函数 \texttt{f()} 。
 
-\begin{codeboxt}{代码清单 15.15（程序 15.6 Fibonacci）：\texttt{fibrecursive.cpp}（递归灾难）}
+\begin{codeboxt}{代码清单 15.15（程序 15.6 Fibonacci）：\texttt{fibrecursive.\allowbreak{}cpp}（递归灾难）}
 #include <iostream>
 #include <iomanip>
 
@@ -923,7 +923,7 @@ Q . . . . . . .
 
 把镜像和旋转的情况都算上，共有 92 个解。
 
-类 \texttt{Queens} 每次处理一列来解这个谜题，从最左边的一列开始（代码清单 15.16），每一列构成解的一个步骤。在每一列中，程序为一个皇后寻找安全位置。某一列中皇后的安全位置，是指该皇后不会被已经放置在左侧各列中的任何其他皇后攻击到的位置。如果找到安全位置，程序就在那里放置一个皇后，然后调用成员函数 \texttt{find\_solutions()}，通过递归地测试下一列来尝试解出谜题。这个子问题更小，因为需要考察的剩余列少了一列，我们离最后一列这个基例也更近了。
+类 \texttt{Queens} 每次处理一列来解这个谜题，从最左边的一列开始（代码清单 15.16），每一列构成解的一个步骤。在每一列中，程序为一个皇后寻找安全位置。某一列中皇后的安全位置，是指该皇后不会被已经放置在左侧各列中的任何其他皇后攻击到的位置。如果找到安全位置，程序就在那里放置一个皇后，然后调用成员函数 \texttt{find\_\allowbreak{}solutions(\allowbreak{})\allowbreak{}}，通过递归地测试下一列来尝试解出谜题。这个子问题更小，因为需要考察的剩余列少了一列，我们离最后一列这个基例也更近了。
 
 从某一列中皇后的位置出发进行的递归求解搜索，最终要么成功，要么失败。如果找到了一个解，程序就打印它。无论哪种情况，程序都在该列中把皇后下移到下一个安全位置。移动皇后就是动态回溯，它为从新位置递归搜索另一个解做好了准备。如果某一列中再没有安全位置，程序就回溯到上一列——即退回一步——并把那里的皇后移到该列的下一个安全位置。
 
@@ -960,11 +960,11 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 各皇后的位置}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 递归函数}\par
 
-公有成员函数 \texttt{print\_solutions()} 针对起始列 0 调用私有递归成员函数 \texttt{find\_solutions()}（代码清单 15.17）。该函数逐个检查某一列的每个位置是否为安全位置。如果在该列中找到了一个皇后的安全位置，它就递归地调用自身，通过测试下一列来推进到求解路径的下一步。
+公有成员函数 \texttt{print\_\allowbreak{}solutions(\allowbreak{})\allowbreak{}} 针对起始列 0 调用私有递归成员函数 \texttt{find\_\allowbreak{}solutions(\allowbreak{})\allowbreak{}}（代码清单 15.17）。该函数逐个检查某一列的每个位置是否为安全位置。如果在该列中找到了一个皇后的安全位置，它就递归地调用自身，通过测试下一列来推进到求解路径的下一步。
 
-在递归地检查完某一列中的每个安全位置之后，函数通过把皇后移到该列的下一个安全位置来回溯，以便从那里继续尝试新的求解路径。如果该列再没有安全位置，\texttt{find\_solutions()} 就返回，求解搜索回溯到上一列，从那里继续尝试求解路径。最后一列是基例——不会从该列发出任何递归调用。
+在递归地检查完某一列中的每个安全位置之后，函数通过把皇后移到该列的下一个安全位置来回溯，以便从那里继续尝试新的求解路径。如果该列再没有安全位置，\texttt{find\_\allowbreak{}solutions(\allowbreak{})\allowbreak{}} 就返回，求解搜索回溯到上一列，从那里继续尝试求解路径。最后一列是基例——不会从该列发出任何递归调用。
 
-\begin{codeboxt}{代码清单 15.17（程序 15.7 Queens）：\texttt{Queens.cpp}（第 1 部分，共 2 部分）}
+\begin{codeboxt}{代码清单 15.17（程序 15.7 Queens）：\texttt{Queens.\allowbreak{}cpp}（第 1 部分，共 2 部分）}
 #include <iostream>
 #include "Queens.h"
 
@@ -1000,9 +1000,9 @@ void Queens::find_solutions(const int col)
 
 \myGraphic{0.849}{images/CH15_F13_UN09_Mak.png}{}
 
-私有布尔成员函数 \texttt{is\_safe\_position()} 检查棋盘上的某个位置是否会受到前面几列中已放置皇后的攻击，如下面的代码清单所示。它检查皇后左侧的同一行、从皇后到左上方的对角线，以及从皇后到左下方的对角线。由于每一列只有一个皇后，因此不可能受到同一列中另一个皇后的攻击。私有成员函数 \texttt{print()} 打印一个解。
+私有布尔成员函数 \texttt{is\_\allowbreak{}safe\_\allowbreak{}position(\allowbreak{})\allowbreak{}} 检查棋盘上的某个位置是否会受到前面几列中已放置皇后的攻击，如下面的代码清单所示。它检查皇后左侧的同一行、从皇后到左上方的对角线，以及从皇后到左下方的对角线。由于每一列只有一个皇后，因此不可能受到同一列中另一个皇后的攻击。私有成员函数 \texttt{print()} 打印一个解。
 
-\begin{codeboxt}{代码清单 15.18（程序 15.7 Queens）：\texttt{Queens.cpp}（第 2 部分，共 2 部分）}
+\begin{codeboxt}{代码清单 15.18（程序 15.7 Queens）：\texttt{Queens.\allowbreak{}cpp}（第 2 部分，共 2 部分）}
 bool Queens::is_safe_position(const int row, const int col) const
 {
     int c = col - 1;
@@ -1058,7 +1058,7 @@ void Queens::print()
 
 测试程序打印这些解。
 
-\begin{codeboxt}{代码清单 15.19（程序 15.7 Queens）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 15.19（程序 15.7 Queens）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Queens.h"
 
@@ -1179,7 +1179,7 @@ Solution:
 
 如果某个格子上的数字失败，程序就回溯，为那个格子尝试下一个数字。如果某个格子上九个数字都失败了，程序就进一步回溯，退回到上一个格子，并为那个格子尝试下一个数字。
 
-类 \texttt{Sudoku} 有一个私有递归成员函数 \texttt{solution\_found()}，它返回 true 或 false，表示在某个格子中填入一个数字后是否找到了解。私有布尔函数 \texttt{is\_number\_ok()} 测试某个数字是否允许放入某个格子。
+类 \texttt{Sudoku} 有一个私有递归成员函数 \texttt{solution\_\allowbreak{}found(\allowbreak{})\allowbreak{}}，它返回 true 或 false，表示在某个格子中填入一个数字后是否找到了解。私有布尔函数 \texttt{is\_\allowbreak{}number\_\allowbreak{}ok(\allowbreak{})\allowbreak{}} 测试某个数字是否允许放入某个格子。
 
 \begin{codeboxt}{代码清单 15.20（程序 15.8 Sudoku）：\texttt{Sudoku.h}}
 class Sudoku
@@ -1206,7 +1206,7 @@ private:
 
 构造函数读取输入文件，用给定的值初始化网格，其余位置为 0。
 
-\begin{codeboxt}{代码清单 15.21（程序 15.8 Sudoku）：\texttt{Sudoku.cpp}（第 1 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 15.21（程序 15.8 Sudoku）：\texttt{Sudoku.\allowbreak{}cpp}（第 1 部分，共 3 部分）}
 #include <iostream>
 #include <fstream>
 #include "Sudoku.h"
@@ -1238,9 +1238,9 @@ Sudoku::Sudoku(const char *file_name)
 ...
 \end{codeboxt}
 
-在把某个数字填入由给定 \texttt{row} 和 \texttt{col} 指定的网格格子之后，布尔成员函数 \texttt{solution\_found()} 递归地测试后续格子，检查是否找到了解。\texttt{for} 循环控制回溯。如果它填入的数字无法得出解，循环就尝试下一个数字。
+在把某个数字填入由给定 \texttt{row} 和 \texttt{col} 指定的网格格子之后，布尔成员函数 \texttt{solution\_\allowbreak{}found(\allowbreak{})\allowbreak{}} 递归地测试后续格子，检查是否找到了解。\texttt{for} 循环控制回溯。如果它填入的数字无法得出解，循环就尝试下一个数字。
 
-\begin{codeboxt}{代码清单 15.22（程序 15.8 Sudoku）：\texttt{Sudoku.cpp}（第 2 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 15.22（程序 15.8 Sudoku）：\texttt{Sudoku.\allowbreak{}cpp}（第 2 部分，共 3 部分）}
 ...
 
 bool Sudoku::solution_found(int row, int col)
@@ -1277,13 +1277,13 @@ bool Sudoku::solution_found(int row, int col)
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 在尝试完所有数字仍未成功之后，把该格子重置为“空”。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 回溯到上一个格子：返回 false，以便上一次调用可以尝试下一个数字。}\par
 
-这里有两个递归调用。第一个在当前格子包含的是给定数字时，递归地尝试下一个格子。在 \texttt{for} 循环中，把一个允许的数字赋给某个格子之后，第二个递归调用检查下一个格子，看从那里是否能找到解。如果找到了解，函数调用就返回 true。否则，循环尝试下一个数字。在尝试完所有数字仍未成功之后，函数把该格子重置为 0（“空”）并返回 false。这会使 \texttt{solution\_found()} 的调用者回溯，为上一个格子尝试下一个允许的数字。
+这里有两个递归调用。第一个在当前格子包含的是给定数字时，递归地尝试下一个格子。在 \texttt{for} 循环中，把一个允许的数字赋给某个格子之后，第二个递归调用检查下一个格子，看从那里是否能找到解。如果找到了解，函数调用就返回 true。否则，循环尝试下一个数字。在尝试完所有数字仍未成功之后，函数把该格子重置为 0（“空”）并返回 false。这会使 \texttt{solution\_\allowbreak{}found(\allowbreak{})\allowbreak{}} 的调用者回溯，为上一个格子尝试下一个允许的数字。
 
 终止递归的基例是在右下角的最后一个格子中放入一个允许的数字。回溯到上一个格子发生在某个格子中所有数字都尝试失败之后。当所有递归调用都展开回到第一个格子时，程序要么找到了一个解，要么这个谜题无解。
 
-布尔成员函数 \texttt{is\_number\_ok()} 检查某个数字是否允许放入某个格子。它检查该数字是否已经出现在该格子所在的行、列或宫中。成员函数 \texttt{print()} 打印解。
+布尔成员函数 \texttt{is\_\allowbreak{}number\_\allowbreak{}ok(\allowbreak{})\allowbreak{}} 检查某个数字是否允许放入某个格子。它检查该数字是否已经出现在该格子所在的行、列或宫中。成员函数 \texttt{print()} 打印解。
 
-\begin{codeboxt}{代码清单 15.23（程序 15.8 Sudoku）：\texttt{Sudoku.cpp}（第 3 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 15.23（程序 15.8 Sudoku）：\texttt{Sudoku.\allowbreak{}cpp}（第 3 部分，共 3 部分）}
 bool Sudoku::is_number_ok(int row, int col, int number) const
 {
     for (int c = 0; c < GRID_SIZE; c++)                       ①
@@ -1341,7 +1341,7 @@ void Sudoku::print() const
 
 测试程序打印带有给定数字的初始网格，调用类 \texttt{Sudoku} 的 \texttt{solve()} 成员函数，并在有解时打印解网格。
 
-\begin{codeboxt}{代码清单 15.24（程序 15.8 Sudoku）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 15.24（程序 15.8 Sudoku）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Sudoku.h"
 

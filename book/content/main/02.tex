@@ -145,9 +145,9 @@ inline ostream& operator <<(ostream& ostr, const Book& book)
 
 在类 \texttt{Catalogue} 中（代码清单 2.2），私有成员变量 \texttt{booklist} 是一个 vector，存放指向目录中所存 \texttt{Book} 对象的指针。公有成员函数 \texttt{add()} 根据书名以及作者的姓和名创建一个新的 \texttt{Book} 对象，并把该对象添加到 vector 中。公有成员函数 \texttt{find()} 在 vector 中搜索匹配的图书。
 
-私有静态成员函数 \texttt{equal\_ignore\_case()} 对两个字符串 \texttt{str\_1} 和 \texttt{str\_2} 进行不区分大小写的比较，逐个字符比较每个字母的小写形式。空的目标字符串表示一个无关属性，此时比较总是返回 \texttt{true}。
+私有静态成员函数 \texttt{equal\_\allowbreak{}ignore\_\allowbreak{}case(\allowbreak{})\allowbreak{}} 对两个字符串 \texttt{str\_1} 和 \texttt{str\_2} 进行不区分大小写的比较，逐个字符比较每个字母的小写形式。空的目标字符串表示一个无关属性，此时比较总是返回 \texttt{true}。
 
-\begin{codeboxt}{代码清单 2.2（程序 2.1 Books-1）：\texttt{Catalogue.h}}
+\begin{codeboxt}{代码清单 2.2（程序 2.1 Books-1）：\texttt{Catalogue.\allowbreak{}h}}
 #include <string>
 #include <vector>
 #include "Book.h"
@@ -187,9 +187,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 指向 Book 对象的指针的 vector}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 比较每个字母的小写形式。}\par
 
-公有成员函数 \texttt{find()} 接收一个 \texttt{Book} 对象的引用，该对象包含目标属性（代码清单 2.3）。它遍历 \texttt{booklist} vector 中的图书，并调用 \texttt{equal\_ignore\_case()} 将目标书名、姓和名与 booklist 中每本书的对应属性进行比较。在比较时把所有属性字符串中的字符都转换为小写，使我们能够进行不区分大小写的字符串匹配。该函数返回一个由匹配目标属性的图书组成的 vector；如果没有图书匹配，则返回一个空 vector。
+公有成员函数 \texttt{find()} 接收一个 \texttt{Book} 对象的引用，该对象包含目标属性（代码清单 2.3）。它遍历 \texttt{booklist} vector 中的图书，并调用 \texttt{equal\_\allowbreak{}ignore\_\allowbreak{}case(\allowbreak{})\allowbreak{}} 将目标书名、姓和名与 booklist 中每本书的对应属性进行比较。在比较时把所有属性字符串中的字符都转换为小写，使我们能够进行不区分大小写的字符串匹配。该函数返回一个由匹配目标属性的图书组成的 vector；如果没有图书匹配，则返回一个空 vector。
 
-\begin{codeboxt}{代码清单 2.3（程序 2.1 Books-1）：\texttt{Catalogue.cpp}}
+\begin{codeboxt}{代码清单 2.3（程序 2.1 Books-1）：\texttt{Catalogue.\allowbreak{}cpp}}
 #include "Book.h"
 #include "Catalogue.h"
 
@@ -225,7 +225,7 @@ vector<Book *>Catalogue::find(const Book& target) const
 
 在测试程序中（代码清单 2.4），函数 \texttt{fill()} 向目录中加载一些小说类图书。函数 \texttt{test()} 用一些目标图书执行测试搜索，并调用函数 \texttt{search()} 来完成每次搜索。有些目标属性是空字符串，表示无关属性。
 
-\begin{codeboxt}{代码清单 2.4（程序 2.1 Books-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 2.4（程序 2.1 Books-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <vector>
 #include <string>
@@ -363,9 +363,9 @@ Matches:
 良好的软件设计会把可能变化的代码与不会变化的代码分离开来。封装可能变化的代码可将其与程序的其余部分隔离开来。这样一来，当被封装代码发生变化时，这些变化就不会泄漏出去并导致其他代码发生改变。封装可能变化的代码的一种常见方法是把它单独放进一个类中。
 \end{mySidebar}
 
-由于改动图书属性必然要求改动属性的搜索方式，我们也需要把这种行为封装到类 \texttt{Attributes} 中。私有成员函数 \texttt{is\_match()} 显式地比较属性，并分别在其匹配或不匹配时返回 \texttt{true} 或 \texttt{false}。特殊的 \texttt{Genre} 值 \texttt{UNSPECIFIED} 和 \texttt{year} 值 0 将作为无关的搜索目标值。为了执行不区分大小写的字符串比较，我们必须把静态成员函数 \texttt{equal\_ignore\_case()} 从类 \texttt{Catalogue} 移到类 \texttt{Attributes} 中。
+由于改动图书属性必然要求改动属性的搜索方式，我们也需要把这种行为封装到类 \texttt{Attributes} 中。私有成员函数 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 显式地比较属性，并分别在其匹配或不匹配时返回 \texttt{true} 或 \texttt{false}。特殊的 \texttt{Genre} 值 \texttt{UNSPECIFIED} 和 \texttt{year} 值 0 将作为无关的搜索目标值。为了执行不区分大小写的字符串比较，我们必须把静态成员函数 \texttt{equal\_\allowbreak{}ignore\_\allowbreak{}case(\allowbreak{})\allowbreak{}} 从类 \texttt{Catalogue} 移到类 \texttt{Attributes} 中。
 
-\begin{codeboxt}{代码清单 2.5（程序 2.2 Books-2）：\texttt{Attributes.h}}
+\begin{codeboxt}{代码清单 2.5（程序 2.2 Books-2）：\texttt{Attributes.\allowbreak{}h}}
 #include <iostream>
 
 using namespace std;
@@ -473,7 +473,7 @@ private:
 
 类 \texttt{Catalogue} 的 \texttt{add()} 和 \texttt{find()} 成员函数需要改动，以处理新的 \texttt{Attributes} 类（代码清单 2.7）。我们向函数 \texttt{add()} 传入一个 \texttt{Attributes} 对象的引用，它用该对象构造一个 \texttt{Book} 对象并添加到 \texttt{booklist} vector 中。我们向函数 \texttt{find()} 传入目标 \texttt{Attributes} 对象的引用。
 
-\begin{codeboxt}{代码清单 2.7（程序 2.2 Books-2）：\texttt{Catalogue.h}}
+\begin{codeboxt}{代码清单 2.7（程序 2.2 Books-2）：\texttt{Catalogue.\allowbreak{}h}}
 #include <vector>
 #include "Book.h"
 
@@ -495,13 +495,13 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 由 Attributes 对象构造一个 Book 对象。}\par
 
-成员函数 \texttt{find()} 变得简单多了（代码清单 2.8）。该函数把属性匹配\emph{委托}给类 \texttt{Attributes}，做法是调用后者的 \texttt{is\_match()} 成员函数，因此 \texttt{find()} 不再受图书属性任何改动的影响。
+成员函数 \texttt{find()} 变得简单多了（代码清单 2.8）。该函数把属性匹配\emph{委托}给类 \texttt{Attributes}，做法是调用后者的 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 成员函数，因此 \texttt{find()} 不再受图书属性任何改动的影响。
 
 \myGraphic{0.734}{images/CH02_F03_UN05_Mak.png}{}
 
 属性匹配确实更适合放在一个内聚的 \texttt{Attributes} 类中。
 
-\begin{codeboxt}{代码清单 2.8（程序 2.2 Books-2）：\texttt{Catalogue.cpp}}
+\begin{codeboxt}{代码清单 2.8（程序 2.2 Books-2）：\texttt{Catalogue.\allowbreak{}cpp}}
 #include "Book.h"
 #include "Catalogue.h"
 
@@ -539,7 +539,7 @@ vector<Book *>Catalogue::find(const Attributes& target_attrs) const
 最少知识原则支持封装变化原则。如果一个类需要改变其实现，这种改变不会影响到任何不依赖于该实现的其他代码。
 \end{mySidebar}
 
-每当图书属性发生变化，测试程序 \texttt{tester.cpp} 都必须改动。现在向目录中添加一本书的示例代码是
+每当图书属性发生变化，测试程序 \texttt{tester.\allowbreak{}cpp} 都必须改动。现在向目录中添加一本书的示例代码是
 
 \begin{codebox}
     catalogue.add(new Attributes("The Call of the Wild", 
@@ -606,7 +606,7 @@ public:
 
 在下一个代码清单中，子类 \texttt{Cookbook} 的构造函数也调用了超类构造函数。
 
-\begin{codeboxt}{代码清单 2.10（程序 2.3 Books-3）：\texttt{Cookbook.h}}
+\begin{codeboxt}{代码清单 2.10（程序 2.3 Books-3）：\texttt{Cookbook.\allowbreak{}h}}
 #include "Book.h"
 #include "CookbookAttrs.h"
 
@@ -621,9 +621,9 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 类 Cookbook 是类 Book 的子类。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 调用超类 Book 的构造函数。}\par
 
-我们还可以把 \texttt{Attributes} 设为超类（代码清单 2.11），并为它设计两个新的子类 \texttt{FictionAttrs} 和 \texttt{CookbookAttrs}。超类 \texttt{Attributes} 维护公共成员变量 \texttt{title}、\texttt{last} 和 \texttt{first}。因此，它的成员函数 \texttt{is\_match()} 只比较这些公共属性。
+我们还可以把 \texttt{Attributes} 设为超类（代码清单 2.11），并为它设计两个新的子类 \texttt{Fiction\allowbreak{}Attrs} 和 \texttt{Cookbook\allowbreak{}Attrs}。超类 \texttt{Attributes} 维护公共成员变量 \texttt{title}、\texttt{last} 和 \texttt{first}。因此，它的成员函数 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 只比较这些公共属性。
 
-\begin{codeboxt}{代码清单 2.11（程序 2.3 Books-3）：\texttt{Attributes.h}}
+\begin{codeboxt}{代码清单 2.11（程序 2.3 Books-3）：\texttt{Attributes.\allowbreak{}h}}
 #include <string>
 
 using namespace std;
@@ -661,11 +661,11 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 只比较公共属性。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 公共属性}\par
 
-子类 \texttt{FictionAttrs} 包含小说类图书特有的属性：体裁和年份（代码清单 2.12）。它的构造函数首先调用其超类 \texttt{Attributes} 的构造函数，以初始化继承来的公共成员变量 \texttt{title}、\texttt{last} 和 \texttt{first}。然后，它初始化子类的 \texttt{year} 和 \texttt{genre} 成员变量。我们还把 \texttt{Genre} 枚举常量的定义及其重载的 \texttt{<<} 运算符在物理位置上移得更靠近类 \texttt{FictionAttrs}。
+子类 \texttt{Fiction\allowbreak{}Attrs} 包含小说类图书特有的属性：体裁和年份（代码清单 2.12）。它的构造函数首先调用其超类 \texttt{Attributes} 的构造函数，以初始化继承来的公共成员变量 \texttt{title}、\texttt{last} 和 \texttt{first}。然后，它初始化子类的 \texttt{year} 和 \texttt{genre} 成员变量。我们还把 \texttt{Genre} 枚举常量的定义及其重载的 \texttt{<<} 运算符在物理位置上移得更靠近类 \texttt{Fiction\allowbreak{}Attrs}。
 
-成员函数 \texttt{is\_match()} 首先调用超类成员函数 \texttt{Attributes::is\_match()} 来检查公共的 \texttt{title}、\texttt{last} 和 \texttt{first} 属性。如果这一检查通过，那么子类接着可以检查小说类图书的 \texttt{year} 和 \texttt{genre} 属性。
+成员函数 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 首先调用超类成员函数 \texttt{Attributes::\allowbreak{}is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 来检查公共的 \texttt{title}、\texttt{last} 和 \texttt{first} 属性。如果这一检查通过，那么子类接着可以检查小说类图书的 \texttt{year} 和 \texttt{genre} 属性。
 
-\begin{codeboxt}{代码清单 2.12（程序 2.3 Books-3）：\texttt{FictionAttrs.h}}
+\begin{codeboxt}{代码清单 2.12（程序 2.3 Books-3）：\texttt{Fiction\allowbreak{}Attrs.\allowbreak{}h}}
 #include <iostream>
 #include <string>
 #include "Attributes.h"
@@ -720,9 +720,9 @@ inline ostream& operator <<(ostream& ostr, const FictionAttrs& attrs)
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 然后匹配小说类图书的年份和体裁。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 小说类图书的年份和体裁属性}\par
 
-子类 \texttt{CookbookAttrs} 包含菜谱书特有的地区属性，如下一个代码清单所示。它的构造函数和 \texttt{is\_match()} 成员函数的行为与子类 \texttt{FictionAttrs} 中的类似。
+子类 \texttt{Cookbook\allowbreak{}Attrs} 包含菜谱书特有的地区属性，如下一个代码清单所示。它的构造函数和 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 成员函数的行为与子类 \texttt{Fiction\allowbreak{}Attrs} 中的类似。
 
-\begin{codeboxt}{代码清单 2.13（程序 2.3 Books-3）：\texttt{CookbookAttrs.h}}
+\begin{codeboxt}{代码清单 2.13（程序 2.3 Books-3）：\texttt{Cookbook\allowbreak{}Attrs.\allowbreak{}h}}
 #include <iostream>
 #include <string>
 #include "Attributes.h"
@@ -790,7 +790,7 @@ inline ostream& operator <<(ostream& ostr, const CookbookAttrs& attrs)
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 然后匹配菜谱书的地区。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 菜谱书的地区属性}\par
 
-这些都是\emph{开闭}\emph{原则}的例子。一旦我们确定类 \texttt{Attributes} 已经捕获了所有属性的公共成员变量和函数，我们就\emph{关闭}它，不再对其进行修改，以提供代码稳定性。我们不期望再对该类做更多改动。但我们把该类\emph{开放}给以子类形式进行的扩展，例如 \texttt{FictionAttrs} 和 \texttt{CookbookAttrs}，从而提供了添加更多种图书属性的灵活性。类 \texttt{Book} 及其子类是该设计原则的另一个例子。
+这些都是\emph{开闭}\emph{原则}的例子。一旦我们确定类 \texttt{Attributes} 已经捕获了所有属性的公共成员变量和函数，我们就\emph{关闭}它，不再对其进行修改，以提供代码稳定性。我们不期望再对该类做更多改动。但我们把该类\emph{开放}给以子类形式进行的扩展，例如 \texttt{Fiction\allowbreak{}Attrs} 和 \texttt{Cookbook\allowbreak{}Attrs}，从而提供了添加更多种图书属性的灵活性。类 \texttt{Book} 及其子类是该设计原则的另一个例子。
 
 \begin{mySidebar}{开闭原则}
 
@@ -799,7 +799,7 @@ inline ostream& operator <<(ostream& ostr, const CookbookAttrs& attrs)
 开闭原则支持松耦合与封装。例如，\texttt{Shape} 超类可以隐藏它存储坐标的方式。但它可以有诸如 \texttt{Rectangle} 和 \texttt{Circle} 这样的子类，通过显示各种形状来扩展功能，而这些子类并不依赖于坐标是如何存储的。如果某天有必要更改超类中的坐标代码，子类将继承这些更改，但无需对任何代码做修改。
 \end{mySidebar}
 
-类 \texttt{Book} 没有变化（代码清单 2.14）。由于每个 \texttt{Book} 对象，无论是 \texttt{Fiction} 还是 \texttt{Cookbook}，都必须指向其相应的 \texttt{Attributes} 对象（分别是 \texttt{FictionAttrs} 或 \texttt{CookbookAttrs}），我们将把这个公共指针放在超类 \texttt{Book} 中。因此，\texttt{Book} 包含的是指向超类 \texttt{Attributes} 的指针，而不是专门指向 \texttt{FictionAttrs} 或 \texttt{CookbookAttrs} 的指针。这是\emph{面向接口编程}的一个例子，因为超类 \texttt{Attributes} 充当其子类的接口。
+类 \texttt{Book} 没有变化（代码清单 2.14）。由于每个 \texttt{Book} 对象，无论是 \texttt{Fiction} 还是 \texttt{Cookbook}，都必须指向其相应的 \texttt{Attributes} 对象（分别是 \texttt{Fiction\allowbreak{}Attrs} 或 \texttt{Cookbook\allowbreak{}Attrs}），我们将把这个公共指针放在超类 \texttt{Book} 中。因此，\texttt{Book} 包含的是指向超类 \texttt{Attributes} 的指针，而不是专门指向 \texttt{Fiction\allowbreak{}Attrs} 或 \texttt{Cookbook\allowbreak{}Attrs} 的指针。这是\emph{面向接口编程}的一个例子，因为超类 \texttt{Attributes} 充当其子类的接口。
 
 \begin{mySidebar}{面向接口编程原则}
 
@@ -846,9 +846,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 指向 Attributes 对象的指针，而不是专门指向 FictionAttrs 或 CookbookAttrs}\par
 
-类 \texttt{Catalogue} 现在需要重载的 \texttt{add()} 成员函数：一个用于 \texttt{FictionAttrs}，一个用于 \texttt{CookbookAttrs}。类似地，它还需要重载的 \texttt{find()} 成员函数，如下一个代码清单所示。成员变量 \texttt{booklist} 仍然是一个指向 \texttt{Book} 对象的指针的 vector，而不是专门指向 \texttt{Fiction} 或 \texttt{Cookbook} 对象的指针，这是面向接口编程原则的又一个例子。
+类 \texttt{Catalogue} 现在需要重载的 \texttt{add()} 成员函数：一个用于 \texttt{Fiction\allowbreak{}Attrs}，一个用于 \texttt{Cookbook\allowbreak{}Attrs}。类似地，它还需要重载的 \texttt{find()} 成员函数，如下一个代码清单所示。成员变量 \texttt{booklist} 仍然是一个指向 \texttt{Book} 对象的指针的 vector，而不是专门指向 \texttt{Fiction} 或 \texttt{Cookbook} 对象的指针，这是面向接口编程原则的又一个例子。
 
-\begin{codeboxt}{代码清单 2.15（程序 2.3 Books-3）：\texttt{Catalogue.h}}
+\begin{codeboxt}{代码清单 2.15（程序 2.3 Books-3）：\texttt{Catalogue.\allowbreak{}h}}
 #include <vector>
 #include "Book.h"
 #include "FictionAttrs.h"
@@ -890,7 +890,7 @@ private:
 
 这两个 \texttt{add()} 成员函数彼此相似，这两个 \texttt{find()} 成员函数也彼此相似。
 
-\begin{codeboxt}{代码清单 2.16（程序 2.3 Books-3）：\texttt{Catalogue.cpp}}
+\begin{codeboxt}{代码清单 2.16（程序 2.3 Books-3）：\texttt{Catalogue.\allowbreak{}cpp}}
 #include "Book.h"
 #include "Fiction.h"
 #include "FictionAttrs.h"
@@ -951,9 +951,9 @@ vector<Cookbook *>Catalogue::find(const CookbookAttrs& target_attrs)  ⑤
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 将指针转换为指向 CookbookAttrs 对象。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 把属性匹配委托给 CookbookAttrs 类。}\par
 
-带 \texttt{FictionAttrs} 参数的重载 \texttt{add()} 成员函数会把一个新的 \texttt{Fiction} 图书对象追加到 booklist 中。带 \texttt{CookbookAttrs} 参数的重载 \texttt{add()} 成员函数则追加一个新的 \texttt{Cookbook} 图书对象。
+带 \texttt{Fiction\allowbreak{}Attrs} 参数的重载 \texttt{add()} 成员函数会把一个新的 \texttt{Fiction} 图书对象追加到 booklist 中。带 \texttt{Cookbook\allowbreak{}Attrs} 参数的重载 \texttt{add()} 成员函数则追加一个新的 \texttt{Cookbook} 图书对象。
 
-带 \texttt{FictionAttrs} 参数的重载 \texttt{find()} 成员函数只能检查 \texttt{Fiction} 图书对象。在遍历 booklist 中的每个图书对象时，下面这些语句
+带 \texttt{Fiction\allowbreak{}Attrs} 参数的重载 \texttt{find()} 成员函数只能检查 \texttt{Fiction} 图书对象。在遍历 booklist 中的每个图书对象时，下面这些语句
 
 \begin{codebox}
 Fiction *fiction = dynamic_cast<Fiction *>(book);
@@ -968,23 +968,23 @@ FictionAttrs *fiction_attrs =
 if (fiction_attrs->is_match(target_attrs))
 \end{codebox}
 
-首先把从 \texttt{book->get\_attrs()} 返回的 \texttt{Attributes} 指针转换为指向 \texttt{FictionAttrs} 对象的指针。然后，它们通过调用 \texttt{FictionAttrs} 对象的 \texttt{is\_match()} 成员函数，把属性匹配委托给该对象。\texttt{find()} 函数返回一个指针的 vector，这些指针指向任何匹配的 \texttt{Fiction} 图书对象。
+首先把从 \texttt{book->get\_\allowbreak{}attrs(\allowbreak{})\allowbreak{}} 返回的 \texttt{Attributes} 指针转换为指向 \texttt{Fiction\allowbreak{}Attrs} 对象的指针。然后，它们通过调用 \texttt{Fiction\allowbreak{}Attrs} 对象的 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 成员函数，把属性匹配委托给该对象。\texttt{find()} 函数返回一个指针的 vector，这些指针指向任何匹配的 \texttt{Fiction} 图书对象。
 
 \begin{mySidebar}{在 C++ 中检查并转换指针类型}
 
-考虑接收 \texttt{FictionAttrs} 参数的重载 \texttt{Catalogue::find()} 成员函数。我们在遍历 vector \texttt{booklist} 中 \texttt{Book} 对象的 \texttt{for} 循环里声明了指针变量 \texttt{Book *book}。由于 \texttt{booklist} 存放的是指向 \texttt{Book} 对象的指针，在循环的每次迭代中，变量 \texttt{book} 都将指向某个从 \texttt{Book} 子类实例化而来的对象。如果该变量指向一个 \texttt{Fiction} 图书对象，那么下面这些语句中对 \texttt{dynamic\_cast<>()} 的调用
+考虑接收 \texttt{Fiction\allowbreak{}Attrs} 参数的重载 \texttt{Catalogue::\allowbreak{}find(\allowbreak{})\allowbreak{}} 成员函数。我们在遍历 vector \texttt{booklist} 中 \texttt{Book} 对象的 \texttt{for} 循环里声明了指针变量 \texttt{Book *book}。由于 \texttt{booklist} 存放的是指向 \texttt{Book} 对象的指针，在循环的每次迭代中，变量 \texttt{book} 都将指向某个从 \texttt{Book} 子类实例化而来的对象。如果该变量指向一个 \texttt{Fiction} 图书对象，那么下面这些语句中对 \texttt{dynamic\_\allowbreak{}cast<>(\allowbreak{})\allowbreak{}} 的调用
 
 \begin{codebox}
     Fiction *fiction = dynamic_cast<Fiction *>(book);
     if (fiction != nullptr) ...
 \end{codebox}
 
-会把 \texttt{Book} 指针转换为 \texttt{Fiction} 指针，因此指针变量 \texttt{fiction} 将指向一个 \texttt{Fiction} 对象。但如果变量 \texttt{book} 转而指向一个 \texttt{Cookbook} 对象，则动态转换将返回 \texttt{nullptr}。因此，这次对 \texttt{dynamic\_cast<>()} 的调用同时完成了指针类型检查和指针类型转换。我们用另一次对 \texttt{dynamic\_cast<>()} 的调用来检查并把 \texttt{Attributes} 指针转换为 \texttt{FictionAttrs} 指针。
+会把 \texttt{Book} 指针转换为 \texttt{Fiction} 指针，因此指针变量 \texttt{fiction} 将指向一个 \texttt{Fiction} 对象。但如果变量 \texttt{book} 转而指向一个 \texttt{Cookbook} 对象，则动态转换将返回 \texttt{nullptr}。因此，这次对 \texttt{dynamic\_\allowbreak{}cast<>(\allowbreak{})\allowbreak{}} 的调用同时完成了指针类型检查和指针类型转换。我们用另一次对 \texttt{dynamic\_\allowbreak{}cast<>(\allowbreak{})\allowbreak{}} 的调用来检查并把 \texttt{Attributes} 指针转换为 \texttt{Fiction\allowbreak{}Attrs} 指针。
 \end{mySidebar}
 
-我们可以类似地定义接收 \texttt{CookbookAttrs} 参数的重载 \texttt{find()} 成员函数。当该函数遍历 booklist 时，它必须检查 \texttt{Cookbook} 对象，并对这些对象把属性匹配委托给 \texttt{CookbookAttrs} 对象。它返回一个指针的 vector，这些指针指向匹配的 \texttt{Cookbook} 对象。
+我们可以类似地定义接收 \texttt{Cookbook\allowbreak{}Attrs} 参数的重载 \texttt{find()} 成员函数。当该函数遍历 booklist 时，它必须检查 \texttt{Cookbook} 对象，并对这些对象把属性匹配委托给 \texttt{Cookbook\allowbreak{}Attrs} 对象。它返回一个指针的 vector，这些指针指向匹配的 \texttt{Cookbook} 对象。
 
-当测试程序把书加载到目录中时，它调用重载的 \texttt{Catalogue::add()} 函数，要么传入一个 \texttt{FictionAttrs} 对象，
+当测试程序把书加载到目录中时，它调用重载的 \texttt{Catalogue::\allowbreak{}add(\allowbreak{})\allowbreak{}} 函数，要么传入一个 \texttt{Fiction\allowbreak{}Attrs} 对象，
 
 \begin{codebox}
     catalogue.add(new FictionAttrs("Little Women",
@@ -992,7 +992,7 @@ if (fiction_attrs->is_match(target_attrs))
                                    1868, Genre::CLASSICS));
 \end{codebox}
 
-要么传入一个 \texttt{CookbookAttrs} 对象：
+要么传入一个 \texttt{Cookbook\allowbreak{}Attrs} 对象：
 
 \begin{codebox}
     catalogue.add(new CookbookAttrs("The Woks of Life",
@@ -1006,7 +1006,7 @@ if (fiction_attrs->is_match(target_attrs))
 \begin{itemize}
 \item 每种书都需要一对 \texttt{Book} 和 \texttt{Attributes} 子类。
 \item 每种书都需要在类 \texttt{Catalogue} 中有一个重载的 \texttt{add()} 成员函数和一个重载的 \texttt{find()} 成员函数。这些函数的代码相似。
-\item 每个 \texttt{find()} 成员函数都需要一次 \texttt{dynamic\_cast<>()} 调用，以确保它检查的是正确种类的书，还需要另一次 \texttt{dynamic\_cast<>()} 调用，把指针转换为正确种类的属性。除此之外，这些成员函数的代码都很相似。
+\item 每个 \texttt{find()} 成员函数都需要一次 \texttt{dynamic\_\allowbreak{}cast<>(\allowbreak{})\allowbreak{}} 调用，以确保它检查的是正确种类的书，还需要另一次 \texttt{dynamic\_\allowbreak{}cast<>(\allowbreak{})\allowbreak{}} 调用，把指针转换为正确种类的属性。除此之外，这些成员函数的代码都很相似。
 \end{itemize}
 
 如果我们的应用需要管理更多种类的书，就会出现子类数量增加、代码重复以及运行时类型检查和转换的情况。
@@ -1026,10 +1026,10 @@ if (fiction_attrs->is_match(target_attrs))
 \toprule
 书的种类 & 类 & 属性 \\
 \midrule
-所有书 & \texttt{Book, Attributes} & title, last, first \\
-小说 & \texttt{Fiction, FictionAttrs} & year, genre \\
-菜谱书 & \texttt{Cookbook, CookbookAttrs} & region \\
-实用指南 & \texttt{Howto, HowtoAttrs} & subject \\
+所有书 & \texttt{Book,\allowbreak{} Attributes} & title, last, first \\
+小说 & \texttt{Fiction,\allowbreak{} Fiction\allowbreak{}Attrs} & year, genre \\
+菜谱书 & \texttt{Cookbook,\allowbreak{} Cookbook\allowbreak{}Attrs} & region \\
+实用指南 & \texttt{Howto,\allowbreak{} Howto\allowbreak{}Attrs} & subject \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -1042,7 +1042,7 @@ if (fiction_attrs->is_match(target_attrs))
 
 在第三次迭代之后，我们必须承认，用子类来处理图书和属性需求的变化是一次糟糕的设计决策，如果书的种类更多，这种方式将无法很好地扩展。图 2.6 展示了这次迭代后我们的进展。我们活该得到那些煤块！
 
-\myGraphic{0.391}{images/CH02_F06_Mak.png}{图 2.6 第三次开发迭代添加了子类 \texttt{Fiction}、\texttt{Cookbook}、\texttt{FictionAttrs} 和 \texttt{CookbookAttrs}。子类数量的增加，再加上新增的运行时类型检查和类型转换，告诉我们走错了一条决策路径。}
+\myGraphic{0.391}{images/CH02_F06_Mak.png}{图 2.6 第三次开发迭代添加了子类 \texttt{Fiction}、\texttt{Cookbook}、\texttt{Fiction\allowbreak{}Attrs} 和 \texttt{Cookbook\allowbreak{}Attrs}。子类数量的增加，再加上新增的运行时类型检查和类型转换，告诉我们走错了一条决策路径。}
 
 \subsection{2.3.4 迭代 4：回溯之后更好的设计}
 
@@ -1050,7 +1050,7 @@ if (fiction_attrs->is_match(target_attrs))
 
 在我们的图书目录应用中，就我们迄今所设计的方案而言，子类 \texttt{Fiction} 和 \texttt{Cookbook} 与状态或行为几乎没什么关系。我们不需要这些子类。仅有类 \texttt{Book} 就应当足够了。
 
-子类 \texttt{FictionAttrs} 和 \texttt{CookbookAttrs} 表现出非常相似的行为，主要是在图书搜索期间执行属性匹配。然而，它们为各自不同的属性设置了不同的成员变量。有没有办法让 \texttt{Attributes} 类独自处理所有不同的属性，并消除它的子类呢？与任意种类的 \texttt{Book} 对象关联的一个 \texttt{Attributes} 对象，将不得不存储每个属性的名字和值。
+子类 \texttt{Fiction\allowbreak{}Attrs} 和 \texttt{Cookbook\allowbreak{}Attrs} 表现出非常相似的行为，主要是在图书搜索期间执行属性匹配。然而，它们为各自不同的属性设置了不同的成员变量。有没有办法让 \texttt{Attributes} 类独自处理所有不同的属性，并消除它的子类呢？与任意种类的 \texttt{Book} 对象关联的一个 \texttt{Attributes} 对象，将不得不存储每个属性的名字和值。
 
 只要 C++ 程序中出现名—值对，我们就应该考虑标准模板库（standard template library, STL）中的 \texttt{map} 数据结构。STL 的 \texttt{map} 包含\emph{名—值}对，其中名字充当检索配对值的键。因此，\texttt{map} 中的对通常被称为\emph{键—值}对。当我们声明一个 \texttt{map} 时，必须同时指定键的数据类型和值的数据类型。所有键具有相同的数据类型，所有值也具有相同的数据类型。键和值的数据类型可以彼此不同。
 
@@ -1217,9 +1217,9 @@ inline ostream& operator <<(ostream& ostr, const Subject& subject)
 
 我们不再需要 \texttt{UNSPECIFIED} 值了。在我们的新设计中，如果搜索目标中缺少某个属性，那么该属性就是一个无关属性。
 
-我们需要为 \texttt{AttributeMap} 中的配对值定义一个公共数据类型，尽管存在好几种不同的底层数据类型（表 2.2）。因此，我们可以把每个对的 \texttt{AttributeValue} 定义为一个 \texttt{variant} 类型，其值可以是 \texttt{int}、\texttt{string}、\texttt{Kind}、\texttt{Genre}、\texttt{Region} 或 \texttt{Subject}，如下一个代码清单所示。
+我们需要为 \texttt{Attribute\allowbreak{}Map} 中的配对值定义一个公共数据类型，尽管存在好几种不同的底层数据类型（表 2.2）。因此，我们可以把每个对的 \texttt{Attribute\allowbreak{}Value} 定义为一个 \texttt{variant} 类型，其值可以是 \texttt{int}、\texttt{string}、\texttt{Kind}、\texttt{Genre}、\texttt{Region} 或 \texttt{Subject}，如下一个代码清单所示。
 
-\begin{codeboxt}{代码清单 2.22（程序 2.4 Books-4）：\texttt{Attributes.h}}
+\begin{codeboxt}{代码清单 2.22（程序 2.4 Books-4）：\texttt{Attributes.\allowbreak{}h}}
 #include <string>
 #include <map>
 #include <variant>
@@ -1269,9 +1269,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 与 variant 数据类型对应的索引}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 属性 map}\par
 
-枚举类型 \texttt{type\_indexes} 的值与 variant 的数据类型相对应：\texttt{INT\_INDEX} 对应 \texttt{int}，\texttt{STRING\_INDEX} 对应 \texttt{string}，\texttt{KIND\_INDEX} 对应 \texttt{Kind}，等等。这些索引使我们能够在 \texttt{Attributes} 构造函数中（代码清单 2.23）核实 map 中每个键—值对的值具有正确的数据类型。这是防御式编程的一个例子——我们绝不希望创建一个无效的 \texttt{Attributes} 对象。
+枚举类型 \texttt{type\_\allowbreak{}indexes} 的值与 variant 的数据类型相对应：\texttt{INT\_\allowbreak{}INDEX} 对应 \texttt{int}，\texttt{STRING\_\allowbreak{}INDEX} 对应 \texttt{string}，\texttt{KIND\_\allowbreak{}INDEX} 对应 \texttt{Kind}，等等。这些索引使我们能够在 \texttt{Attributes} 构造函数中（代码清单 2.23）核实 map 中每个键—值对的值具有正确的数据类型。这是防御式编程的一个例子——我们绝不希望创建一个无效的 \texttt{Attributes} 对象。
 
-\begin{codeboxt}{代码清单 2.23（程序 2.4 Books-4）：\texttt{Attributes.cpp}（第 1 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 2.23（程序 2.4 Books-4）：\texttt{Attributes.\allowbreak{}cpp}（第 1 部分，共 3 部分）}
 #include <iostream>
 #include <string>
 #include <cassert>
@@ -1329,16 +1329,16 @@ Attributes::Attributes(AttributeMap *pairs) : attribute_map(pairs)  ①
 对函数参数值执行运行时检查，以确保没有传入任何无效的值。不过，为了保持本书中示例程序简短，它们的函数通常不做参数检查。
 \end{mySidebar}
 
-成员函数 \texttt{is\_match()} 把这个 \texttt{Attributes} 对象与 \texttt{target\_attrs} 对象进行比较。只有当两个 \texttt{Attributes} 对象的 map 中所有对应的键—值元素都相等时，它们才匹配。迭代器 \texttt{target\_it} 遍历 \texttt{target\_attrs} 对象的 map 中的键—值元素。对于每个元素
+成员函数 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 把这个 \texttt{Attributes} 对象与 \texttt{target\_\allowbreak{}attrs} 对象进行比较。只有当两个 \texttt{Attributes} 对象的 map 中所有对应的键—值元素都相等时，它们才匹配。迭代器 \texttt{target\_\allowbreak{}it} 遍历 \texttt{target\_\allowbreak{}attrs} 对象的 map 中的键—值元素。对于每个元素
 
 \begin{itemize}
 \item 第一项检查判断该属性的 map 是否包含目标元素的键。
 \item 如果第一项检查通过，那么第二项检查判断它们配对的值是否相等。
 \end{itemize}
 
-如果在遍历 \texttt{target\_attrs} 对象 map 的元素时任何一项检查失败，那么这两个属性对象就不匹配。如果某个特定属性（例如年份）不在目标 map 中，那么该属性在匹配时就是无关属性。
+如果在遍历 \texttt{target\_\allowbreak{}attrs} 对象 map 的元素时任何一项检查失败，那么这两个属性对象就不匹配。如果某个特定属性（例如年份）不在目标 map 中，那么该属性在匹配时就是无关属性。
 
-\begin{codeboxt}{代码清单 2.24（程序 2.4 Books-4）：\texttt{Attributes.cpp}（第 2 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 2.24（程序 2.4 Books-4）：\texttt{Attributes.\allowbreak{}cpp}（第 2 部分，共 3 部分）}
 ...
 bool Attributes::is_match(const Attributes& target_attrs) const
 {
@@ -1390,7 +1390,7 @@ bool Attributes::is_matching_pair(
 ↪ YEAR: 1974, GENRE: horror}
 \end{codebox}
 
-\begin{codeboxt}{代码清单 2.25（程序 2.4 Books-4）：\texttt{Attributes.cpp}（第 3 部分，共 3 部分）}
+\begin{codeboxt}{代码清单 2.25（程序 2.4 Books-4）：\texttt{Attributes.\allowbreak{}cpp}（第 3 部分，共 3 部分）}
 ostream& operator <<(ostream& ostr, const Attributes& attrs)
 {
     AttributeMap *pairs = attrs.attribute_map;
@@ -1453,7 +1453,7 @@ inline ostream& operator <<(ostream& ostr, const Book& book)
 
 类 \texttt{Catalogue} 现在简单多了，如下一个代码清单所示。
 
-\begin{codeboxt}{代码清单 2.27（程序 2.4 Books-4）：\texttt{Catalogue.h}}
+\begin{codeboxt}{代码清单 2.27（程序 2.4 Books-4）：\texttt{Catalogue.\allowbreak{}h}}
 #include <vector>
 #include "Book.h"
 
@@ -1471,9 +1471,9 @@ private:
 };
 \end{codeboxt}
 
-我们消除了重复的代码，现在遵循不要重复自己（Don't Repeat Yourself, DRY）原则。只有一个 \texttt{add()} 成员函数，也只有一个 \texttt{find()} 成员函数。我们不再需要对 \texttt{dynamic\_cast<>()} 的调用来进行运行时类型检查和转换。这种设计的一个额外好处是，一本书可以具有任意属性，不再局限于基于图书种类的某些特定属性，如下一个代码清单所示。
+我们消除了重复的代码，现在遵循不要重复自己（Don't Repeat Yourself, DRY）原则。只有一个 \texttt{add()} 成员函数，也只有一个 \texttt{find()} 成员函数。我们不再需要对 \texttt{dynamic\_\allowbreak{}cast<>(\allowbreak{})\allowbreak{}} 的调用来进行运行时类型检查和转换。这种设计的一个额外好处是，一本书可以具有任意属性，不再局限于基于图书种类的某些特定属性，如下一个代码清单所示。
 
-\begin{codeboxt}{代码清单 2.28（程序 2.4 Books-4）：\texttt{Catalogue.cpp}}
+\begin{codeboxt}{代码清单 2.28（程序 2.4 Books-4）：\texttt{Catalogue.\allowbreak{}cpp}}
 #include "Book.h"
 #include "Catalogue.h"
 
@@ -1501,7 +1501,7 @@ vector<Book *>Catalogue::find(const Attributes& target_attrs)     ②
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 只有一个 add() 成员函数}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 只有一个 find() 成员函数}\par
 
-在测试程序 \texttt{tester.cpp} 中，函数 \texttt{fill()} 现在用如下语句把一本书录入目录：
+在测试程序 \texttt{tester.\allowbreak{}cpp} 中，函数 \texttt{fill()} 现在用如下语句把一本书录入目录：
 
 \begin{codebox}
     AttributeMap pairs3 =

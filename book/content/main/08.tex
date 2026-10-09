@@ -124,13 +124,13 @@ End of report
 \item 打印报告尾部。
 \end{enumerate}
 
-类 \texttt{BaseballReport} 用私有成员函数实现这些步骤（图 8.1）。它依赖类 \texttt{BaseballData}，后者使用随机数生成器为报告生成测试数据。
+类 \texttt{Baseball\allowbreak{}Report} 用私有成员函数实现这些步骤（图 8.1）。它依赖类 \texttt{Baseball\allowbreak{}Data}，后者使用随机数生成器为报告生成测试数据。
 
-\myGraphic{0.918}{images/CH08_F01_Mak.png}{图 8.1 类 \texttt{BaseballReport} 的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，由这些函数执行生成棒球比赛报告的各个步骤。它依赖类 \texttt{BaseballData} 为报告生成随机测试数据。}
+\myGraphic{0.918}{images/CH08_F01_Mak.png}{图 8.1 类 \texttt{Baseball\allowbreak{}Report} 的公有成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 调用它的私有成员函数，由这些函数执行生成棒球比赛报告的各个步骤。它依赖类 \texttt{Baseball\allowbreak{}Data} 为报告生成随机测试数据。}
 
-类 \texttt{BaseballReport} 的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，按正确顺序执行各步骤以生成比赛报告。
+类 \texttt{Baseball\allowbreak{}Report} 的公有成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 调用它的私有成员函数，按正确顺序执行各步骤以生成比赛报告。
 
-\begin{codeboxt}{代码清单 8.1（程序 8.1 Reports）：\texttt{BaseballReport.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.1（程序 8.1 Reports）：\texttt{Baseball\allowbreak{}Report.\allowbreak{}h}（使用设计模式之前）}
 #include <string>
 #include <vector>
 #include "BaseballData.h"
@@ -170,9 +170,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 调用各步骤以生成报告。}\par
 
-为了测试我们对类 \texttt{BaseballReport} 的实现，需要一组比赛数据。类 \texttt{BaseballData} 使用随机数生成器生成一个 vector，其中存放某队球员在一场比赛中的击球命中记录。
+为了测试我们对类 \texttt{Baseball\allowbreak{}Report} 的实现，需要一组比赛数据。类 \texttt{Baseball\allowbreak{}Data} 使用随机数生成器生成一个 vector，其中存放某队球员在一场比赛中的击球命中记录。
 
-\begin{codeboxt}{代码清单 8.2（程序 8.1 Reports）：\texttt{BaseballData.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.2（程序 8.1 Reports）：\texttt{Baseball\allowbreak{}Data.\allowbreak{}h}（使用设计模式之前）}
 #include <vector>
 #include <random>
 #include <time.h>
@@ -203,9 +203,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 一场比赛中的累计击球命中}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 随机数生成器}\par
 
-私有成员函数 \texttt{generate\_hits()} 使用随机数生成器生成服从正态分布的整数值，表示该队球员在比赛中的击球命中（一垒安打、二垒安打、三垒安打、本垒打）和出局。它把每次击球命中追加到 vector \texttt{hits} 中，并在出现 27 次出局后停止。
+私有成员函数 \texttt{generate\_\allowbreak{}hits(\allowbreak{})\allowbreak{}} 使用随机数生成器生成服从正态分布的整数值，表示该队球员在比赛中的击球命中（一垒安打、二垒安打、三垒安打、本垒打）和出局。它把每次击球命中追加到 vector \texttt{hits} 中，并在出现 27 次出局后停止。
 
-\begin{codeboxt}{代码清单 8.3（程序 8.1 Reports）：\texttt{BaseballData.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.3（程序 8.1 Reports）：\texttt{Baseball\allowbreak{}Data.\allowbreak{}cpp}（使用设计模式之前）}
 #include <vector>
 #include <random>
 #include "BaseballData.h"
@@ -230,9 +230,9 @@ void BaseballData::generate_hits()
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 随机生成一次击球命中或出局。}\par
 
-现在可以来实现类 \texttt{BaseballReport} 了（代码清单 8.4）。成员函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 分别打印报告的头部和尾部。成员函数 \texttt{acquire\_data()} 从 \texttt{BaseballData} 对象获取击球命中记录 vector。成员函数 \texttt{analyze\_data()} 统计一垒安打、二垒安打、三垒安打和本垒打的数量。成员函数 \texttt{print\_report()} 打印比赛报告。
+现在可以来实现类 \texttt{Baseball\allowbreak{}Report} 了（代码清单 8.4）。成员函数 \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}} 分别打印报告的头部和尾部。成员函数 \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 从 \texttt{Baseball\allowbreak{}Data} 对象获取击球命中记录 vector。成员函数 \texttt{analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 统计一垒安打、二垒安打、三垒安打和本垒打的数量。成员函数 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 打印比赛报告。
 
-\begin{codeboxt}{代码清单 8.4（程序 8.1 Reports）：\texttt{BaseballReport.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.4（程序 8.1 Reports）：\texttt{Baseball\allowbreak{}Report.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "BaseballData.h"
@@ -297,13 +297,13 @@ void BaseballReport::print_footer() const
 }
 \end{codeboxt}
 
-类 \texttt{VolleyballReport} 遵循相同的步骤来打印排球比赛报告（图 8.2），它依赖类 \texttt{VolleyballData}，后者使用随机数生成器为报告生成测试数据。
+类 \texttt{Volleyball\allowbreak{}Report} 遵循相同的步骤来打印排球比赛报告（图 8.2），它依赖类 \texttt{Volleyball\allowbreak{}Data}，后者使用随机数生成器为报告生成测试数据。
 
-\myGraphic{0.980}{images/CH08_F02_Mak.png}{图 8.2 类 \texttt{VolleyballReport} 的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，由这些函数执行生成排球比赛报告的各个步骤。它依赖类 \texttt{VolleyballData} 为报告生成随机测试数据。}
+\myGraphic{0.980}{images/CH08_F02_Mak.png}{图 8.2 类 \texttt{Volleyball\allowbreak{}Report} 的公有成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 调用它的私有成员函数，由这些函数执行生成排球比赛报告的各个步骤。它依赖类 \texttt{Volleyball\allowbreak{}Data} 为报告生成随机测试数据。}
 
-类 \texttt{VolleyballReport} 中的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，按正确顺序执行各步骤以生成比赛报告，如下面的代码清单所示。
+类 \texttt{Volleyball\allowbreak{}Report} 中的公有成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 调用它的私有成员函数，按正确顺序执行各步骤以生成比赛报告，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 8.5（程序 8.1 Reports）：\texttt{VolleyballReport.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.5（程序 8.1 Reports）：\texttt{Volleyball\allowbreak{}Report.\allowbreak{}h}（使用设计模式之前）}
 #include <string>
 #include <vector>
 #include "VolleyballData.h"
@@ -341,9 +341,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 调用各步骤以生成报告。}\par
 
-与棒球比赛报告类似，类 \texttt{VolleyballData} 使用随机数生成器生成一个 vector，其中存放模拟比赛中两队所得的分数。
+与棒球比赛报告类似，类 \texttt{Volleyball\allowbreak{}Data} 使用随机数生成器生成一个 vector，其中存放模拟比赛中两队所得的分数。
 
-\begin{codeboxt}{代码清单 8.6（程序 8.1 Reports）：\texttt{VolleyballData.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.6（程序 8.1 Reports）：\texttt{Volleyball\allowbreak{}Data.\allowbreak{}h}（使用设计模式之前）}
 #include <vector>
 #include <random>
 #include <time.h>
@@ -373,9 +373,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 一场比赛中的累计得分}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 随机数生成器}\par
 
-私有成员函数 \texttt{generate\_points()} 使用均匀随机数生成器决定把每一回合的得分加到第 1 队还是第 2 队（成员变量 \texttt{score1} 和 \texttt{score2}），然后把该队在该回合结束时的比分追加到 vector \texttt{points} 中。为了区分两队的得分，第 2 队的得分为负数。当某队达到 15 分时，模拟比赛结束。
+私有成员函数 \texttt{generate\_\allowbreak{}points(\allowbreak{})\allowbreak{}} 使用均匀随机数生成器决定把每一回合的得分加到第 1 队还是第 2 队（成员变量 \texttt{score1} 和 \texttt{score2}），然后把该队在该回合结束时的比分追加到 vector \texttt{points} 中。为了区分两队的得分，第 2 队的得分为负数。当某队达到 15 分时，模拟比赛结束。
 
-\begin{codeboxt}{代码清单 8.7（程序 8.1 Reports）：\texttt{VolleyballData.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.7（程序 8.1 Reports）：\texttt{Volleyball\allowbreak{}Data.\allowbreak{}cpp}（使用设计模式之前）}
 #include <vector>
 #include <random>
 #include "VolleyballData.h"
@@ -406,9 +406,9 @@ void VolleyballData::generate_points()
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 随机把该分加到第 1 队或第 2 队。}\par
 
-现在，我们可以来实现类 \texttt{VolleyballReport} 了（代码清单 8.8）。成员函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 分别打印报告的头部和尾部。成员函数 \texttt{acquire\_data()} 从 \texttt{VolleyballData} 对象获取得分 vector。成员函数 \texttt{analyze\_data()} 判断哪支球队赢得了比赛（\texttt{points} vector 中最后一项是正数还是负数？）以及最终比分。成员函数 \texttt{print\_report()} 打印比赛报告。
+现在，我们可以来实现类 \texttt{Volleyball\allowbreak{}Report} 了（代码清单 8.8）。成员函数 \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}} 分别打印报告的头部和尾部。成员函数 \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 从 \texttt{Volleyball\allowbreak{}Data} 对象获取得分 vector。成员函数 \texttt{analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 判断哪支球队赢得了比赛（\texttt{points} vector 中最后一项是正数还是负数？）以及最终比分。成员函数 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 打印比赛报告。
 
-\begin{codeboxt}{代码清单 8.8（程序 8.1 Reports）\texttt{VolleyballReport.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.8（程序 8.1 Reports）\texttt{Volleyball\allowbreak{}Report.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "VolleyballData.h"
@@ -475,7 +475,7 @@ void VolleyballReport::print_footer() const
 
 测试程序既可以生成排球比赛报告，也可以生成棒球比赛报告，取决于我们在命令行启动程序时用的是 \texttt{-v} 还是 \texttt{-b} 选项。
 
-\begin{codeboxt}{代码清单 8.9（程序 8.1 Reports）：\texttt{tester.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.9（程序 8.1 Reports）：\texttt{tester.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include "VolleyballReport.h"
 #include "BaseballReport.h"
@@ -505,14 +505,14 @@ int main(int argc, char *args[])
 }
 \end{codeboxt}
 
-如果以后想生成橄榄球比赛报告，我们就要创建类 \texttt{FootballReport}，它同样会遵循这些步骤。
+如果以后想生成橄榄球比赛报告，我们就要创建类 \texttt{Football\allowbreak{}Report}，它同样会遵循这些步骤。
 
 \myGraphic{0.890}{images/CH08_F02_UN02_Mak.png}{}
 
 诚然，这个解决方案的主要缺陷在于
 
 \begin{itemize}
-\item \emph{重复代码}——在类 \texttt{VolleyballReport} 和 \texttt{BaseballReport} 中，我们重复编写了成员函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 的代码，而这些函数代表的是报告生成中的公共操作。各项运动的报告生成都遵循相同的步骤，因此我们在这两个类中也重复编写了成员函数 \texttt{generate\_report()} 的代码。
+\item \emph{重复代码}——在类 \texttt{Volleyball\allowbreak{}Report} 和 \texttt{Baseball\allowbreak{}Report} 中，我们重复编写了成员函数 \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}} 的代码，而这些函数代表的是报告生成中的公共操作。各项运动的报告生成都遵循相同的步骤，因此我们在这两个类中也重复编写了成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 的代码。
 \end{itemize}
 
 \subsection{8.1.3 使用模板方法设计模式之后}
@@ -524,21 +524,21 @@ int main(int argc, char *args[])
 “在一个操作中定义算法的骨架，并把某些步骤延迟到子类中。模板方法使子类可以重新定义算法的某些步骤，而不改变算法的结构。”（GoF 325）
 \end{mySidebar}
 
-\myGraphic{0.980}{images/CH08_F03_Mak.png}{图 8.3 这一版本的应用是依据模板方法设计模式建模的。超类 \texttt{GameReport} 按恰当顺序勾勒出算法生成报告的各个步骤。它实现了公共步骤 \texttt{print\_header()} 和 \texttt{print\_footer()}，并把其余步骤 \texttt{acquire\_data()}、\texttt{analyze\_data()} 和 \texttt{print\_report()} 委托给子类 \texttt{BaseballReport} 和 \texttt{VolleyballReport}。超类中的公有模板方法 \texttt{generate\_report()} 按恰当顺序调用各步骤成员函数。图中灰色部分在逻辑上与图 8.1 和图 8.2 相比没有变化。}
+\myGraphic{0.980}{images/CH08_F03_Mak.png}{图 8.3 这一版本的应用是依据模板方法设计模式建模的。超类 \texttt{Game\allowbreak{}Report} 按恰当顺序勾勒出算法生成报告的各个步骤。它实现了公共步骤 \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}}，并把其余步骤 \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}}、\texttt{analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 委托给子类 \texttt{Baseball\allowbreak{}Report} 和 \texttt{Volleyball\allowbreak{}Report}。超类中的公有模板方法 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 按恰当顺序调用各步骤成员函数。图中灰色部分在逻辑上与图 8.1 和图 8.2 相比没有变化。}
 
 用模板方法设计模式为我们的架构建模，会带来以下几项主要好处：
 
 \begin{itemize}
-\item \emph{算法框架}——超类 \texttt{GameReport} 通过声明实现算法各步骤的成员函数，为比赛报告的生成确立了标准。模板方法 \texttt{generate\_report()} 按恰当顺序调用各步骤成员函数。
-\item \emph{减少代码重复}——超类中的步骤函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 定义了公共行为，从而消除了代码重复。这符合不要重复自己原则（Don’t Repeat Yourself Principle，2.3.3 节）。其余步骤函数由子类定义。
-\item \emph{开闭原则}——超类 \texttt{GameReport} 遵循开闭原则（2.3.3 节）。我们不会修改它，但可以用报告子类来扩展它。
+\item \emph{算法框架}——超类 \texttt{Game\allowbreak{}Report} 通过声明实现算法各步骤的成员函数，为比赛报告的生成确立了标准。模板方法 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 按恰当顺序调用各步骤成员函数。
+\item \emph{减少代码重复}——超类中的步骤函数 \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}} 定义了公共行为，从而消除了代码重复。这符合不要重复自己原则（Don’t Repeat Yourself Principle，2.3.3 节）。其余步骤函数由子类定义。
+\item \emph{开闭原则}——超类 \texttt{Game\allowbreak{}Report} 遵循开闭原则（2.3.3 节）。我们不会修改它，但可以用报告子类来扩展它。
 \item \emph{封装步骤}——各报告子类遵循“封装变化之处”原则（2.3.2 节），对生成比赛报告中会变化的步骤加以封装。
 \item \emph{内聚且解耦的类}——每个报告子类都具有内聚性，并与其他报告子类相互解耦。
 \end{itemize}
 
-在超类 \texttt{GameReport} 中，成员函数 \texttt{generate\_report()} 就是模板方法。
+在超类 \texttt{Game\allowbreak{}Report} 中，成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 就是模板方法。
 
-\begin{codeboxt}{代码清单 8.10（程序 8.2 Reports-TemplateDP）：\texttt{GameReport.h}}
+\begin{codeboxt}{代码清单 8.10（程序 8.2 Reports-TemplateDP）：\texttt{Game\allowbreak{}Report.\allowbreak{}h}}
 #include <iostream>
 #include <string>
 
@@ -585,9 +585,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 由子类实现的步骤}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 打印报告尾部步骤的公共实现}\par
 
-类 \texttt{BaseballReport} 现在是 \texttt{GameReport} 的子类。它只需实现棒球比赛报告所特有的成员函数 \texttt{acquire\_data()}、\texttt{analyze\_data()} 和 \texttt{print\_report()}。这些函数的实现与代码清单 8.4 相比没有变化。
+类 \texttt{Baseball\allowbreak{}Report} 现在是 \texttt{Game\allowbreak{}Report} 的子类。它只需实现棒球比赛报告所特有的成员函数 \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}}、\texttt{analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}}。这些函数的实现与代码清单 8.4 相比没有变化。
 
-\begin{codeboxt}{代码清单 8.11（程序 8.2 Reports-TemplateDP）：\texttt{BaseballReport.h}}
+\begin{codeboxt}{代码清单 8.11（程序 8.2 Reports-TemplateDP）：\texttt{Baseball\allowbreak{}Report.\allowbreak{}h}}
 #include <vector>
 #include "BaseballData.h"
 #include "GameReport.h"
@@ -615,9 +615,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 棒球比赛报告特有的步骤}\par
 
-类 \texttt{VolleyballReport} 也是如此。函数 \texttt{acquire\_data()}、\texttt{analyze\_data()} 和 \texttt{print\_report()} 的实现与代码清单 8.8 相比没有变化。
+类 \texttt{Volleyball\allowbreak{}Report} 也是如此。函数 \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}}、\texttt{analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{}} 和 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 的实现与代码清单 8.8 相比没有变化。
 
-\begin{codeboxt}{代码清单 8.12（程序 8.2 Reports-TemplateDP）：\texttt{VolleyballReport.h}}
+\begin{codeboxt}{代码清单 8.12（程序 8.2 Reports-TemplateDP）：\texttt{Volleyball\allowbreak{}Report.\allowbreak{}h}}
 #include <vector>
 #include "GameReport.h"
 #include "VolleyballData.h"
@@ -644,13 +644,13 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 排球比赛报告特有的步骤}\par
 
-类 \texttt{VolleyballData} 和 \texttt{BaseballData} 没有变化。同一个测试程序（代码清单 8.9）打印出的报告与上一版本相同。
+类 \texttt{Volleyball\allowbreak{}Data} 和 \texttt{Baseball\allowbreak{}Data} 没有变化。同一个测试程序（代码清单 8.9）打印出的报告与上一版本相同。
 
 \subsection{8.1.4 模板方法的通用模型}
 
 图 8.4 展示了模板方法设计模式的通用模型。正是依据设计模式的通用模型，我们才能针对某个架构问题打造量身定制的解决方案。
 
-\myGraphic{0.449}{images/CH08_F04_Mak.png}{图 8.4 模板方法设计模式的通用模型。可以拿它和图 8.3 作对比。抽象超类 \texttt{AlgorithmOutline} 的各成员函数勾勒出算法的各个步骤。成员函数 \texttt{template\_method()} 按正确顺序调用代表各步骤的成员函数。超类实现公共步骤，并把可变步骤的实现委托给它的具体子类。表 8.1 展示了示例应用如何采用该模式。}
+\myGraphic{0.449}{images/CH08_F04_Mak.png}{图 8.4 模板方法设计模式的通用模型。可以拿它和图 8.3 作对比。抽象超类 \texttt{Algorithm\allowbreak{}Outline} 的各成员函数勾勒出算法的各个步骤。成员函数 \texttt{template\_\allowbreak{}method(\allowbreak{})\allowbreak{}} 按正确顺序调用代表各步骤的成员函数。超类实现公共步骤，并把可变步骤的实现委托给它的具体子类。表 8.1 展示了示例应用如何采用该模式。}
 
 \begin{center}
 {\bfseries 表 8.1 示例应用对模板方法设计模式的采用}\par\vspace{3bp}
@@ -659,9 +659,9 @@ private:
 设计模式 & 示例应用中的采用 \\
 \midrule
 \texttt{客户类} & Main \\
-超类 \texttt{AlgorithmOutline} & 超类 \texttt{GameReport} \\
-子类 \texttt{ConcreteAlgorithm} & 子类 \texttt{VolleyballReport} 和 \texttt{BaseballReport} \\
-\texttt{template\_method()} & \texttt{generate\_report()} \\
+超类 \texttt{Algorithm\allowbreak{}Outline} & 超类 \texttt{Game\allowbreak{}Report} \\
+子类 \texttt{Concrete\allowbreak{}Algorithm} & 子类 \texttt{Volleyball\allowbreak{}Report} 和 \texttt{Baseball\allowbreak{}Report} \\
+\texttt{template\_\allowbreak{}method(\allowbreak{})\allowbreak{}} & \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} \\
 公共步骤 & \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{} 和 print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}} \\
 可变步骤 & \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}、analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{} 和 print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} \\
 \bottomrule
@@ -705,7 +705,7 @@ private:
 
 \myGraphic{0.980}{images/CH08_F05_Mak.png}{图 8.5 我们的体育应用的第一版。抽象类 \texttt{Sport} 含有纯虚成员函数，它们代表招募球员和预订场地的算法，子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都必须实现这些函数。}
 
-类 \texttt{Sport} 是抽象类，带有纯虚成员函数 \texttt{recruit\_players()} 和 \texttt{reserve\_venue()}，由它们调用这两个算法。子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都必须实现这些函数。
+类 \texttt{Sport} 是抽象类，带有纯虚成员函数 \texttt{recruit\_\allowbreak{}players(\allowbreak{})\allowbreak{}} 和 \texttt{reserve\_\allowbreak{}venue(\allowbreak{})\allowbreak{}}，由它们调用这两个算法。子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都必须实现这些函数。
 
 \begin{codeboxt}{代码清单 8.13（程序 8.3 Sports）：\texttt{Sport.h}（使用设计模式之前）}
 #include <iostream>
@@ -790,7 +790,7 @@ public:
 
 我们的测试程序为每项运动生成一份报告。
 
-\begin{codeboxt}{代码清单 8.15（程序 8.3 Sports）\texttt{tester.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 8.15（程序 8.3 Sports）\texttt{tester.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include "Sport.h"
 #include "Sports.h"
@@ -837,7 +837,7 @@ volleyball
 这个解决方案依赖继承——\texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 各自都“是一个”\texttt{Sport}。我们可以看出这一架构设计存在一些严重缺陷：
 
 \begin{itemize}
-\item \emph{重复代码}——例如，表示场地算法的语句块 \texttt{\{ return "stadium"; \}} 重复出现了多次。如果运动项目更多，或者算法行为更复杂，这会成为一个严重问题。
+\item \emph{重复代码}——例如，表示场地算法的语句块 \texttt{\{\allowbreak{} return "stadium";\allowbreak{} \}\allowbreak{}} 重复出现了多次。如果运动项目更多，或者算法行为更复杂，这会成为一个严重问题。
 \item \emph{缺乏封装}——例如，如果体育场不可用，而使用它的运动项目必须改用其他场地，我们就需要修改多处代码。
 \item \emph{本应共享的代码却难以复用}——如果另一项运动也需要体育场作为场地，我们不重复代码就无法轻松复用它。
 \item \emph{球员和场地被硬编码}——要更改它们就必须重写代码。
@@ -845,22 +845,22 @@ volleyball
 
 \subsection{8.2.3 使用策略设计模式之后}
 
-策略设计模式提供了一种可用于解决这一架构问题的模型（图 8.6）。该解决方案对两族算法采用组合——即 has-a 关系。算法被组织成超类和子类。类 \texttt{Sport} 借助接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy}，运用了聚合以及面向接口编程原则（2.3.3 节）。类 \texttt{Sport} 拥有一个由成员变量 \texttt{player\_strategy} 指向的球员算法族，还拥有一个由成员变量 \texttt{venue\_strategy} 指向的场地算法族。策略设计模式把每个算法称为一个策略，因此这些命名很贴切。现在 \texttt{Sport} 的各个子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都简单多了。
+策略设计模式提供了一种可用于解决这一架构问题的模型（图 8.6）。该解决方案对两族算法采用组合——即 has-a 关系。算法被组织成超类和子类。类 \texttt{Sport} 借助接口 \texttt{Player\allowbreak{}Strategy} 和 \texttt{Venue\allowbreak{}Strategy}，运用了聚合以及面向接口编程原则（2.3.3 节）。类 \texttt{Sport} 拥有一个由成员变量 \texttt{player\_\allowbreak{}strategy} 指向的球员算法族，还拥有一个由成员变量 \texttt{venue\_\allowbreak{}strategy} 指向的场地算法族。策略设计模式把每个算法称为一个策略，因此这些命名很贴切。现在 \texttt{Sport} 的各个子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都简单多了。
 
 \begin{mySidebar}{策略设计模式}
 
 “定义一族算法，把每个算法分别封装起来，并使它们可以互换。策略让算法能够独立于使用它的客户而变化。”（GoF 315）
 \end{mySidebar}
 
-\myGraphic{0.980}{images/CH08_F06_Mak.png}{图 8.6 这一版本的应用依据策略设计模式为各运动队和场地建模。球员算法族实现 \texttt{PlayerStrategy} 接口，场地算法族实现 \texttt{VenueStrategy} 接口。类 \texttt{Sport} 用 has-a 关系聚合这些算法。每个球员算法和场地算法都有一个 \texttt{strategy()} 成员函数。现在子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都简单多了，每个子类各自设置 \texttt{Sport} 超类的成员变量 \texttt{player\_strategy} 和 \texttt{venue\_strategy}。}
+\myGraphic{0.980}{images/CH08_F06_Mak.png}{图 8.6 这一版本的应用依据策略设计模式为各运动队和场地建模。球员算法族实现 \texttt{Player\allowbreak{}Strategy} 接口，场地算法族实现 \texttt{Venue\allowbreak{}Strategy} 接口。类 \texttt{Sport} 用 has-a 关系聚合这些算法。每个球员算法和场地算法都有一个 \texttt{strategy(\allowbreak{})\allowbreak{}} 成员函数。现在子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都简单多了，每个子类各自设置 \texttt{Sport} 超类的成员变量 \texttt{player\_\allowbreak{}strategy} 和 \texttt{venue\_\allowbreak{}strategy}。}
 
 采用策略设计模式的优势包括以下几点：
 
 \begin{itemize}
 \item \emph{可复用的共享代码}——例如，子类 \texttt{Stadium} 遵循不要重复自己原则（2.2.3 节）。棒球队和橄榄球队都在体育场比赛。
-\item \emph{封装的算法}——可以在实现 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy} 接口的类中修改这些可互换的算法，而不必修改其他类。这就是“封装变化之处”原则（2.3.2 节）。
+\item \emph{封装的算法}——可以在实现 \texttt{Player\allowbreak{}Strategy} 和 \texttt{Venue\allowbreak{}Strategy} 接口的类中修改这些可互换的算法，而不必修改其他类。这就是“封装变化之处”原则（2.3.2 节）。
 \item \emph{开闭原则}——超类 \texttt{Sport} 对修改关闭，但我们可以用子类来扩展它。我们可以添加和删除运动项目而不影响超类。
-\item \emph{优先用 has-a 而非 is-a}——类 \texttt{Sport} 聚合了诸如 \texttt{BaseballPlayers} 和 \texttt{Stadium} 这样的策略类，而不是依赖其子类来实现策略（7.3 节）。类 \texttt{Sport} 运用了面向接口编程原则（2.3.3 节），因为它的成员变量 \texttt{player\_strategy} 和 \texttt{venue\_strategy} 分别指向策略接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy}。
+\item \emph{优先用 has-a 而非 is-a}——类 \texttt{Sport} 聚合了诸如 \texttt{Baseball\allowbreak{}Players} 和 \texttt{Stadium} 这样的策略类，而不是依赖其子类来实现策略（7.3 节）。类 \texttt{Sport} 运用了面向接口编程原则（2.3.3 节），因为它的成员变量 \texttt{player\_\allowbreak{}strategy} 和 \texttt{venue\_\allowbreak{}strategy} 分别指向策略接口 \texttt{Player\allowbreak{}Strategy} 和 \texttt{Venue\allowbreak{}Strategy}。
 \item \emph{运行时灵活性}——应用可以在运行时为各项运动提供策略，而不必硬编码。例如，某个 \texttt{Volleyball} 对象的场地策略可以从 \texttt{OpenField} 改为 \texttt{Stadium}。
 \end{itemize}
 
@@ -926,7 +926,7 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 设置场地策略。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 被聚合的策略}\par
 
-每个 \texttt{Sport} 类都恰当地设置初始策略。例如，当我们实例化一个 \texttt{Baseball} 对象时，它的构造函数会调用超类 \texttt{Sport} 的构造函数，把 \texttt{player\_strategy} 设为 \texttt{BaseballPlayers}，把 \texttt{venue\_strategy} 设为 \texttt{Stadium}。在这个示例应用中，每个球员策略和场地策略都只包含一个返回描述性字符串的成员函数。
+每个 \texttt{Sport} 类都恰当地设置初始策略。例如，当我们实例化一个 \texttt{Baseball} 对象时，它的构造函数会调用超类 \texttt{Sport} 的构造函数，把 \texttt{player\_\allowbreak{}strategy} 设为 \texttt{Baseball\allowbreak{}Players}，把 \texttt{venue\_\allowbreak{}strategy} 设为 \texttt{Stadium}。在这个示例应用中，每个球员策略和场地策略都只包含一个返回描述性字符串的成员函数。
 
 \begin{codeboxt}{代码清单 8.17（程序 8.4 Sports-StrategyDP）：\texttt{Sports.h}}
 #include "Sport.h"
@@ -965,9 +965,9 @@ public:
 
 如果我们新增 \texttt{Sport} 子类，类 \texttt{Sport} 无需改动。我们可以运用开闭原则（2.3.3 节），让超类 \texttt{Sport} 对修改关闭。
 
-如图 8.6 所示，每个招募球员的策略都实现接口 \texttt{PlayerStrategy}，并且每个都必须实现 \texttt{strategy()} 成员函数，以便超类 \texttt{Sport} 执行招募球员的算法。由于由子类设置其成员变量 \texttt{player\_strategy}，类 \texttt{Sport} 遵循委托原则（2.3.2 节），把“执行哪个球员招募算法”的选择委托给子类。
+如图 8.6 所示，每个招募球员的策略都实现接口 \texttt{Player\allowbreak{}Strategy}，并且每个都必须实现 \texttt{strategy(\allowbreak{})\allowbreak{}} 成员函数，以便超类 \texttt{Sport} 执行招募球员的算法。由于由子类设置其成员变量 \texttt{player\_\allowbreak{}strategy}，类 \texttt{Sport} 遵循委托原则（2.3.2 节），把“执行哪个球员招募算法”的选择委托给子类。
 
-\begin{codeboxt}{代码清单 8.18（程序 8.4 Sports-StrategyDP）：\texttt{PlayerStrategy.h}}
+\begin{codeboxt}{代码清单 8.18（程序 8.4 Sports-StrategyDP）：\texttt{Player\allowbreak{}Strategy.\allowbreak{}h}}
 #include <string>
 
 using namespace std;
@@ -1008,9 +1008,9 @@ public:
 };
 \end{codeboxt}
 
-与此类似，每个预订场地的策略都实现接口 \texttt{VenueStrategy}，并且每个都必须实现 \texttt{strategy()} 成员函数，以便超类 \texttt{Sport} 执行预订场地的策略。与球员策略一样，类 \texttt{Sport} 把“执行哪个算法”的选择委托给子类，由子类在设置成员变量 \texttt{venue\_strategy} 时决定。
+与此类似，每个预订场地的策略都实现接口 \texttt{Venue\allowbreak{}Strategy}，并且每个都必须实现 \texttt{strategy(\allowbreak{})\allowbreak{}} 成员函数，以便超类 \texttt{Sport} 执行预订场地的策略。与球员策略一样，类 \texttt{Sport} 把“执行哪个算法”的选择委托给子类，由子类在设置成员变量 \texttt{venue\_\allowbreak{}strategy} 时决定。
 
-\begin{codeboxt}{代码清单 8.19（程序 8.4 Sports-StrategyDP）：\texttt{VenueStrategy.h}}
+\begin{codeboxt}{代码清单 8.19（程序 8.4 Sports-StrategyDP）：\texttt{Venue\allowbreak{}Strategy.\allowbreak{}h}}
 #include <string>
 
 using namespace std;
@@ -1094,10 +1094,10 @@ volleyball
 设计模式 & 示例应用中的采用 \\
 \midrule
 类 \texttt{Client} & 超类 \texttt{Sport} \\
-超类 \texttt{Strategy} & 接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy} \\
-子类 \texttt{Strategy1}、\texttt{Strategy2} 等。 & 类 \texttt{BaseballPlayers}、\texttt{FootballPlayers}、\texttt{VolleyballPlayers}、\texttt{Stadium} 和 \texttt{OpenField} \\
-\texttt{algorithm()} & \texttt{strategy()} 成员函数 \\
-\texttt{strategy->algorithm()} & \texttt{player\_\allowbreak{}strategy->strategy(\allowbreak{})\allowbreak{}}\par \texttt{venue\_\allowbreak{}strategy->strategy(\allowbreak{})\allowbreak{}} \\
+超类 \texttt{Strategy} & 接口 \texttt{Player\allowbreak{}Strategy} 和 \texttt{Venue\allowbreak{}Strategy} \\
+子类 \texttt{Strategy1}、\texttt{Strategy2} 等。 & 类 \texttt{Baseball\allowbreak{}Players}、\texttt{Football\allowbreak{}Players}、\texttt{Volleyball\allowbreak{}Players}、\texttt{Stadium} 和 \texttt{OpenField} \\
+\texttt{algorithm(\allowbreak{})\allowbreak{}} & \texttt{strategy(\allowbreak{})\allowbreak{}} 成员函数 \\
+\texttt{strategy->algorithm(\allowbreak{})\allowbreak{}} & \texttt{player\_\allowbreak{}strategy->strategy(\allowbreak{})\allowbreak{}}\par \texttt{venue\_\allowbreak{}strategy->strategy(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -1108,7 +1108,7 @@ volleyball
 
 \begin{itemize}
 \item 模板方法依赖继承。算法的框架在超类中，算法的封装部分在子类中。模板方法允许超类实现算法的公共步骤。
-\item 策略聚合完整的算法并使其可以互换。它使用组合——\texttt{Strategy} 子类（\texttt{PlayerStrategy} 和 \texttt{VenueStrategy}）由 \texttt{Client} 类（超类 \texttt{Sport}）组合而成。
+\item 策略聚合完整的算法并使其可以互换。它使用组合——\texttt{Strategy} 子类（\texttt{Player\allowbreak{}Strategy} 和 \texttt{Venue\allowbreak{}Strategy}）由 \texttt{Client} 类（超类 \texttt{Sport}）组合而成。
 \item 在策略模型中，\texttt{Client} 类与 \texttt{Strategy} 子类是松耦合的。我们可以稍后添加、删除或更新这些子类。
 \end{itemize}
 

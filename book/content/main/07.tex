@@ -27,13 +27,13 @@
 
 在代码中，我们可以直接在子类对象上调用子类的重写函数。但更常见的情况是，我们会运用面向接口编程原则（2.3.3 节）。此时，多态会在运行时决定程序调用的是超类中被重写的函数，还是子类中的重写函数。这取决于我们调用该函数所针对的对象分别来自超类还是子类。
 
-图 7.1 给出一个函数重写的例子。在 \texttt{GeneralTax} 对象上调用 \texttt{amount\_owed()} 会调用超类 \texttt{GeneralTax} 中的成员函数。该函数使用私有常量 \texttt{GENERAL\_RATE} 的值和参数 \texttt{income} 的值来计算并返回所欠税额。子类 \texttt{LocalTax} 中的成员函数 \texttt{amount\_owed()} 与超类 \texttt{Tax} 中对应的成员函数具有相同的签名；因此，子类函数重写了超类函数。在 \texttt{LocalTax} 对象上调用该函数会调用子类的成员函数。子类函数使用私有常量 \texttt{LOCAL\_RATE} 的值和参数 \texttt{earnings} 的值来计算并返回所欠税额。
+图 7.1 给出一个函数重写的例子。在 \texttt{General\allowbreak{}Tax} 对象上调用 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}} 会调用超类 \texttt{General\allowbreak{}Tax} 中的成员函数。该函数使用私有常量 \texttt{GENERAL\_\allowbreak{}RATE} 的值和参数 \texttt{income} 的值来计算并返回所欠税额。子类 \texttt{LocalTax} 中的成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}} 与超类 \texttt{Tax} 中对应的成员函数具有相同的签名；因此，子类函数重写了超类函数。在 \texttt{LocalTax} 对象上调用该函数会调用子类的成员函数。子类函数使用私有常量 \texttt{LOCAL\_\allowbreak{}RATE} 的值和参数 \texttt{earnings} 的值来计算并返回所欠税额。
 
-\myGraphic{0.862}{images/CH07_F01_Mak.png}{图 7.1 子类 \texttt{LocalTax} 中的成员函数 \texttt{amount\_owed()} 重写了超类 \texttt{GeneralTax} 中的成员函数 \texttt{amount\_owed()}。尽管参数名不同（\texttt{income} 和 \texttt{earnings}），这两个函数仍具有相同的签名。要让多态生效，这些函数必须是虚函数。}
+\myGraphic{0.862}{images/CH07_F01_Mak.png}{图 7.1 子类 \texttt{LocalTax} 中的成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}} 重写了超类 \texttt{General\allowbreak{}Tax} 中的成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}}。尽管参数名不同（\texttt{income} 和 \texttt{earnings}），这两个函数仍具有相同的签名。要让多态生效，这些函数必须是虚函数。}
 
-要让多态生效，函数 \texttt{amount\_owed()} 必须是虚函数。假设我们声明了一个变量 \texttt{a\_tax}，它是指向 \texttt{GeneralTax} 对象的指针，然后我们有表达式 \texttt{a\_\allowbreak{}tax>amount\_\allowbreak{}owed(\allowbreak{}10000.\allowbreak{}00)\allowbreak{}}。多态会在运行时决定调用超类函数还是子类函数，取决于 \texttt{a\_tax} 当前分别指向 \texttt{GeneralTax} 对象还是 \texttt{LocalTax} 对象。
+要让多态生效，函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}} 必须是虚函数。假设我们声明了一个变量 \texttt{a\_tax}，它是指向 \texttt{General\allowbreak{}Tax} 对象的指针，然后我们有表达式 \texttt{a\_\allowbreak{}tax>amount\_\allowbreak{}owed(\allowbreak{}10000.\allowbreak{}00)\allowbreak{}}。多态会在运行时决定调用超类函数还是子类函数，取决于 \texttt{a\_tax} 当前分别指向 \texttt{General\allowbreak{}Tax} 对象还是 \texttt{LocalTax} 对象。
 
-下面的代码清单展示了超类 \texttt{GeneralTax,}、它的子类 \texttt{LocalTax}，以及另一个子类 \texttt{MaxTax}。每个子类都重写了超类的虚成员函数 \texttt{amount\_owed()}。
+下面的代码清单展示了超类 \texttt{General\allowbreak{}Tax,\allowbreak{}}、它的子类 \texttt{LocalTax}，以及另一个子类 \texttt{MaxTax}。每个子类都重写了超类的虚成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}}。
 
 \begin{codeboxt}{代码清单 7.1（程序 7.1 Taxes）：\texttt{Taxes.h}}
 class GeneralTax
@@ -81,13 +81,13 @@ private:
 在每个重写成员函数头部的末尾加上可选关键字 \texttt{override}，就是告诉 C++ 编译器我们本意是让该成员函数重写超类中的虚成员函数。编译器会检查超类中的函数确实是虚函数，并且被重写函数与重写函数的签名相同。若非如此，编译器会发出错误信息。被重写的函数必须是虚函数，才能启用多态。
 \end{mySidebar}
 
-我们可以在子类 \texttt{LocalTax} 和 \texttt{MaxTax} 中每个重写成员函数 \texttt{amount\_owed()} 头部的末尾加上可选关键字 \texttt{override}，以此告诉 C++ 编译器我们的意图。函数参数名 \texttt{income}、\texttt{earnings} 和 \texttt{amount} 都不被视为函数签名的组成部分。
+我们可以在子类 \texttt{LocalTax} 和 \texttt{MaxTax} 中每个重写成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}} 头部的末尾加上可选关键字 \texttt{override}，以此告诉 C++ 编译器我们的意图。函数参数名 \texttt{income}、\texttt{earnings} 和 \texttt{amount} 都不被视为函数签名的组成部分。
 
-子类 \texttt{MaxTax} 中的重写成员函数 \texttt{amount\_owed()} 演示了可以借助作用域解析运算符 \texttt{::} 加上超类名来调用超类中被重写的成员函数。
+子类 \texttt{MaxTax} 中的重写成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}} 演示了可以借助作用域解析运算符 \texttt{::} 加上超类名来调用超类中被重写的成员函数。
 
 下面的代码清单是一个测试程序，用于演示函数重写的结果。
 
-\begin{codeboxt}{代码清单 7.2（程序 7.1 Taxes）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.2（程序 7.1 Taxes）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Taxes.h"
 
@@ -125,7 +125,7 @@ General taxes owed = $1000
 \end{codebox}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 由多态产生的输出}\par
 
-把超类成员函数声明为虚函数即可启用多态，测试程序中的 \texttt{tax2} 和 \texttt{tax3} 变量以及输出的最后两行就是证明。我们把变量 \texttt{tax2} 声明为指向 \texttt{GeneralTax} 对象的指针，但在运行时它指向的是一个 \texttt{LocalTax} 对象。有了多态，程序会调用类 \texttt{LocalTax} 的重写成员函数 \texttt{amount\_owed()}。类似地，变量 \texttt{tax3} 在运行时指向一个 \texttt{MaxTax} 对象，程序会调用类 \texttt{MaxTax} 的重写成员函数 \texttt{amount\_owed()}。
+把超类成员函数声明为虚函数即可启用多态，测试程序中的 \texttt{tax2} 和 \texttt{tax3} 变量以及输出的最后两行就是证明。我们把变量 \texttt{tax2} 声明为指向 \texttt{General\allowbreak{}Tax} 对象的指针，但在运行时它指向的是一个 \texttt{LocalTax} 对象。有了多态，程序会调用类 \texttt{LocalTax} 的重写成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}}。类似地，变量 \texttt{tax3} 在运行时指向一个 \texttt{MaxTax} 对象，程序会调用类 \texttt{MaxTax} 的重写成员函数 \texttt{amount\_\allowbreak{}owed(\allowbreak{})\allowbreak{}}。
 
 \subsection{7.1.2 重载行为相似或等价的函数}
 
@@ -187,7 +187,7 @@ cout << k << endl;
 这条原则以面向对象编程先驱、麻省理工学院（MIT）教授芭芭拉·利斯科夫（Barbara Liskov）的名字命名。
 \end{mySidebar}
 
-在代码清单 7.2 的测试程序中，我们能够在第二条输出语句中用一个子类 \texttt{LocalTax} 对象（变量 \texttt{tax2}）替换超类 \texttt{GeneralTax} 对象（变量 \texttt{tax1}），程序依然正常运行，只是输出不同：
+在代码清单 7.2 的测试程序中，我们能够在第二条输出语句中用一个子类 \texttt{LocalTax} 对象（变量 \texttt{tax2}）替换超类 \texttt{General\allowbreak{}Tax} 对象（变量 \texttt{tax1}），程序依然正常运行，只是输出不同：
 
 \begin{codebox}
     GeneralTax *tax1 = new Tax();
@@ -199,15 +199,15 @@ cout << k << endl;
          << tax2->amount_owed(50000.00) << endl;
 \end{codebox}
 
-超类 \texttt{GeneralTax} 及其子类 \texttt{LocalTax} 和 \texttt{MaxTax} 遵循里氏替换原则。
+超类 \texttt{General\allowbreak{}Tax} 及其子类 \texttt{LocalTax} 和 \texttt{MaxTax} 遵循里氏替换原则。
 
-下一个例子展示如果我们忽视这条原则，程序会如何失败。在 \texttt{CircularBuffer} 类的另一个版本中（6.3 节），我们会把该缓冲区实现为一个 vector——稍后就能看到这是个非常糟糕的主意，但我们这样做是为了说明一个要点——于是 \texttt{CircularBuffer} 就成了 \texttt{vector<int> (}代码清单 7.3\texttt{)} 的子类。
+下一个例子展示如果我们忽视这条原则，程序会如何失败。在 \texttt{Circular\allowbreak{}Buffer} 类的另一个版本中（6.3 节），我们会把该缓冲区实现为一个 vector——稍后就能看到这是个非常糟糕的主意，但我们这样做是为了说明一个要点——于是 \texttt{Circular\allowbreak{}Buffer} 就成了 \texttt{vector<int> (\allowbreak{}}代码清单 7.3\texttt{)} 的子类。
 
 \myGraphic{0.855}{images/CH07_F01_UN02_Mak.png}{}
 
 与该类的前一个版本一样，公有成员函数 \texttt{add()} 在缓冲区尾部加入一个整数元素，公有成员函数 \texttt{remove()} 从缓冲区头部移除一个整数元素。成员变量 \texttt{head} 和 \texttt{tail} 分别是头部元素和尾部元素的下标。成员变量 \texttt{count} 记录缓冲区中当前有多少个元素。
 
-\begin{codeboxt}{代码清单 7.3（程序 7.2 CircularBuffer-2）：\texttt{CircularBuffer.h}（设计不良）}
+\begin{codeboxt}{代码清单 7.3（程序 7.2 CircularBuffer-2）：\texttt{Circular\allowbreak{}Buffer.\allowbreak{}h}（设计不良）}
 #include <vector>
 
 using namespace std;
@@ -231,9 +231,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 把环形缓冲区实现为 vector（糟糕的设计！）}\par
 
-与类 \texttt{CircularBuffer} 的前一个版本一样，成员函数 \texttt{add()} 在向缓冲区加入一个新值之后会递增成员变量 \texttt{tail}（代码清单 7.4）。当变量 \texttt{tail} 的值超过缓冲区容量时，它会回绕到缓冲区的另一端。成员函数 \texttt{remove()} 在从缓冲区移除一个值之后会递增成员变量 \texttt{head}。当变量 \texttt{head} 的值超过缓冲区容量时，它也会回绕到缓冲区的另一端。为了让这个版本的类保持简短，我们省略前置条件和后置条件以及类不变式。重载的 \texttt{<<} 运算符按从头部到尾部的顺序打印缓冲区的内容。
+与类 \texttt{Circular\allowbreak{}Buffer} 的前一个版本一样，成员函数 \texttt{add()} 在向缓冲区加入一个新值之后会递增成员变量 \texttt{tail}（代码清单 7.4）。当变量 \texttt{tail} 的值超过缓冲区容量时，它会回绕到缓冲区的另一端。成员函数 \texttt{remove()} 在从缓冲区移除一个值之后会递增成员变量 \texttt{head}。当变量 \texttt{head} 的值超过缓冲区容量时，它也会回绕到缓冲区的另一端。为了让这个版本的类保持简短，我们省略前置条件和后置条件以及类不变式。重载的 \texttt{<<} 运算符按从头部到尾部的顺序打印缓冲区的内容。
 
-\begin{codeboxt}{代码清单 7.4（程序 7.2 CircularBuffer-2）：\texttt{CircularBuffer.cpp}}
+\begin{codeboxt}{代码清单 7.4（程序 7.2 CircularBuffer-2）：\texttt{Circular\allowbreak{}Buffer.\allowbreak{}cpp}}
 #include <iostream>
 #include "CircularBuffer.h"
 
@@ -285,7 +285,7 @@ ostream& operator <<(ostream& ostr, CircularBuffer& buffer)
 
 下面的代码清单是一个测试程序。由于我们违反了里氏替换原则，它执行了两个非法操作。
 
-\begin{codeboxt}{代码清单 7.5（程序 7.2 CircularBuffer-2）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.5（程序 7.2 CircularBuffer-2）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "CircularBuffer.h"
 
@@ -330,11 +330,11 @@ Contents: 40 50 libc++abi.dylib: terminating with uncaught exception
 ↪of type std::out_of_range: vector
 \end{codebox}
 
-从逻辑上说，环形缓冲区并不是一个 vector。我们不应该用 vector 操作、通过 vector 的 \texttt{at()} 成员函数去修改缓冲区中的某个值，也不应该用 vector 的 \texttt{erase()} 成员函数移除某个值。这些操作会破坏环形缓冲区，导致运行时逻辑错误，使程序崩溃。程序之所以失败，是因为子类 \texttt{CircularBuffer} 违反了里氏替换原则——我们不能用一个子类 \texttt{CircularBuffer} 对象去替换超类 \texttt{vector<int>} 对象，因为无法对环形缓冲区使用 vector 操作。
+从逻辑上说，环形缓冲区并不是一个 vector。我们不应该用 vector 操作、通过 vector 的 \texttt{at()} 成员函数去修改缓冲区中的某个值，也不应该用 vector 的 \texttt{erase()} 成员函数移除某个值。这些操作会破坏环形缓冲区，导致运行时逻辑错误，使程序崩溃。程序之所以失败，是因为子类 \texttt{Circular\allowbreak{}Buffer} 违反了里氏替换原则——我们不能用一个子类 \texttt{Circular\allowbreak{}Buffer} 对象去替换超类 \texttt{vector<int>} 对象，因为无法对环形缓冲区使用 vector 操作。
 
-我们可以通过不让 \texttt{CircularBuffer} 成为 \texttt{vector<int>} 的子类来修复该程序，改为让 \texttt{CircularBuffer} 类拥有一个类型为 \texttt{vector<int>} 的成员变量。换句话说，类 \texttt{CircularBuffer} 拥有一个 vector。这就是 is-a（继承）关系与 has-a（聚合）关系的区别。里氏替换原则可以帮助我们决定该使用哪一种。我们可以把 \texttt{CircularBuffer} 改写成独立的类，它拥有一个聚合了 \texttt{vector<int>} 的私有成员变量 \texttt{buffer}。
+我们可以通过不让 \texttt{Circular\allowbreak{}Buffer} 成为 \texttt{vector<int>} 的子类来修复该程序，改为让 \texttt{Circular\allowbreak{}Buffer} 类拥有一个类型为 \texttt{vector<int>} 的成员变量。换句话说，类 \texttt{Circular\allowbreak{}Buffer} 拥有一个 vector。这就是 is-a（继承）关系与 has-a（聚合）关系的区别。里氏替换原则可以帮助我们决定该使用哪一种。我们可以把 \texttt{Circular\allowbreak{}Buffer} 改写成独立的类，它拥有一个聚合了 \texttt{vector<int>} 的私有成员变量 \texttt{buffer}。
 
-\begin{codeboxt}{代码清单 7.6（程序 7.3 CircularBuffer-3）：\texttt{CircularBuffer.h}}
+\begin{codeboxt}{代码清单 7.6（程序 7.3 CircularBuffer-3）：\texttt{Circular\allowbreak{}Buffer.\allowbreak{}h}}
 #include <vector>
 
 using namespace std;
@@ -362,9 +362,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 不是 vector 的子类}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 聚合的 vector}\par
 
-类 \texttt{CircularBuffer} 隐藏了它聚合的 vector。公有成员\texttt{函数} \texttt{add()} 和 \texttt{remove()} 控制对 vector 的访问，而该类不允许对 vector 进行其他行为。
+类 \texttt{Circular\allowbreak{}Buffer} 隐藏了它聚合的 vector。公有成员\texttt{函数} \texttt{add()} 和 \texttt{remove()} 控制对 vector 的访问，而该类不允许对 vector 进行其他行为。
 
-\begin{codeboxt}{代码清单 7.7（程序 7.3 CircularBuffer-3）：\texttt{CircularBuffer.cpp}}
+\begin{codeboxt}{代码清单 7.7（程序 7.3 CircularBuffer-3）：\texttt{Circular\allowbreak{}Buffer.\allowbreak{}cpp}}
 #include <iostream>
 #include "CircularBuffer.h"
 
@@ -413,7 +413,7 @@ ostream& operator <<(ostream& ostr, CircularBuffer& cb)
 
 如以下代码清单所示，测试程序无法对环形缓冲区执行 vector 操作。
 
-\begin{codeboxt}{代码清单 7.8（程序 7.3 CircularBuffer-3）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.8（程序 7.3 CircularBuffer-3）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "CircularBuffer.h"
 
@@ -527,11 +527,11 @@ public:
 
 正如 图 7.2 清楚展示的，这个版本的应用使用 is-a 关系。例如，\texttt{TrainSet} 是一个 \texttt{Toy}。
 
-这个设计的一个严重缺陷是子类之间的重复代码，它违反了不要重复自己原则（2.3.3 节）。例如，\texttt{ToyCar} 和 \texttt{TrainSet} 都拥有实现各自 \texttt{play()} 成员函数的相同代码，而 \texttt{ToyCar} 和 \texttt{ModelAirplane} 都拥有实现各自 \texttt{sound()} 成员函数的相同代码。如果实现每个成员函数的代码做得更多，或者我们添加更多子类和行为，这个问题会更加严重。
+这个设计的一个严重缺陷是子类之间的重复代码，它违反了不要重复自己原则（2.3.3 节）。例如，\texttt{ToyCar} 和 \texttt{TrainSet} 都拥有实现各自 \texttt{play()} 成员函数的相同代码，而 \texttt{ToyCar} 和 \texttt{Model\allowbreak{}Airplane} 都拥有实现各自 \texttt{sound()} 成员函数的相同代码。如果实现每个成员函数的代码做得更多，或者我们添加更多子类和行为，这个问题会更加严重。
 
 另一个缺陷是，每种玩具的玩耍动作和声音行为都被硬编码在每个 \texttt{Toy} 子类的源代码中。例如，实现类 \texttt{TrainSet} 的源代码硬编码了火车套装是通过滚动来玩耍的，并且它会发出呜呜声。下面的测试程序演练了这些行为。
 
-\begin{codeboxt}{代码清单 7.10（程序 7.4 Toys-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.10（程序 7.4 Toys-1）：\texttt{tester.\allowbreak{}cpp}}
 #include "Toy.h"
 
 using namespace std;
@@ -574,13 +574,13 @@ TRAIN SET
 
 \myGraphic{0.980}{images/CH07_F03_Mak.png}{图 7.3 玩耍动作和声音行为各自是一个单独的类。每个 \texttt{Toy} 子类与 \texttt{Toy} 超类之间具有 is-a 关系，并与玩耍动作类和声音类之间具有 is-a 关系。通过共享这些类，我们消除了一些代码重复，但每种玩具的行为依然是硬编码的。}
 
-图中显示，\texttt{ToyCar} 和 \texttt{TrainSet} 两个子类都继承并共享 \texttt{Roll} 玩耍动作类，\texttt{ToyCar} 和 \texttt{ModelAirplane} 两个子类都继承并共享 \texttt{Engine} 声音类。\texttt{ModelAirplane} 还继承了 \texttt{Fly} 玩耍动作类，\texttt{TrainSet} 还继承了 \texttt{ChooChoo} 声音类。
+图中显示，\texttt{ToyCar} 和 \texttt{TrainSet} 两个子类都继承并共享 \texttt{Roll} 玩耍动作类，\texttt{ToyCar} 和 \texttt{Model\allowbreak{}Airplane} 两个子类都继承并共享 \texttt{Engine} 声音类。\texttt{Model\allowbreak{}Airplane} 还继承了 \texttt{Fly} 玩耍动作类，\texttt{TrainSet} 还继承了 \texttt{ChooChoo} 声音类。
 
 \myGraphic{0.644}{images/CH07_F03_UN03_Mak.png}{}
 
 下面的代码清单把玩耍动作展示为单独的类。
 
-\begin{codeboxt}{代码清单 7.11（程序 7.5 Toys-2）：\texttt{PlayAction.h}}
+\begin{codeboxt}{代码清单 7.11（程序 7.5 Toys-2）：\texttt{Play\allowbreak{}Action.\allowbreak{}h}}
 #include <string>
 
 using namespace std;
@@ -616,7 +616,7 @@ public:
 };
 \end{codeboxt}
 
-采用这种设计，每种玩具都可以继承自己的玩耍动作行为和声音行为（图 7.3）。因为每个 \texttt{Toy} 子类已经继承了超类 \texttt{Toy}，所以我们必须使用多重继承，如下面的代码清单所示。作用域解析运算符让我们能够从所继承的行为类中显式调用成员函数 \texttt{Roll::play()}、\texttt{Fly::play()}、\texttt{Engine::sound()} 和 \texttt{ChooChoo::sound()}。
+采用这种设计，每种玩具都可以继承自己的玩耍动作行为和声音行为（图 7.3）。因为每个 \texttt{Toy} 子类已经继承了超类 \texttt{Toy}，所以我们必须使用多重继承，如下面的代码清单所示。作用域解析运算符让我们能够从所继承的行为类中显式调用成员函数 \texttt{Roll::\allowbreak{}play(\allowbreak{})\allowbreak{}}、\texttt{Fly::\allowbreak{}play(\allowbreak{})\allowbreak{}}、\texttt{Engine::\allowbreak{}sound(\allowbreak{})\allowbreak{}} 和 \texttt{Choo\allowbreak{}Choo::\allowbreak{}sound(\allowbreak{})\allowbreak{}}。
 
 \begin{codeboxt}{代码清单 7.13（程序 7.5 Toys-2）：\texttt{Toy.h}（设计不良）}
 #include <iostream>
@@ -668,15 +668,15 @@ public:
 
 同一个测试程序（代码清单 7.10）生成的输出与之前相同。
 
-对于 \texttt{Toy} 的每个子类，我们应用的第二版除了保留它此前与 \texttt{Toy} 超类之间的 is-a 关系外，还添加了与玩耍动作类和声音类之间的 is-a 关系。例如，\texttt{ModelAirplane} 是一个 \texttt{Toy}，同时它也是一个 \texttt{Fly} 玩耍动作和一个 \texttt{Engine} 声音。这个版本解决了代码重复问题，因为每种玩耍动作和每种声音都只有一份可共享的副本。然而，每种玩具子类的源代码依然硬编码了该玩具的行为，只不过这次用的是多重继承。
+对于 \texttt{Toy} 的每个子类，我们应用的第二版除了保留它此前与 \texttt{Toy} 超类之间的 is-a 关系外，还添加了与玩耍动作类和声音类之间的 is-a 关系。例如，\texttt{Model\allowbreak{}Airplane} 是一个 \texttt{Toy}，同时它也是一个 \texttt{Fly} 玩耍动作和一个 \texttt{Engine} 声音。这个版本解决了代码重复问题，因为每种玩耍动作和每种声音都只有一份可共享的副本。然而，每种玩具子类的源代码依然硬编码了该玩具的行为，只不过这次用的是多重继承。
 
 为了让玩具的行为方式更加灵活，我们希望避免在子类的源代码中硬编码每种玩具的玩耍行为和声音行为，转而能够在运行时确定每种玩具的行为。为此，玩具应用的最终版本把玩具与其行为之间的 is-a 关系替换为 has-a 关系。图 7.4 用图展示了该应用最终版本的 is-a 关系和 has-a 关系。
 
-\myGraphic{0.904}{images/CH07_F04_Mak.png}{图 7.4 每个 \texttt{Toy} 子类与 \texttt{Toy} 超类之间具有 is-a 关系。\texttt{Toy} 超类与 \texttt{PlayAction} 和 \texttt{Sound} 行为之间具有 has-a 关系，这使得 \texttt{Toy} 子类能够访问并共享玩耍动作行为和声音行为。这种设计更加灵活，且玩具与其玩耍动作、声音行为之间是松耦合的。玩具行为不再硬编码在源代码中，而是可以在运行时创建玩具对象时随时指定。还可以在运行时通过调用设值函数 \texttt{set\_play()} 和 \texttt{set\_sound()} 来修改玩具的行为。}
+\myGraphic{0.904}{images/CH07_F04_Mak.png}{图 7.4 每个 \texttt{Toy} 子类与 \texttt{Toy} 超类之间具有 is-a 关系。\texttt{Toy} 超类与 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 行为之间具有 has-a 关系，这使得 \texttt{Toy} 子类能够访问并共享玩耍动作行为和声音行为。这种设计更加灵活，且玩具与其玩耍动作、声音行为之间是松耦合的。玩具行为不再硬编码在源代码中，而是可以在运行时创建玩具对象时随时指定。还可以在运行时通过调用设值函数 \texttt{set\_\allowbreak{}play(\allowbreak{})\allowbreak{}} 和 \texttt{set\_\allowbreak{}sound(\allowbreak{})\allowbreak{}} 来修改玩具的行为。}
 
-首先，我们让每种玩耍动作都实现接口 \texttt{PlayAction}。每个 \texttt{PlayAction} 类都必须以适合该子类的方式实现成员函数 \texttt{play()}。
+首先，我们让每种玩耍动作都实现接口 \texttt{Play\allowbreak{}Action}。每个 \texttt{Play\allowbreak{}Action} 类都必须以适合该子类的方式实现成员函数 \texttt{play()}。
 
-\begin{codeboxt}{代码清单 7.14（程序 7.6 Toys-3）：\texttt{PlayAction.h}}
+\begin{codeboxt}{代码清单 7.14（程序 7.6 Toys-3）：\texttt{Play\allowbreak{}Action.\allowbreak{}h}}
 #include <string>
 
 using namespace std;
@@ -734,9 +734,9 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① Sound 超类}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 由每个子类实现的声音行为}\par
 
-我们把开闭原则（2.3.3 节和 5.8 节）应用到接口 \texttt{PlayAction} 和 \texttt{Sound} 上。我们可以在不改变这两个接口的情况下添加新的玩耍动作行为和声音行为。
+我们把开闭原则（2.3.3 节和 5.8 节）应用到接口 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 上。我们可以在不改变这两个接口的情况下添加新的玩耍动作行为和声音行为。
 
-超类 \texttt{Toy} 通过其私有成员变量 \texttt{play\_behavior} 和 \texttt{sound\_behavior} 维持与玩耍动作和声音行为之间的 has-a 关系。我们在构造函数中初始化这些成员变量。
+超类 \texttt{Toy} 通过其私有成员变量 \texttt{play\_\allowbreak{}behavior} 和 \texttt{sound\_\allowbreak{}behavior} 维持与玩耍动作和声音行为之间的 has-a 关系。我们在构造函数中初始化这些成员变量。
 
 \begin{codeboxt}{代码清单 7.16（程序 7.6 Toys-3）：\texttt{Toy.h}}
 #include <iostream>
@@ -809,13 +809,13 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 实现与玩耍动作和声音之间的 has-a 关系。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 把 PlayAction 和 Sound 对象传递给超类 Toy 的构造函数。}\par
 
-在这个版本的应用中，类 \texttt{Toy} 遵循委托原则（2.3.2 节），把玩耍动作行为和声音行为委托给 \texttt{PlayAction} 和 \texttt{Sound} 类。\texttt{Toy} 的子类都没有硬编码这些行为。相反，当在运行时创建 \texttt{Toy} 对象时，表示这些行为的 \texttt{PlayAction} 和 \texttt{Sound} 对象会被传递给每个 \texttt{Toy} 子类的构造函数。
+在这个版本的应用中，类 \texttt{Toy} 遵循委托原则（2.3.2 节），把玩耍动作行为和声音行为委托给 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 类。\texttt{Toy} 的子类都没有硬编码这些行为。相反，当在运行时创建 \texttt{Toy} 对象时，表示这些行为的 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 对象会被传递给每个 \texttt{Toy} 子类的构造函数。
 
 \myGraphic{0.792}{images/CH07_F04_UN04_Mak.png}{}
 
-下面代码清单中的测试程序创建每个 \texttt{Toy} 对象，并创建相应的 \texttt{PlayAction} 和 \texttt{Sound} 对象传递给构造函数。为了进一步展示行为的灵活性，测试程序使用 \texttt{Toy} 类的设值函数 \texttt{set\_sound()} 在运行时改变 \texttt{TrainSet} 对象的声音行为。
+下面代码清单中的测试程序创建每个 \texttt{Toy} 对象，并创建相应的 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 对象传递给构造函数。为了进一步展示行为的灵活性，测试程序使用 \texttt{Toy} 类的设值函数 \texttt{set\_\allowbreak{}sound(\allowbreak{})\allowbreak{}} 在运行时改变 \texttt{TrainSet} 对象的声音行为。
 
-\begin{codeboxt}{代码清单 7.17（程序 7.6 Toys-3）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.17（程序 7.6 Toys-3）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <vector>
 #include "Toy.h"
@@ -882,8 +882,8 @@ TRAIN SET
 \begin{itemize}
 \item \emph{灵活性}——行为不硬编码在源代码中，可以在运行时被赋予和修改。
 \item \emph{代码共享}——行为被共享，从而减少代码重复。
-\item \emph{委托}——行为被委托给 \texttt{PlayAction} 和 \texttt{Sound} 子类。
-\item \emph{松耦合}——类 \texttt{Toy} 及其子类不了解 \texttt{PlayAction} 和 \texttt{Sound} 子类的实现。\texttt{PlayAction} 和 \texttt{Sound} 子类也不依赖 \texttt{Toy} 子类。
+\item \emph{委托}——行为被委托给 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 子类。
+\item \emph{松耦合}——类 \texttt{Toy} 及其子类不了解 \texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 子类的实现。\texttt{Play\allowbreak{}Action} 和 \texttt{Sound} 子类也不依赖 \texttt{Toy} 子类。
 \item \emph{封装}——将来我们可以添加和修改玩具行为，而无需更改 \texttt{Toy} 超类或其任何子类。
 \item \emph{降低复杂度}——类层次结构得以简化。不再需要多重继承。
 \end{itemize}
@@ -906,9 +906,9 @@ Toy *toy = new TrainSet(new Roll(), new ChooChoo());
 
 现在，变量 \texttt{toy} 稍后可以指向另一个 \texttt{Toy} 对象。
 
-然而，这段代码仍然没有那么灵活。如果在应用的另一次运行中，我们需要把变量 \texttt{toy} 初始化为另一个 \texttt{Toy} 对象，该怎么办？为了获得更大的灵活性，让我们尽量少硬编码、尽量多在运行时确定，我们可以使用一个封装了对 \texttt{new} 的调用的工厂函数。工厂函数的用途是封装创建并返回超类的不同子类对象的过程。一个参数值决定要创建并返回哪个子类对象。工厂函数通常是工厂类的静态成员。我们的 \texttt{ToyFactory} 类在工厂函数 \texttt{make()} 中封装了创建并返回 \texttt{Toy} 对象的过程。
+然而，这段代码仍然没有那么灵活。如果在应用的另一次运行中，我们需要把变量 \texttt{toy} 初始化为另一个 \texttt{Toy} 对象，该怎么办？为了获得更大的灵活性，让我们尽量少硬编码、尽量多在运行时确定，我们可以使用一个封装了对 \texttt{new} 的调用的工厂函数。工厂函数的用途是封装创建并返回超类的不同子类对象的过程。一个参数值决定要创建并返回哪个子类对象。工厂函数通常是工厂类的静态成员。我们的 \texttt{Toy\allowbreak{}Factory} 类在工厂函数 \texttt{make()} 中封装了创建并返回 \texttt{Toy} 对象的过程。
 
-\begin{codeboxt}{代码清单 7.18（程序 7.7 Toys-4）\texttt{ToyFactory.h}}
+\begin{codeboxt}{代码清单 7.18（程序 7.7 Toys-4）\texttt{Toy\allowbreak{}Factory.\allowbreak{}h}}
 #include "Toy.h"
 
 enum class Kind { CAR, AIRPLANE, TRAIN };  ①
@@ -948,7 +948,7 @@ public:
 
 下面代码清单中的测试程序表明，现在我们能够根据变量 \texttt{kind} 的值，在运行时灵活确定要创建哪个 \texttt{Toy} 对象。
 
-\begin{codeboxt}{代码清单 7.19（程序 7.7 Toys-4）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.19（程序 7.7 Toys-4）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Toy.h"
 #include "ToyFactory.h"
@@ -983,13 +983,13 @@ MODEL AIRPLANE
 
 如果我们使用契约式编程（6.3 节），就需要对子类格外小心，尤其是在遵循面向接口编程原则（7.4 节）时。如果某个子类重写了其超类的成员函数，并且被重写的超类成员函数带有前置条件和后置条件，那么对于子类的成员函数来说，什么样的前置条件和后置条件才是合适的呢？
 
-考虑类 \texttt{Shipment} 及其子类 \texttt{Expedited} 和 \texttt{International}（代码清单 7.20）。类 \texttt{Shipment}（用于通过普通邮件寄送包裹）有两个成员函数。设值函数 \texttt{set\_cost()} 设置运费。它的前置条件很简单，就是运费大于 0。成员函数 \texttt{calculate\_days()} 计算包裹到达目的地需要多少天。在实际应用中，该函数会利用运输方式和其他因素来进行这一计算。它的后置条件是天数必须介于 0 和 14 之间。在本例中，我们干脆把天数硬编码为 5，这满足后置条件。
+考虑类 \texttt{Shipment} 及其子类 \texttt{Expedited} 和 \texttt{International}（代码清单 7.20）。类 \texttt{Shipment}（用于通过普通邮件寄送包裹）有两个成员函数。设值函数 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 设置运费。它的前置条件很简单，就是运费大于 0。成员函数 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 计算包裹到达目的地需要多少天。在实际应用中，该函数会利用运输方式和其他因素来进行这一计算。它的后置条件是天数必须介于 0 和 14 之间。在本例中，我们干脆把天数硬编码为 5，这满足后置条件。
 
-子类 \texttt{Expedited}（用于加急运输）的成员函数 \texttt{set\_cost()} 有这样一个前置条件：运费大于 5。它的成员函数 \texttt{calculate\_days()} 有这样一个后置条件：天数为 1 或 2，并在返回前进行检查。在本例中，它被硬编码为 2 天，这满足后置条件。这两个函数重写了超类 \texttt{Shipment} 中对应的函数。
+子类 \texttt{Expedited}（用于加急运输）的成员函数 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 有这样一个前置条件：运费大于 5。它的成员函数 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 有这样一个后置条件：天数为 1 或 2，并在返回前进行检查。在本例中，它被硬编码为 2 天，这满足后置条件。这两个函数重写了超类 \texttt{Shipment} 中对应的函数。
 
-子类 \texttt{International}（用于国际运输）的成员函数 \texttt{set\_cost()} 有这样一个前置条件：运费大于 0。它的成员函数 \texttt{calculate\_days()} 有这样一个后置条件：天数大于 12，并在返回前进行检查。在本例中，它被硬编码为 20 天，这满足后置条件。这两个函数重写了超类 \texttt{Shipment} 中对应的函数。
+子类 \texttt{International}（用于国际运输）的成员函数 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 有这样一个前置条件：运费大于 0。它的成员函数 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 有这样一个后置条件：天数大于 12，并在返回前进行检查。在本例中，它被硬编码为 20 天，这满足后置条件。这两个函数重写了超类 \texttt{Shipment} 中对应的函数。
 
-\begin{codeboxt}{代码清单 7.20（程序 7.8 ContractShipment）：\texttt{Shipment.h}（设计不良）}
+\begin{codeboxt}{代码清单 7.20（程序 7.8 ContractShipment）：\texttt{Shipment.\allowbreak{}h}（设计不良）}
 #include <string>
 
 using namespace std;
@@ -1081,11 +1081,11 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 无效的前置条件}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 无效的后置条件}\par
 
-回想一下，调用方有责任在调用函数之前确保该函数的前置条件得到满足，而函数在被调用后，即使前置条件为假，也可以采取任何方便的做法。在这个例子中，如果前置条件被违反，我们让每个 \texttt{set\_cost()} 成员函数抛出异常。（抛出异常并不是由函数头声明的，因此它不属于契约的一部分。）另外，回想一下，函数有责任在返回前满足其后置条件，因此每个 \texttt{calculate\_days()} 成员函数中硬编码的天数都满足它的后置条件\texttt{.}
+回想一下，调用方有责任在调用函数之前确保该函数的前置条件得到满足，而函数在被调用后，即使前置条件为假，也可以采取任何方便的做法。在这个例子中，如果前置条件被违反，我们让每个 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 成员函数抛出异常。（抛出异常并不是由函数头声明的，因此它不属于契约的一部分。）另外，回想一下，函数有责任在返回前满足其后置条件，因此每个 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 成员函数中硬编码的天数都满足它的后置条件\texttt{.}
 
-测试程序（代码清单 7.21）创建 \texttt{Shipment}、\texttt{Expedited} 和 \texttt{International} 对象，并依次把每个对象传给函数 \texttt{ship\_it()}。该函数以指向 \texttt{Shipment} 对象的指针形式接收其实参。它以实参值 2.00 调用该对象上的 \texttt{set\_cost()}，这满足 \texttt{Shipment} 成员函数的前置条件 \texttt{c > 0}。在调用 \texttt{Shipment} 对象上的 \texttt{calculate\_days()} 返回之后，出于防御式编程，它会核实 \texttt{Shipment} 成员函数的后置条件 \texttt{(\allowbreak{}days > 0)\allowbreak{} \&\& (\allowbreak{}days < 14)\allowbreak{}} 得到了满足。成员函数 \texttt{set\_cost()} 和 \texttt{calculate\_days()} 都是虚函数，所以多态会决定调用哪个类的成员函数。
+测试程序（代码清单 7.21）创建 \texttt{Shipment}、\texttt{Expedited} 和 \texttt{International} 对象，并依次把每个对象传给函数 \texttt{ship\_\allowbreak{}it(\allowbreak{})\allowbreak{}}。该函数以指向 \texttt{Shipment} 对象的指针形式接收其实参。它以实参值 2.00 调用该对象上的 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}}，这满足 \texttt{Shipment} 成员函数的前置条件 \texttt{c > 0}。在调用 \texttt{Shipment} 对象上的 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 返回之后，出于防御式编程，它会核实 \texttt{Shipment} 成员函数的后置条件 \texttt{(\allowbreak{}days > 0)\allowbreak{} \&\& (\allowbreak{}days < 14)\allowbreak{}} 得到了满足。成员函数 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 和 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 都是虚函数，所以多态会决定调用哪个类的成员函数。
 
-\begin{codeboxt}{代码清单 7.21（程序 7.8 ContractShipment）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 7.21（程序 7.8 ContractShipment）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Shipment.h"
 
@@ -1141,20 +1141,20 @@ Shipping EXPEDITED *** Invalid cost: 2
 Shipping INTERNATIONAL *** Invalid days: 20
 \end{codebox}
 
-普通运输没有问题。然而，加急运输违反了 \texttt{set\_cost()} 成员函数的前置条件，而国际运输显然违反了 \texttt{calculate\_days()} 成员函数的后置条件。哪里出错了？
+普通运输没有问题。然而，加急运输违反了 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 成员函数的前置条件，而国际运输显然违反了 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 成员函数的后置条件。哪里出错了？
 
-函数 \texttt{ship\_it()} 使用的是 \texttt{Shipping} 对象的前置条件和后置条件。但由于 \texttt{ship\_it()} 的实参是指向 \texttt{Shipping} 对象的指针，我们无法保证在运行时调用方不会传入指向 \texttt{Expedited} 对象的指针或指向 \texttt{International} 对象的指针，而这可能会违反前置条件或后置条件。
+函数 \texttt{ship\_\allowbreak{}it(\allowbreak{})\allowbreak{}} 使用的是 \texttt{Shipping} 对象的前置条件和后置条件。但由于 \texttt{ship\_\allowbreak{}it(\allowbreak{})\allowbreak{}} 的实参是指向 \texttt{Shipping} 对象的指针，我们无法保证在运行时调用方不会传入指向 \texttt{Expedited} 对象的指针或指向 \texttt{International} 对象的指针，而这可能会违反前置条件或后置条件。
 
 以下是设计子类以及使用契约式编程时的一些指导原则：
 
 \begin{itemize}
-\item 子类重写成员函数的前置条件所允许的取值范围，必须包含被重写的超类成员函数的前置条件所允许的取值范围。在这个例子中，子类 \texttt{Expedited} 中成员函数 \texttt{set\_cost()} 的前置条件 \texttt{cost > 5} 并未包含超类 \texttt{Shipment} 中成员函数 \texttt{set\_cost()} 的 cost > 0 这一范围。因此，当超类 \texttt{Shipment} 把运费设为 2 时，就违反了子类 \texttt{Expedited} 的前置条件（图 7.5）。
+\item 子类重写成员函数的前置条件所允许的取值范围，必须包含被重写的超类成员函数的前置条件所允许的取值范围。在这个例子中，子类 \texttt{Expedited} 中成员函数 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 的前置条件 \texttt{cost > 5} 并未包含超类 \texttt{Shipment} 中成员函数 \texttt{set\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 的 cost > 0 这一范围。因此，当超类 \texttt{Shipment} 把运费设为 2 时，就违反了子类 \texttt{Expedited} 的前置条件（图 7.5）。
 \end{itemize}
 
 \myGraphic{0.429}{images/CH07_F05_Mak.png}{图 7.5 运费 2 满足超类的前置条件，却不满足子类的前置条件。子类前置条件的范围必须包含超类前置条件的范围。}
 
 \begin{itemize}
-\item 超类被重写成员函数的后置条件所允许的取值范围，必须包含重写它的子类成员函数的后置条件所允许的取值范围。在这个例子中，超类 \texttt{Shipping} 中成员函数 \texttt{calculate\_days()} 的后置条件 \texttt{(\allowbreak{}days > 0)\allowbreak{} \&\& (\allowbreak{}days < 14)\allowbreak{}} 并未包含子类 \texttt{International} 中成员函数 \texttt{calculate\_days()} 的 \texttt{days > 12} 这一范围。因此，当子类 \texttt{International} 把天数设为 20 时，就违反了超类 \texttt{Shipping} 的后置条件（图 7.6）。
+\item 超类被重写成员函数的后置条件所允许的取值范围，必须包含重写它的子类成员函数的后置条件所允许的取值范围。在这个例子中，超类 \texttt{Shipping} 中成员函数 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 的后置条件 \texttt{(\allowbreak{}days > 0)\allowbreak{} \&\& (\allowbreak{}days < 14)\allowbreak{}} 并未包含子类 \texttt{International} 中成员函数 \texttt{calculate\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 的 \texttt{days > 12} 这一范围。因此，当子类 \texttt{International} 把天数设为 20 时，就违反了超类 \texttt{Shipping} 的后置条件（图 7.6）。
 \end{itemize}
 
 \myGraphic{0.885}{images/CH07_F06_Mak.png}{图 7.6 天数 20 满足子类的后置条件，却不满足超类的后置条件。超类后置条件的范围必须包含子类后置条件的范围。}

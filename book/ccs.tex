@@ -96,12 +96,28 @@
 %   （0.496/0.671 em vs 原书 0.484/0.667 em）
 \setmainfont{Cambria}[BoldFont=*-Bold, ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]
 \setsansfont[BoldFont={Franklin Gothic Medium}]{Franklin Gothic Medium}   % 拉丁标题
-% 代码字体：与原书一致的 JetBrains Mono NL（无连字版），随项目放在 fonts/ 目录
-\setmonofont{JetBrainsMonoNL}[
+% 代码字体：正文代码（行内 \texttt 与 minted 代码清单）统一用 Consolas（Windows 自带）。
+%   依赖：本机需有 Consolas（consola.ttf 等四款字重）；若缺失则自动回退到项目自带的
+%         JetBrains Mono NL（无连字版），不会中断编译。
+%   字形差异：Consolas 有 ①–⑳ 与制表符 ─│┌┐└┘，但【没有 ↪(U+21AA) 和 ㉑–㉚】；
+%         故把 JetBrainsMonoNL 额外注册成 \codeextra，供文末「Unicode 符号兜底」
+%         里的 ↪ 使用（㉑–㉚ 由 xeCJK 走 CJKmonofont 雅黑，见同处注释）。
+\newfontfamily\codeextra{JetBrainsMonoNL}[
   Path=fonts/, Extension=.ttf,
   UprightFont=*-Regular, BoldFont=*-Bold,
   ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]
+\IfFontExistsTF{Consolas}
+  {\setmonofont{Consolas}[BoldFont=*-Bold, ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]}
+  {\setmonofont{JetBrainsMonoNL}[
+     Path=fonts/, Extension=.ttf,
+     UprightFont=*-Regular, BoldFont=*-Bold,
+     ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]
+   \PackageWarning{ccs}{未找到 Consolas，正文代码字体已回退到 JetBrainsMonoNL}}
 \newfontfamily\codehan{Microsoft YaHei}  % 备用的中英文混排字体
+% 字间弹性收紧：xeCJK 默认 CJKglue 是 0 宽、plus 0.08\baselineskip 的弹性胶，
+% 在 \sloppy 式的高容忍下整行汉字间距会被均匀拉大（字距稀稀拉拉）。
+% 这里把弹性减半，正常文字观感不变，但最坏情况的松散度明显收敛。
+\xeCJKsetup{CJKglue={\hskip 0pt plus 0.04\baselineskip minus 0.04\baselineskip}}
 % -----------------------------------------------------------------------------
 
 % -----------------------------------------------------------------------------
@@ -478,6 +494,7 @@
 \usepackage{url}
 \usepackage[depth=3]{bookmark}
 \usepackage{hyperref}
+\urlstyle{same}   % URL 文字沿用当前字体（与原书一致，不改等宽）；配合 \nolinkurl 可在 . / - 处断行
 \hypersetup{
   colorlinks=true,
   linkcolor=black,
@@ -492,6 +509,13 @@
   pdfkeywords={C++, 面向对象, 软件设计, 设计模式, UML},
 }
 \renewcommand{\contentsname}{目录}
+
+% 目录页码盒加宽：默认 1.55em 装不下 Cambria 的三位数页码（恒溢出 1.1pt），
+% 导致每个三位页码的目录行都报 Overfull；加宽到 2em 后归零
+\makeatletter
+\renewcommand{\@pnumwidth}{2em}
+\renewcommand{\@tocrmarg}{2em}
+\makeatother
 
 % 目录里的章条目也补上引导点（默认章条目是空白的，只有节条目有点）
 % 其余与 book.cls 原定义一致：加粗、段前空 0.8em、页码右对齐
@@ -583,9 +607,10 @@
 \newunicodechar{𝑦}{\(y\)}
 % ---------------------------------------------------------------------------
 %  ★ 本项目补充：带圈数字 ①–⑳（U+2460–U+24FF）与 ㉑–㉟（U+3251–U+325F）
-%    代码清单里的 ① 是行标记，等宽字体 JetBrainsMonoNL 没有这些字形。
-%    把这些区间声明成 CJK 字符类后：正文走思源宋体（①–⑳、㉑–㉚ 都有），
-%    代码里走 CJKmonofont（微软雅黑，①–⑩ 与 ㉑–㉟ 都有）。
+%    代码清单里的 ① 是行标记。等宽字体本身不可靠：JetBrainsMonoNL 完全没有这些字形，
+%    Consolas 有 ①–⑳ 却没有 ㉑–㉚。把这些区间整段声明成 CJK 字符类最稳妥：
+%    正文走思源宋体（①–⑳、㉑–㉚ 都有），代码里走 CJKmonofont
+%    （微软雅黑，①–⑩ 与 ㉑–㉟ 都有）。
 %    正文中偶现的 ㉑–㉚ 用 \newCJKfontfamily 显式切到雅黑。
 % ---------------------------------------------------------------------------
 \xeCJKDeclareCharClass{CJK}{"2460 -> "24FF, "3251 -> "325F}
@@ -615,7 +640,14 @@
 \newunicodechar{㉘}{{\cjkcompat ㉘}}
 \newunicodechar{㉙}{{\cjkcompat ㉙}}
 \newunicodechar{㉚}{{\cjkcompat ㉚}}
-% ➥ 在正文里也回退成 ↪（等宽字体里没有 ➥）
+% ↪ 与 ➥：代码字体 Consolas 这两个字形都没有（JetBrainsMonoNL 有 ↪、没有 ➥），
+% 故统一用 \codeextra（= JetBrainsMonoNL）兜底。↪ 有两个用武之地——
+%   ① 代码清单行首的续行标记（main/02、main/07）；
+%   ② 正文「关于本书」里说明续行标记的那一句。
+% 定义是全局的，两处都走同一字形（正文里此前借用 Cambria 的 ↪，现在也走等宽）。
+% 顺序要紧：先定义 ↪，再定义 ➥→↪ 的链——这样后者替换文字里的 ↪ 才是活动字符、
+% 会继续展开到 \codeextra（否则它只是 catcode 12 的普通字符，在 Consolas 下仍会缺字）。
+\newunicodechar{↪}{{\codeextra ↪}}
 \newunicodechar{➥}{↪}
 
 % -----------------------------------------------------------------------------

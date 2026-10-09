@@ -21,7 +21,7 @@ latex_source/
 │       ├── part/               p1–p5：五个部分的扉页（「第 N 部分」灰带 + 导语）
 │       ├── main/               01–16：正文十六章
 │       └── back/               01-index：索引（双栏排版）
-├── fonts/                      JetBrainsMonoNL 四款字重（代码字体，随工程分发）
+├── fonts/                      JetBrainsMonoNL 四款字重（Consolas 的兜底字体 + ↪ 字形回退）
 └── images/                     cover.jpg 封面 + 255 张插图（CH<章>_…_Mak.png）
                                 + Manning_M_small.png / Manning_copyright.png / Mak_Author-Photo.png
 ```
@@ -54,6 +54,11 @@ latex_source/
 （[官方发布页](https://github.com/adobe-fonts/source-han-serif/releases)下载 Windows 版 OTF 即可）；
 未安装时 `ccs.tex` 里的 `\IfFontExistsTF` 会自动回退到系统自带的华文宋体（STSong），
 编译不会中断，仅字形与字重略有差异。
+
+正文代码（行内 `\texttt` 与代码清单）使用 **Consolas**（Windows 自带，无需安装）。
+Consolas 缺少 `↪`（续行标记）与 `㉑–㉚`，这两处分别回退到随工程分发的 JetBrains Mono NL
+和微软雅黑；若在非 Windows 机器上、连 Consolas 也没有，`\IfFontExistsTF` 会自动整体回退到
+JetBrains Mono NL，同样不会中断编译。
 
 ```bat
 build.bat                          REM Windows 双击即可

@@ -33,9 +33,9 @@
 
 \subsection{4.2.1 内聚与单一职责原则}
 
-如果一个类遵循单一职责原则（2.3.1 节），它就是内聚的。设计良好的类应当只有一项主要职责。来看一个例子。假设在一个关于汽车的应用中，我们有一个类 \texttt{AutomobileApp}。
+如果一个类遵循单一职责原则（2.3.1 节），它就是内聚的。设计良好的类应当只有一项主要职责。来看一个例子。假设在一个关于汽车的应用中，我们有一个类 \texttt{Automobile\allowbreak{}App}。
 
-\begin{codeboxt}{代码清单 4.1（程序 4.1 Automobile-1）：\texttt{AutomobileApp.h}（非内聚）}
+\begin{codeboxt}{代码清单 4.1（程序 4.1 Automobile-1）：\texttt{Automobile\allowbreak{}App.\allowbreak{}h}（非内聚）}
 class AutomobileApp
 {
 public:
@@ -75,14 +75,14 @@ private:
 这个类不内聚，因为它承担了过多的状态和行为职责：
 
 \begin{itemize}
-\item \texttt{汽车操作} \emph{状态}\texttt{—brakes}, \texttt{engine}, \texttt{heading}, \texttt{speed} \emph{行为}\textbf{—}\texttt{accelerate()}, \texttt{apply\_brakes()}, \texttt{shut\_off\_engine()}, \texttt{start\_engine()}, \texttt{turn\_left()}, \texttt{turn\_right()}
-\item \texttt{汽车维护} \emph{状态}\texttt{—engine\_oil}, \texttt{headlights}, \texttt{tires} \emph{行为}\texttt{—adjust\_headlights()}, \texttt{change\_oil()}, \texttt{change\_tires()}, \texttt{check\_brakes()}, \texttt{check\_tires()}, \texttt{rotate\_tires()}, \texttt{tuneup\_engine()}
-\item \texttt{汽车} \texttt{清洁} \emph{状态}\texttt{—soap}, \texttt{vacuum\_cleaner}, \texttt{wax} \emph{行为}\textbf{—} \texttt{vacuum\_car(}), \texttt{wash\_car()}, \texttt{wax\_car()}
+\item \texttt{汽车操作} \emph{状态}\texttt{—brakes}, \texttt{engine}, \texttt{heading}, \texttt{speed} \emph{行为}\textbf{—}\texttt{accelerate(\allowbreak{})\allowbreak{}}, \texttt{apply\_\allowbreak{}brakes(\allowbreak{})\allowbreak{}}, \texttt{shut\_\allowbreak{}off\_\allowbreak{}engine(\allowbreak{})\allowbreak{}}, \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{}}, \texttt{turn\_\allowbreak{}left(\allowbreak{})\allowbreak{}}, \texttt{turn\_\allowbreak{}right(\allowbreak{})\allowbreak{}}
+\item \texttt{汽车维护} \emph{状态}\texttt{—engine\_\allowbreak{}oil}, \texttt{headlights}, \texttt{tires} \emph{行为}\texttt{—adjust\_\allowbreak{}headlights(\allowbreak{})\allowbreak{}}, \texttt{change\_\allowbreak{}oil(\allowbreak{})\allowbreak{}}, \texttt{change\_\allowbreak{}tires(\allowbreak{})\allowbreak{}}, \texttt{check\_\allowbreak{}brakes(\allowbreak{})\allowbreak{}}, \texttt{check\_\allowbreak{}tires(\allowbreak{})\allowbreak{}}, \texttt{rotate\_\allowbreak{}tires(\allowbreak{})\allowbreak{}}, \texttt{tuneup\_\allowbreak{}engine(\allowbreak{})\allowbreak{}}
+\item \texttt{汽车} \texttt{清洁} \emph{状态}\texttt{—soap}, \texttt{vacuum\_\allowbreak{}cleaner}, \texttt{wax} \emph{行为}\textbf{—} \texttt{vacuum\_\allowbreak{}car(\allowbreak{}}), \texttt{wash\_\allowbreak{}car(\allowbreak{})\allowbreak{}}, \texttt{wax\_\allowbreak{}car(\allowbreak{})\allowbreak{}}
 \end{itemize}
 
-我们需要把类 \texttt{AutomobileApp} 拆分成更小的类，每个类只承担一项主要职责。
+我们需要把类 \texttt{Automobile\allowbreak{}App} 拆分成更小的类，每个类只承担一项主要职责。
 
-\begin{codeboxt}{代码清单 4.2（程序 4.2 Automobile-2）：\texttt{Automobile.h}（内聚）}
+\begin{codeboxt}{代码清单 4.2（程序 4.2 Automobile-2）：\texttt{Automobile.\allowbreak{}h}（内聚）}
 class Automobile
 {
 public:
@@ -155,7 +155,7 @@ private:
 
 我们在第 2 章见过一个最少知识原则的例子。类 \texttt{Catalogue}（在代码清单 4.3 中部分重现）对类 \texttt{Attributes} 的依赖仅通过指向 \texttt{Attributes} 对象的指针和引用来实现，因此类 \texttt{Catalogue} 并不了解类 \texttt{Attributes} 是如何实现图书属性的。
 
-\begin{codeboxt}{代码清单 4.3（程序 2.4 Books-4）：\texttt{Catalogue.h}}
+\begin{codeboxt}{代码清单 4.3（程序 2.4 Books-4）：\texttt{Catalogue.\allowbreak{}h}}
 class Catalogue
 {
 public:
@@ -170,9 +170,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 指向 Attributes 对象的指针}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 指向 Attributes 对象的引用}\par
 
-类 \texttt{Attributes}（在代码清单 4.4 中部分重现）对类 \texttt{Catalogue} 完全没有任何依赖。它没有指向或引用 \texttt{Catalogue} 对象的成员变量、函数参数，也没有含此类局部变量的成员函数。因此，\texttt{Attributes} 对象不知道自己最终被存储在一个 \texttt{Catalogue} 对象中。尽管类 \texttt{Catalogue} 通过调用类 \texttt{Attributes} 的布尔型 \texttt{is\_match()} 成员函数把属性匹配委托给它，但类 \texttt{Attributes} 并不知道是谁在调用该函数。
+类 \texttt{Attributes}（在代码清单 4.4 中部分重现）对类 \texttt{Catalogue} 完全没有任何依赖。它没有指向或引用 \texttt{Catalogue} 对象的成员变量、函数参数，也没有含此类局部变量的成员函数。因此，\texttt{Attributes} 对象不知道自己最终被存储在一个 \texttt{Catalogue} 对象中。尽管类 \texttt{Catalogue} 通过调用类 \texttt{Attributes} 的布尔型 \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 成员函数把属性匹配委托给它，但类 \texttt{Attributes} 并不知道是谁在调用该函数。
 
-\begin{codeboxt}{代码清单 4.4（程序 2.4 Books-4）：\texttt{Attributes.h}}
+\begin{codeboxt}{代码清单 4.4（程序 2.4 Books-4）：\texttt{Attributes.\allowbreak{}h}}
 class Attributes
 {
 public:
@@ -260,15 +260,15 @@ UML 类图可以更精确地表达依赖的性质。当一个类聚合（包含�
 
 泛化关系涉及超类、子类和继承。一般的那个类是超类。
 
-在第 2 章的图书目录应用经过三次开发迭代后，我们设计出了（事后看来，设计得并不好）一个 \texttt{Book} 超类，以及 \texttt{Fiction}、\texttt{Cookbook} 和 \texttt{Howto} 子类。UML 图用一条从子类指向超类的箭头来表示超类—子类关系，箭头是紧靠超类的一个空心三角形。图 4.11 还用另一种画箭头的方式展示了超类 \texttt{Attributes} 及其子类 \texttt{FictionAttrs}、\texttt{CookbookAttrs} 和 \texttt{HowtoAttrs}。我们可以视哪张图看起来最好来选择画箭头的方式。
+在第 2 章的图书目录应用经过三次开发迭代后，我们设计出了（事后看来，设计得并不好）一个 \texttt{Book} 超类，以及 \texttt{Fiction}、\texttt{Cookbook} 和 \texttt{Howto} 子类。UML 图用一条从子类指向超类的箭头来表示超类—子类关系，箭头是紧靠超类的一个空心三角形。图 4.11 还用另一种画箭头的方式展示了超类 \texttt{Attributes} 及其子类 \texttt{Fiction\allowbreak{}Attrs}、\texttt{Cookbook\allowbreak{}Attrs} 和 \texttt{Howto\allowbreak{}Attrs}。我们可以视哪张图看起来最好来选择画箭头的方式。
 
-\myGraphic{0.980}{images/CH04_F11_Mak.png}{图 4.11 超类 \texttt{Book} 有子类 \texttt{Fiction, Cookbook,} 和 \texttt{Howto}。此外，超类 \texttt{Attributes} 有子类 \texttt{FictionAttrs,\allowbreak{} CookbookAttrs} 和 \texttt{HowtoAttrs}。本图展示了画泛化图的两种方式。}
+\myGraphic{0.980}{images/CH04_F11_Mak.png}{图 4.11 超类 \texttt{Book} 有子类 \texttt{Fiction,\allowbreak{} Cookbook,\allowbreak{}} 和 \texttt{Howto}。此外，超类 \texttt{Attributes} 有子类 \texttt{Fiction\allowbreak{}Attrs,\allowbreak{} Cookbook\allowbreak{}Attrs} 和 \texttt{Howto\allowbreak{}Attrs}。本图展示了画泛化图的两种方式。}
 
 \subsection{4.4.4 抽象类与接口：子类必须实现什么}
 
-如果一个 C++ 类含有至少一个抽象（纯虚）成员函数，它就是抽象类。代码清单 4.5 展示了抽象类 \texttt{MotorVehicle}，它有两个抽象成员函数 \texttt{start\_engine()} 和 \texttt{stop\_engine()}。我们随后必须在子类（例如 \texttt{Car} 和 \texttt{Truck}）中实现这两个函数。类 \texttt{MotorVehicle} 为成员函数 \texttt{accelerate()}、\texttt{turn\_left()}、\texttt{turn\_right()}、\texttt{apply\_brakes()} 和 \texttt{drive()} 提供了默认实现，子类可以选择是否重写它们。
+如果一个 C++ 类含有至少一个抽象（纯虚）成员函数，它就是抽象类。代码清单 4.5 展示了抽象类 \texttt{Motor\allowbreak{}Vehicle}，它有两个抽象成员函数 \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{}} 和 \texttt{stop\_\allowbreak{}engine(\allowbreak{})\allowbreak{}}。我们随后必须在子类（例如 \texttt{Car} 和 \texttt{Truck}）中实现这两个函数。类 \texttt{Motor\allowbreak{}Vehicle} 为成员函数 \texttt{accelerate(\allowbreak{})\allowbreak{}}、\texttt{turn\_\allowbreak{}left(\allowbreak{})\allowbreak{}}、\texttt{turn\_\allowbreak{}right(\allowbreak{})\allowbreak{}}、\texttt{apply\_\allowbreak{}brakes(\allowbreak{})\allowbreak{}} 和 \texttt{drive()} 提供了默认实现，子类可以选择是否重写它们。
 
-\begin{codeboxt}{代码清单 4.5（程序 4.3 VehicleAbstract）：\texttt{MotorVehicle.h}}
+\begin{codeboxt}{代码清单 4.5（程序 4.3 VehicleAbstract）：\texttt{Motor\allowbreak{}Vehicle.\allowbreak{}h}}
 #include <iostream>
 
 using namespace std;
@@ -326,7 +326,7 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 抽象成员函数}\par
 
-子类 \texttt{Car} 以私有方式实现成员函数 \texttt{start\_engine()} 和 \texttt{stop\_engine()}，并从其超类 \texttt{MotorVehicle} 继承其余的成员函数。
+子类 \texttt{Car} 以私有方式实现成员函数 \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{}} 和 \texttt{stop\_\allowbreak{}engine(\allowbreak{})\allowbreak{}}，并从其超类 \texttt{Motor\allowbreak{}Vehicle} 继承其余的成员函数。
 
 \begin{codeboxt}{代码清单 4.6（程序 4.3 VehicleAbstract）：\texttt{Car.h}}
 #include <iostream>
@@ -352,7 +352,7 @@ private:
 };
 \end{codeboxt}
 
-子类 \texttt{Truck} 以私有方式实现成员函数 \texttt{start\_engine()} 和 \texttt{stop\_engine()}。它还会以私有方式重写超类中成员函数 \texttt{turn\_left()} 和 \texttt{turn\_right()} 的实现。
+子类 \texttt{Truck} 以私有方式实现成员函数 \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{}} 和 \texttt{stop\_\allowbreak{}engine(\allowbreak{})\allowbreak{}}。它还会以私有方式重写超类中成员函数 \texttt{turn\_\allowbreak{}left(\allowbreak{})\allowbreak{}} 和 \texttt{turn\_\allowbreak{}right(\allowbreak{})\allowbreak{}} 的实现。
 
 \begin{codeboxt}{代码清单 4.7（程序 4.3 VehicleAbstract）：\texttt{Truck.h}}
 #include <iostream>
@@ -390,11 +390,11 @@ private:
 
 图 4.12 表明，在这个示例程序的 UML 类图中，我们用斜体或倾斜字体打印类名来表示一个类是抽象类。我们也用斜体或倾斜字体打印抽象函数的名称。
 
-\myGraphic{0.455}{images/CH04_F12_Mak.png}{图 4.12 类 \texttt{MotorVehicle} 是抽象类，因此其名称用倾斜字体。它的成员函数 \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{} and shut\_\allowbreak{}off\_\allowbreak{}engine(\allowbreak{})\allowbreak{}} 是抽象的（纯虚函数），因此也用倾斜字体。子类 \texttt{Car} 和 \texttt{Truck} 必须实现这些抽象成员函数。带空心三角形的关系箭头指向超类。}
+\myGraphic{0.455}{images/CH04_F12_Mak.png}{图 4.12 类 \texttt{Motor\allowbreak{}Vehicle} 是抽象类，因此其名称用倾斜字体。它的成员函数 \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{} and shut\_\allowbreak{}off\_\allowbreak{}engine(\allowbreak{})\allowbreak{}} 是抽象的（纯虚函数），因此也用倾斜字体。子类 \texttt{Car} 和 \texttt{Truck} 必须实现这些抽象成员函数。带空心三角形的关系箭头指向超类。}
 
 测试程序创建 \texttt{Car} 和 \texttt{Truck} 对象，并分别调用它们继承来的 \texttt{drive()} 成员函数。
 
-\begin{codeboxt}{代码清单 4.8（程序 4.3 VehicleAbstract）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 4.8（程序 4.3 VehicleAbstract）：\texttt{tester.\allowbreak{}cpp}}
 #include "Car.h"
 #include "Truck.h"
 
@@ -423,9 +423,9 @@ vehicle applies brakes
 truck stops engine
 \end{codeboxt}
 
-C++ 接口类是一种只含有抽象（纯虚）成员函数的抽象类。它不含任何成员变量，但可以包含常量。抽象成员函数规定了任何实现该接口的类必须具备的行为，但要由各个类为这些成员函数提供代码来实现这些行为。接口类与抽象类的区别在于它不提供任何默认的成员函数实现。示例中的 \texttt{MotorVehicalInterface} 就是一个接口类。
+C++ 接口类是一种只含有抽象（纯虚）成员函数的抽象类。它不含任何成员变量，但可以包含常量。抽象成员函数规定了任何实现该接口的类必须具备的行为，但要由各个类为这些成员函数提供代码来实现这些行为。接口类与抽象类的区别在于它不提供任何默认的成员函数实现。示例中的 \texttt{Motor\allowbreak{}Vehical\allowbreak{}Interface} 就是一个接口类。
 
-\begin{codeboxt}{代码清单 4.9（程序 4.4 VehicleInterface）：\texttt{MotorVehicleInterface.h}}
+\begin{codeboxt}{代码清单 4.9（程序 4.4 VehicleInterface）：\texttt{Motor\allowbreak{}Vehicle\allowbreak{}Interface.\allowbreak{}h}}
 typedef int Brake;
 typedef int Direction;
 typedef int Engine;
@@ -571,9 +571,9 @@ private:
 };
 \end{codeboxt}
 
-图 4.13 表明，在其 UML 类图中，标签 \texttt{«interface»} 出现在接口名 \texttt{MotorVehicleInterface} 的上方。虚线关系箭头表示类 \texttt{Car} 和 \texttt{Truck} 实现了该接口。在接口的类图中，不需要使用斜体或倾斜字体。
+图 4.13 表明，在其 UML 类图中，标签 \texttt{«interface»} 出现在接口名 \texttt{Motor\allowbreak{}Vehicle\allowbreak{}Interface} 的上方。虚线关系箭头表示类 \texttt{Car} 和 \texttt{Truck} 实现了该接口。在接口的类图中，不需要使用斜体或倾斜字体。
 
-\myGraphic{0.600}{images/CH04_F13_Mak.png}{图 4.13 标签 \texttt{«interface»} 出现在接口 \texttt{MotorVehicleInterface} 的名称上方。它的所有成员函数都是抽象的，且不含任何成员变量。带空心三角形的虚线关系箭头表示子类 \texttt{Car} 和 \texttt{Truck} 实现了该接口，因此它们必须为接口的所有成员函数提供代码。}
+\myGraphic{0.600}{images/CH04_F13_Mak.png}{图 4.13 标签 \texttt{«interface»} 出现在接口 \texttt{Motor\allowbreak{}Vehicle\allowbreak{}Interface} 的名称上方。它的所有成员函数都是抽象的，且不含任何成员变量。带空心三角形的虚线关系箭头表示子类 \texttt{Car} 和 \texttt{Truck} 实现了该接口，因此它们必须为接口的所有成员函数提供代码。}
 
 使用同一个测试程序，输出变为
 
@@ -644,7 +644,7 @@ UML 序列图同样提供动态信息。它在较高层次上展示一个用例�
 
 \myGraphic{0.918}{images/CH04_F17_Mak.png}{图 4.17 一个 UML 序列图示例，用于一个假设的银行应用中客户从银行 ATM 取现的用例}
 
-该用例是客户取现。在这第二个场景中，一位 ATM 客户首先与 \texttt{Console} 对象交互，按下“取款”选项。这一操作通知 \texttt{Display} 对象显示一条确认消息。接着客户与 \texttt{Keypad} 对象交互，输入取款金额。\texttt{Keypad} 对象通知 \texttt{Bank} 对象，与此同时，它还通知 \texttt{Display} 对象显示银行广告。\texttt{Bank} 对象请求 \texttt{CheckingAccount} 对象核实取款金额。如果 \texttt{CheckingAccount} 对象接受该取款，\texttt{Bank} 对象就通知 \texttt{Console} 对象启动出钞。与前面的序列图一样，这张图有助于确保我们正确地分配了成员函数并设计了类关系。
+该用例是客户取现。在这第二个场景中，一位 ATM 客户首先与 \texttt{Console} 对象交互，按下“取款”选项。这一操作通知 \texttt{Display} 对象显示一条确认消息。接着客户与 \texttt{Keypad} 对象交互，输入取款金额。\texttt{Keypad} 对象通知 \texttt{Bank} 对象，与此同时，它还通知 \texttt{Display} 对象显示银行广告。\texttt{Bank} 对象请求 \texttt{Checking\allowbreak{}Account} 对象核实取款金额。如果 \texttt{Checking\allowbreak{}Account} 对象接受该取款，\texttt{Bank} 对象就通知 \texttt{Console} 对象启动出钞。与前面的序列图一样，这张图有助于确保我们正确地分配了成员函数并设计了类关系。
 
 \section{设计规格说明与软件验证}
 

@@ -28,7 +28,7 @@
 \item 表格报告也在比赛结束后生成。它由一张表格组成，展示每位球员在比赛中打出了哪些安打和出局。
 \end{itemize}
 
-生成这些报告的组件应当随着比赛中每个安打事件的发生而接收该事件。这样，类 \texttt{LogReport} 就能在收到每个事件后立即更新其日志报告。类 \texttt{GraphReport} 和 \texttt{TableReport} 必须在事件到达时累积事件数据，并各自在比赛结束后打印报告。发布者组件产生安打事件，订阅者组件消费这些安打事件并打印报告（图 12.1）。
+生成这些报告的组件应当随着比赛中每个安打事件的发生而接收该事件。这样，类 \texttt{LogReport} 就能在收到每个事件后立即更新其日志报告。类 \texttt{Graph\allowbreak{}Report} 和 \texttt{Table\allowbreak{}Report} 必须在事件到达时累积事件数据，并各自在比赛结束后打印报告。发布者组件产生安打事件，订阅者组件消费这些安打事件并打印报告（图 12.1）。
 
 \myGraphic{0.437}{images/CH12_F01_Mak.png}{图 12.1 发布—订阅模型的一个例子。发布者组件产生安打事件，订阅者组件在事件发生时消费它们，以生成各种报告。}
 
@@ -106,17 +106,17 @@ Ivan         3       4
 
 \subsection{12.1.2 使用观察者设计模式之前}
 
-为了测试我们的棒球比赛报告应用的第一个版本（图 12.2），类 \texttt{EventMaker} 使用随机数生成器来产生安打事件。安打事件是由 \texttt{Event} 对象表示的内容，每次调用成员函数 \texttt{next\_event()} 都会创建并返回这样一个对象。每个 \texttt{Event} 对象由一名球员的名字，以及随机生成的一次出局或一次一垒安打、二垒安打、三垒安打或本垒打（分别对应整数值 0、1、2、3 或 4）组成。
+为了测试我们的棒球比赛报告应用的第一个版本（图 12.2），类 \texttt{Event\allowbreak{}Maker} 使用随机数生成器来产生安打事件。安打事件是由 \texttt{Event} 对象表示的内容，每次调用成员函数 \texttt{next\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 都会创建并返回这样一个对象。每个 \texttt{Event} 对象由一名球员的名字，以及随机生成的一次出局或一次一垒安打、二垒安打、三垒安打或本垒打（分别对应整数值 0、1、2、3 或 4）组成。
 
-\myGraphic{0.980}{images/CH12_F02_Mak.png}{图 12.2 棒球比赛报告应用的初始架构。类 \texttt{BaseballReporter} 的成员函数 \texttt{distribute\_content()} 反复调用类 \texttt{EventMaker} 的 \texttt{next\_event()} 成员函数，一次一个地获取新的 \texttt{Event} 对象。该函数把每个 \texttt{Event} 对象传递给各报告类的 \texttt{log\_event()}、\texttt{handle\_event()} 和 \texttt{receive\_event()} 成员函数。每个报告类都可以用自己的方式处理这个 \texttt{Event} 对象。}
+\myGraphic{0.980}{images/CH12_F02_Mak.png}{图 12.2 棒球比赛报告应用的初始架构。类 \texttt{Baseball\allowbreak{}Reporter} 的成员函数 \texttt{distribute\_\allowbreak{}content(\allowbreak{})\allowbreak{}} 反复调用类 \texttt{Event\allowbreak{}Maker} 的 \texttt{next\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数，一次一个地获取新的 \texttt{Event} 对象。该函数把每个 \texttt{Event} 对象传递给各报告类的 \texttt{log\_\allowbreak{}event(\allowbreak{})\allowbreak{}}、\texttt{handle\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 和 \texttt{receive\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数。每个报告类都可以用自己的方式处理这个 \texttt{Event} 对象。}
 
 \myGraphic{0.803}{images/CH12_F02_UN03_Mak.png}{}
 
-类 \texttt{BaseballReporter} 的成员函数 \texttt{distribute\_content()} 反复调用 \texttt{next\_event()}，一次一个地获取作为内容的 \texttt{Event} 对象，直到 27 次出局后比赛结束。该函数把每个 \texttt{Event} 对象传递给类 \texttt{LogReport} 的 \texttt{log\_event()} 成员函数、类 \texttt{GraphReport} 的 \texttt{handle\_event()} 成员函数，以及类 \texttt{TableReport} 的 \texttt{receive\_event()} 成员函数。（唉，这些报告类的开发者们无法就成员函数的命名达成一致。）每个报告类随后可以用自己的方式处理这个 \texttt{Event} 对象。
+类 \texttt{Baseball\allowbreak{}Reporter} 的成员函数 \texttt{distribute\_\allowbreak{}content(\allowbreak{})\allowbreak{}} 反复调用 \texttt{next\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，一次一个地获取作为内容的 \texttt{Event} 对象，直到 27 次出局后比赛结束。该函数把每个 \texttt{Event} 对象传递给类 \texttt{LogReport} 的 \texttt{log\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数、类 \texttt{Graph\allowbreak{}Report} 的 \texttt{handle\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数，以及类 \texttt{Table\allowbreak{}Report} 的 \texttt{receive\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数。（唉，这些报告类的开发者们无法就成员函数的命名达成一致。）每个报告类随后可以用自己的方式处理这个 \texttt{Event} 对象。
 
-类 \texttt{EventMaker} 用随机数生成器生成 \texttt{Event} 对象，以产生球员的一次安打（一垒安打、二垒安打、三垒安打或本垒打）或一次出局，如下面的代码清单所示。
+类 \texttt{Event\allowbreak{}Maker} 用随机数生成器生成 \texttt{Event} 对象，以产生球员的一次安打（一垒安打、二垒安打、三垒安打或本垒打）或一次出局，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 12.1（程序 12.1 Stats）：\texttt{EventMaker.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.1（程序 12.1 Stats）：\texttt{Event\allowbreak{}Maker.\allowbreak{}h}（设计模式之前）}
 #include <string>
 #include <vector>
 #include <random>
@@ -164,9 +164,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 获取下一个 Event 对象。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 随机数生成器}\par
 
-每次调用类 \texttt{EventMaker} 的成员函数 \texttt{next\_event()}，都会返回一个新的 \texttt{Event} 对象，其中包含一名棒球球员的名字以及一次随机的安打或出局。
+每次调用类 \texttt{Event\allowbreak{}Maker} 的成员函数 \texttt{next\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，都会返回一个新的 \texttt{Event} 对象，其中包含一名棒球球员的名字以及一次随机的安打或出局。
 
-\begin{codeboxt}{代码清单 12.2（程序 12.1 Stats）：\texttt{EventMaker.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.2（程序 12.1 Stats）：\texttt{Event\allowbreak{}Maker.\allowbreak{}cpp}（设计模式之前）}
 #include <random>
 #include "EventMaker.h"
 
@@ -191,9 +191,9 @@ Event *EventMaker::next_event()
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 随机生成一次安打（一垒安打、二垒安打、三垒安打或本垒打）或一次出局。}\par
 
-类 \texttt{BaseballReporter} 聚合了类 \texttt{EventMaker}、\texttt{LogReport}、\texttt{GraphReport} 和 \texttt{TableReport}。
+类 \texttt{Baseball\allowbreak{}Reporter} 聚合了类 \texttt{Event\allowbreak{}Maker}、\texttt{LogReport}、\texttt{Graph\allowbreak{}Report} 和 \texttt{Table\allowbreak{}Report}。
 
-\begin{codeboxt}{代码清单 12.3（程序 12.1 Stats）：\texttt{BaseballReporter.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.3（程序 12.1 Stats）：\texttt{Baseball\allowbreak{}Reporter.\allowbreak{}h}（设计模式之前）}
 #include "EventMaker.h"
 #include "LogReport.h"
 #include "GraphReport.h"
@@ -213,9 +213,9 @@ private:
 };
 \end{codeboxt}
 
-成员函数 \texttt{distribute\_content()} 通过调用类 \texttt{EventMaker} 的 \texttt{next\_event()} 成员函数，一次一个地反复获取新的 \texttt{Event} 对象，直到不再有对象为止（已发生 27 次出局）。对于每个 \texttt{Event} 对象，它把该对象传递给各个报告对象相应的成员函数。
+成员函数 \texttt{distribute\_\allowbreak{}content(\allowbreak{})\allowbreak{}} 通过调用类 \texttt{Event\allowbreak{}Maker} 的 \texttt{next\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数，一次一个地反复获取新的 \texttt{Event} 对象，直到不再有对象为止（已发生 27 次出局）。对于每个 \texttt{Event} 对象，它把该对象传递给各个报告对象相应的成员函数。
 
-\begin{codeboxt}{代码清单 12.4（程序 12.1 Stats）：\texttt{BaseballReporter.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.4（程序 12.1 Stats）：\texttt{Baseball\allowbreak{}Reporter.\allowbreak{}cpp}（设计模式之前）}
 #include "BaseballReporter.h"
 #include "EventMaker.h"
 #include "LogReport.h"
@@ -244,9 +244,9 @@ void BaseballReports::distribute_content()
 
 \myGraphic{0.772}{images/CH12_F02_UN04_Mak.png}{}
 
-类 \texttt{LogReport} 的成员函数 \texttt{log\_event()} 获取每个 \texttt{Event} 对象。
+类 \texttt{LogReport} 的成员函数 \texttt{log\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 获取每个 \texttt{Event} 对象。
 
-\begin{codeboxt}{代码清单 12.5（程序 12.1 Stats）：\texttt{LogReport.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.5（程序 12.1 Stats）：\texttt{Log\allowbreak{}Report.\allowbreak{}h}（设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "EventMaker.h"
@@ -270,9 +270,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 获取一个安打 Event 对象。}\par
 
-成员函数 \texttt{log\_event()} 一收到每个 \texttt{Event} 对象，就通过打印其内容立即更新日志报告。
+成员函数 \texttt{log\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 一收到每个 \texttt{Event} 对象，就通过打印其内容立即更新日志报告。
 
-\begin{codeboxt}{代码清单 12.6（程序 12.1 Stats）：\texttt{LogReport.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.6（程序 12.1 Stats）：\texttt{Log\allowbreak{}Report.\allowbreak{}cpp}（设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "LogReport.h"
@@ -303,9 +303,9 @@ void LogReport::log_event(const Event * const event, const int outs)
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 打印日志的一行。}\par
 
-类 \texttt{GraphReport} 的成员函数 \texttt{handle\_event()} 获取每个 \texttt{Event} 对象。它记录出局、一垒安打、二垒安打、三垒安打和本垒打的数量。
+类 \texttt{Graph\allowbreak{}Report} 的成员函数 \texttt{handle\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 获取每个 \texttt{Event} 对象。它记录出局、一垒安打、二垒安打、三垒安打和本垒打的数量。
 
-\begin{codeboxt}{代码清单 12.7（程序 12.1 Stats）：\texttt{GraphReport.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.7（程序 12.1 Stats）：\texttt{Graph\allowbreak{}Report.\allowbreak{}h}（设计模式之前）}
 #include "EventMaker.h"
 
 class GraphReport
@@ -326,9 +326,9 @@ private:
 };
 \end{codeboxt}
 
-成员函数 \texttt{handle\_event()} 通过累计出局、一垒安打、二垒安打、三垒安打和本垒打的数量来处理各个事件。比赛一结束（已发生 27 次出局），成员函数 \texttt{print\_report()} 就打印各项安打计数和一张柱状图。
+成员函数 \texttt{handle\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 通过累计出局、一垒安打、二垒安打、三垒安打和本垒打的数量来处理各个事件。比赛一结束（已发生 27 次出局），成员函数 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 就打印各项安打计数和一张柱状图。
 
-\begin{codeboxt}{代码清单 12.8（程序 12.1 Stats）：\texttt{GraphReport.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.8（程序 12.1 Stats）：\texttt{Graph\allowbreak{}Report.\allowbreak{}cpp}（设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "GraphReport.h"
@@ -379,9 +379,9 @@ void GraphReport::print_bar(const char ch, const int count) const
 }
 \end{codeboxt}
 
-类 \texttt{TableReport} 的成员函数 \texttt{receive\_event()} 获取每个 \texttt{Event} 对象。它记录出局的数量。它用一个 map 记录每位球员在比赛中打出的安打和出局。该 map 以球员名字为键，每个值是一个数组，记录对应球员的出局、一垒安打、二垒安打、三垒安打和本垒打的数量。
+类 \texttt{Table\allowbreak{}Report} 的成员函数 \texttt{receive\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 获取每个 \texttt{Event} 对象。它记录出局的数量。它用一个 map 记录每位球员在比赛中打出的安打和出局。该 map 以球员名字为键，每个值是一个数组，记录对应球员的出局、一垒安打、二垒安打、三垒安打和本垒打的数量。
 
-\begin{codeboxt}{代码清单 12.9（程序 12.1 Stats）：\texttt{TableReport.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.9（程序 12.1 Stats）：\texttt{Table\allowbreak{}Report.\allowbreak{}h}（设计模式之前）}
 #include <string>
 #include <map>
 #include "EventMaker.h"
@@ -400,9 +400,9 @@ private:
 };
 \end{codeboxt}
 
-\texttt{hit\_map} 以球员名字为键，用一个包含五个整数值的数组记录每位球员在比赛中打出的安打类型和数量。这些值分别是该球员打出的出局、一垒安打、二垒安打、三垒安打和本垒打的总数。比赛一结束（已发生 27 次出局），成员函数 \texttt{print\_report()} 就根据该 map 打印一张表格。
+\texttt{hit\_map} 以球员名字为键，用一个包含五个整数值的数组记录每位球员在比赛中打出的安打类型和数量。这些值分别是该球员打出的出局、一垒安打、二垒安打、三垒安打和本垒打的总数。比赛一结束（已发生 27 次出局），成员函数 \texttt{print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 就根据该 map 打印一张表格。
 
-\begin{codeboxt}{代码清单 12.10（程序 12.1 Stats）：\texttt{TableReport.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.10（程序 12.1 Stats）：\texttt{Table\allowbreak{}Report.\allowbreak{}cpp}（设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "TableReport.h"
@@ -456,7 +456,7 @@ void TableReport::print_report()                                 ③
 
 测试程序输出本节开头展示的那三份棒球比赛报告。
 
-\begin{codeboxt}{代码清单 12.11（程序 12.1 Stats）：\texttt{tester.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 12.11（程序 12.1 Stats）：\texttt{tester.\allowbreak{}cpp}（设计模式之前）}
 #include "BaseballReports.h"
 
 int main()
@@ -473,20 +473,20 @@ int main()
 尽管这个版本的应用生成了正确的棒球比赛报告，但它在架构上存在重大问题，包括
 
 \begin{itemize}
-\item \emph{硬编码的订阅者}——类 \texttt{BaseballReporter} 把它生成的三份报告硬编码了。在发布—订阅模型中，添加和移除订阅者应当很容易。
-\item \emph{类之间不是松耦合}——类 \texttt{BaseballReporter} 必须了解每个订阅者是如何实现的。它的成员函数 \texttt{distribute\_content()} 必须知道：日志报告要调用 \texttt{log\_event()}，图表报告要调用 \texttt{handle\_event()}，表格报告要调用 \texttt{receive\_event()}。因此，类 \texttt{BaseballReporter} 与各报告类之间不是松耦合的。
+\item \emph{硬编码的订阅者}——类 \texttt{Baseball\allowbreak{}Reporter} 把它生成的三份报告硬编码了。在发布—订阅模型中，添加和移除订阅者应当很容易。
+\item \emph{类之间不是松耦合}——类 \texttt{Baseball\allowbreak{}Reporter} 必须了解每个订阅者是如何实现的。它的成员函数 \texttt{distribute\_\allowbreak{}content(\allowbreak{})\allowbreak{}} 必须知道：日志报告要调用 \texttt{log\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，图表报告要调用 \texttt{handle\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，表格报告要调用 \texttt{receive\_\allowbreak{}event(\allowbreak{})\allowbreak{}}。因此，类 \texttt{Baseball\allowbreak{}Reporter} 与各报告类之间不是松耦合的。
 \end{itemize}
 
 \subsection{12.1.3 使用观察者设计模式之后}
 
-我们来看看观察者设计模式如何克服这些缺点。该模型定义了超类 \texttt{Subject} 和接口 \texttt{Observer}。其核心思想是：主题（subject）发布或生成内容，而主题的内容可以有多个观察者。因此，在依据该模式建模的应用版本中，\texttt{Event} 内容的发布者、类 \texttt{BaseballReporter}，继承自超类 \texttt{Subject}。内容的每个订阅者——报告类 \texttt{LogReport}、\texttt{GraphReport} 和 \texttt{TableReport}——都实现接口 \texttt{Observer}（图 12.3）。
+我们来看看观察者设计模式如何克服这些缺点。该模型定义了超类 \texttt{Subject} 和接口 \texttt{Observer}。其核心思想是：主题（subject）发布或生成内容，而主题的内容可以有多个观察者。因此，在依据该模式建模的应用版本中，\texttt{Event} 内容的发布者、类 \texttt{Baseball\allowbreak{}Reporter}，继承自超类 \texttt{Subject}。内容的每个订阅者——报告类 \texttt{LogReport}、\texttt{Graph\allowbreak{}Report} 和 \texttt{Table\allowbreak{}Report}——都实现接口 \texttt{Observer}（图 12.3）。
 
 \begin{mySidebar}{观察者设计模式}
 
 “定义对象间的一种一对多依赖关系，使得当一个对象改变状态时，其所有依赖者都会得到通知并被自动更新”（GoF 293）。
 \end{mySidebar}
 
-\myGraphic{0.980}{images/CH12_F03_Mak.png}{图 12.3 这个版本的应用是依据观察者设计模式建模的。内容发布者 \texttt{BaseballReporter} 是 \texttt{Subject} 的子类，每个报告类都实现接口 \texttt{Observer}。类 \texttt{Subject} 的成员变量 \texttt{observers} 是一个已订阅观察者的 vector。每当 \texttt{BaseballReporter} 使用 \texttt{EventManager} 创建一个新的 \texttt{Event} 对象时，它就把私有的成员变量 \texttt{current\_event} 指向该对象。接着它调用超类 \texttt{Subject} 的 \texttt{notify()} 成员函数，后者遍历 \texttt{observers} vector，并调用每个已订阅订阅者的 \texttt{update()} 成员函数。每个订阅者随后可以决定是否调用成员函数 \texttt{get\_current\_event()} 来获取当前的 \texttt{Event} 对象。图中以灰色显示的部分与图 12.2 相比在逻辑上没有变化。}
+\myGraphic{0.980}{images/CH12_F03_Mak.png}{图 12.3 这个版本的应用是依据观察者设计模式建模的。内容发布者 \texttt{Baseball\allowbreak{}Reporter} 是 \texttt{Subject} 的子类，每个报告类都实现接口 \texttt{Observer}。类 \texttt{Subject} 的成员变量 \texttt{observers} 是一个已订阅观察者的 vector。每当 \texttt{Baseball\allowbreak{}Reporter} 使用 \texttt{Event\allowbreak{}Manager} 创建一个新的 \texttt{Event} 对象时，它就把私有的成员变量 \texttt{current\_\allowbreak{}event} 指向该对象。接着它调用超类 \texttt{Subject} 的 \texttt{notify()} 成员函数，后者遍历 \texttt{observers} vector，并调用每个已订阅订阅者的 \texttt{update()} 成员函数。每个订阅者随后可以决定是否调用成员函数 \texttt{get\_\allowbreak{}current\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 来获取当前的 \texttt{Event} 对象。图中以灰色显示的部分与图 12.2 相比在逻辑上没有变化。}
 
 超类 \texttt{Subject} 的成员变量 \texttt{observers} 是一个 \texttt{Observer} 对象的 vector，用于跟踪当前的订阅者。
 
@@ -512,7 +512,7 @@ private:
 
 每个实现 \texttt{Observer} 接口的报告类都必须实现成员函数 \texttt{update()}。
 
-\begin{codeboxt}{代码清单 12.13（程序 12.2 Stats-ObserverDP）：\texttt{Observer.h}}
+\begin{codeboxt}{代码清单 12.13（程序 12.2 Stats-ObserverDP）：\texttt{Observer.\allowbreak{}h}}
 #include <string>
 
 using namespace std;
@@ -528,7 +528,7 @@ public:
 
 一个 \texttt{Observer} 对象（在我们的示例应用中即一个订阅者对象）可以通过调用超类 \texttt{Subject}（发布者）的 \texttt{attach()} 成员函数，把自身加入后者的 \texttt{observers} vector，也可以通过调用 \texttt{detach()} 把自身从该 vector 中移除。每当出现新的 \texttt{Event} 对象时，成员函数 \texttt{notify()} 就会遍历 vector 中的 \texttt{Observer} 对象，并利用多态调用每一个对象的 \texttt{update()} 成员函数。因此，每当出现新的 \texttt{Event} 对象时，每个订阅者都会收到通知。这是对面向接口编程原则（2.3.3 节）的一次运用。
 
-\begin{codeboxt}{代码清单 12.14（程序 12.2 Stats-ObserverDP）：\texttt{Subject.cpp}}
+\begin{codeboxt}{代码清单 12.14（程序 12.2 Stats-ObserverDP）：\texttt{Subject.\allowbreak{}cpp}}
 #include <string>
 #include <vector>
 #include "Observer.h"
@@ -560,11 +560,11 @@ void Subject::notify(const string name, const int outs) const
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 通过调用每个 Observer 对象（订阅者）的 update() 成员函数来通知它。}\par
 
-类 \texttt{Event} 和 \texttt{EventMaker} 与程序 12.1 相比没有变化。
+类 \texttt{Event} 和 \texttt{Event\allowbreak{}Maker} 与程序 12.1 相比没有变化。
 
-类 \texttt{BaseballReporter} 是发布者，因此它是 \texttt{Subject} 的子类。当一个已订阅的报告对象收到新事件的通知后，如果它对该内容感兴趣，就可以调用 \texttt{get\_current\_event()} 成员函数来获取指向该 \texttt{Event} 对象的指针，如下面的代码清单所示。和之前一样，每个订阅者都可以用自己的方式处理该事件。
+类 \texttt{Baseball\allowbreak{}Reporter} 是发布者，因此它是 \texttt{Subject} 的子类。当一个已订阅的报告对象收到新事件的通知后，如果它对该内容感兴趣，就可以调用 \texttt{get\_\allowbreak{}current\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数来获取指向该 \texttt{Event} 对象的指针，如下面的代码清单所示。和之前一样，每个订阅者都可以用自己的方式处理该事件。
 
-\begin{codeboxt}{代码清单 12.15（程序 12.2 Stats-ObserverDP）：\texttt{BaseballReporter.h}}
+\begin{codeboxt}{代码清单 12.15（程序 12.2 Stats-ObserverDP）：\texttt{Baseball\allowbreak{}Reporter.\allowbreak{}h}}
 #include "Subject.h"
 #include "EventMaker.h"
 
@@ -581,9 +581,9 @@ private:
 };
 \end{codeboxt}
 
-为了测试，与程序 12.1 一样，成员函数 \texttt{distribute\_content()} 通过调用类 \texttt{EventMaker} 的 \texttt{next\_event()} 成员函数，一次一个地反复获取新的 \texttt{Event} 对象，直到不再有对象为止（已发生 27 次出局）。在这个版本中，成员变量 \texttt{current\_event} 保存指向最新 \texttt{Event} 对象的指针。对超类成员函数 \texttt{notify()} 的一次调用，会把新内容通知给每个已订阅的报告对象。
+为了测试，与程序 12.1 一样，成员函数 \texttt{distribute\_\allowbreak{}content(\allowbreak{})\allowbreak{}} 通过调用类 \texttt{Event\allowbreak{}Maker} 的 \texttt{next\_\allowbreak{}event(\allowbreak{})\allowbreak{}} 成员函数，一次一个地反复获取新的 \texttt{Event} 对象，直到不再有对象为止（已发生 27 次出局）。在这个版本中，成员变量 \texttt{current\_\allowbreak{}event} 保存指向最新 \texttt{Event} 对象的指针。对超类成员函数 \texttt{notify()} 的一次调用，会把新内容通知给每个已订阅的报告对象。
 
-\begin{codeboxt}{代码清单 12.16（程序 12.2 Stats-ObserverDP）：\texttt{BaseballReporter.cpp}}
+\begin{codeboxt}{代码清单 12.16（程序 12.2 Stats-ObserverDP）：\texttt{Baseball\allowbreak{}Reporter.\allowbreak{}cpp}}
 #include "BaseballReporter.h"
 #include "EventMaker.h"
 
@@ -605,9 +605,9 @@ void BaseballReporter::distribute_content()
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 创建一个新的随机安打事件。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 通知所有已订阅的报告对象。}\par
 
-订阅者类 \texttt{LogReport} 实现接口 \texttt{Observer}，因此它实现了成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{BaseballReporter} 对象，并把该订阅者对象注册到发布者 \texttt{BaseballReporter}。
+订阅者类 \texttt{LogReport} 实现接口 \texttt{Observer}，因此它实现了成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{Baseball\allowbreak{}Reporter} 对象，并把该订阅者对象注册到发布者 \texttt{Baseball\allowbreak{}Reporter}。
 
-\begin{codeboxt}{代码清单 12.17（程序 12.2 Stats-ObserverDP）：\texttt{LogReport.h}}
+\begin{codeboxt}{代码清单 12.17（程序 12.2 Stats-ObserverDP）：\texttt{Log\allowbreak{}Report.\allowbreak{}h}}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -636,9 +636,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 通过向发布者 BaseballReporter 注册来订阅。}\par
 
-每当订阅者 \texttt{LogReport} 对象收到新到达内容的通知时，成员函数 \texttt{update()} 就调用类 \texttt{BaseballReporter} 的成员函数 \texttt{get\_current\_event()}，获取指向该 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{log\_event()}（代码清单 12.6）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象打印一行实时日志，如下面的代码清单所示。
+每当订阅者 \texttt{LogReport} 对象收到新到达内容的通知时，成员函数 \texttt{update()} 就调用类 \texttt{Baseball\allowbreak{}Reporter} 的成员函数 \texttt{get\_\allowbreak{}current\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，获取指向该 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{log\_\allowbreak{}event(\allowbreak{})\allowbreak{}}（代码清单 12.6）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象打印一行实时日志，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 12.18（程序 12.2 Stats-ObserverDP）：\texttt{LogReport.cpp}}
+\begin{codeboxt}{代码清单 12.18（程序 12.2 Stats-ObserverDP）：\texttt{Log\allowbreak{}Report.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -661,11 +661,11 @@ void LogReport::update(const string name, const int outs)
 
 成员函数 \texttt{update()} 的参数 \texttt{name} 是产生新内容的球员名字。它充当标题，函数可以用它来决定是否获取该内容。参数 \texttt{outs} 是到目前为止的出局数——27 次出局，比赛就结束了。
 
-在这个示例程序中，\texttt{update()} 完全可以有一个指向当前 \texttt{Event} 对象的指针参数；这样就不必调用类 \texttt{BaseballReporter} 的成员函数 \texttt{get\_current\_event()}。但我们想演示“选择是否获取内容”这一做法。在实际应用中，如果内容是一大批数据，而我们在不需要它时不想获取它，那么能够选择就很重要。后来引入的一个新订阅者 \texttt{FanClubReport} 就利用了这种选择能力。
+在这个示例程序中，\texttt{update()} 完全可以有一个指向当前 \texttt{Event} 对象的指针参数；这样就不必调用类 \texttt{Baseball\allowbreak{}Reporter} 的成员函数 \texttt{get\_\allowbreak{}current\_\allowbreak{}event(\allowbreak{})\allowbreak{}}。但我们想演示“选择是否获取内容”这一做法。在实际应用中，如果内容是一大批数据，而我们在不需要它时不想获取它，那么能够选择就很重要。后来引入的一个新订阅者 \texttt{Fan\allowbreak{}Club\allowbreak{}Report} 就利用了这种选择能力。
 
-订阅者类 \texttt{GraphReport} 也实现接口 \texttt{Observer}，并实现成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{BaseballReporter} 对象，并把该订阅者对象注册到发布者 \texttt{BaseballReporter}。
+订阅者类 \texttt{Graph\allowbreak{}Report} 也实现接口 \texttt{Observer}，并实现成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{Baseball\allowbreak{}Reporter} 对象，并把该订阅者对象注册到发布者 \texttt{Baseball\allowbreak{}Reporter}。
 
-\begin{codeboxt}{代码清单 12.19（程序 12.2 Stats-ObserverDP）：\texttt{GraphReport.h}}
+\begin{codeboxt}{代码清单 12.19（程序 12.2 Stats-ObserverDP）：\texttt{Graph\allowbreak{}Report.\allowbreak{}h}}
 #include <string>
 #include "Observer.h"
 #include "BaseballReporter.h"
@@ -693,9 +693,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 通过向发布者 BaseballReporter 注册来订阅。}\par
 
-每当 \texttt{GraphReport} 对象收到新到达内容的通知时，成员函数 \texttt{update()} 就调用类 \texttt{BaseballReporter} 的成员函数 \texttt{get\_current\_event()}，获取指向该 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{handle\_event()}（代码清单 12.8）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象累计安打数，如下面的代码清单所示。
+每当 \texttt{Graph\allowbreak{}Report} 对象收到新到达内容的通知时，成员函数 \texttt{update()} 就调用类 \texttt{Baseball\allowbreak{}Reporter} 的成员函数 \texttt{get\_\allowbreak{}current\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，获取指向该 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{handle\_\allowbreak{}event(\allowbreak{})\allowbreak{}}（代码清单 12.8）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象累计安打数，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 12.20（程序 12.2 Stats-ObserverDP）：\texttt{GraphReport.cpp}}
+\begin{codeboxt}{代码清单 12.20（程序 12.2 Stats-ObserverDP）：\texttt{Graph\allowbreak{}Report.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "EventMaker.h"
@@ -713,9 +713,9 @@ void GraphReport::update(const string name, const int outs)
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 获取新到达的 Event 对象。}\par
 
-最后，订阅者类 \texttt{TableReport} 是接口 \texttt{Observer} 的另一个实现者，它实现成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{BaseballReporter} 对象，并把该订阅者对象注册到发布者 \texttt{BaseballReporter}。
+最后，订阅者类 \texttt{Table\allowbreak{}Report} 是接口 \texttt{Observer} 的另一个实现者，它实现成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{Baseball\allowbreak{}Reporter} 对象，并把该订阅者对象注册到发布者 \texttt{Baseball\allowbreak{}Reporter}。
 
-\begin{codeboxt}{代码清单 12.21（程序 12.2 Stats-ObserverDP）：\texttt{TableReport.h}}
+\begin{codeboxt}{代码清单 12.21（程序 12.2 Stats-ObserverDP）：\texttt{Table\allowbreak{}Report.\allowbreak{}h}}
 #include <string>
 #include <map>
 #include "Observer.h"
@@ -741,9 +741,9 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 通过向发布者 BaseballReporter 注册来订阅。}\par
 
-成员函数 \texttt{update()} 调用类 \texttt{EventMaker} 的成员函数 \texttt{get\_current\_event()}，获取指向新到达的 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{receive\_event()}（代码清单 12.10）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象来构建 hit map，如下面的代码清单所示。
+成员函数 \texttt{update()} 调用类 \texttt{Event\allowbreak{}Maker} 的成员函数 \texttt{get\_\allowbreak{}current\_\allowbreak{}event(\allowbreak{})\allowbreak{}}，获取指向新到达的 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{receive\_\allowbreak{}event(\allowbreak{})\allowbreak{}}（代码清单 12.10）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象来构建 hit map，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 12.22（程序 12.2 Stats-ObserverDP）：\texttt{TableReport.cpp}}
+\begin{codeboxt}{代码清单 12.22（程序 12.2 Stats-ObserverDP）：\texttt{Table\allowbreak{}Report.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -762,9 +762,9 @@ void TableReport::update(const string name, const int outs)
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 获取新到达的 Event 对象。}\par
 
-为了演示添加新订阅者有多么容易，类 \texttt{FanClubReport} 打印一份关于其中一名球员——即该俱乐部的偶像——表现的简短报告。
+为了演示添加新订阅者有多么容易，类 \texttt{Fan\allowbreak{}Club\allowbreak{}Report} 打印一份关于其中一名球员——即该俱乐部的偶像——表现的简短报告。
 
-\begin{codeboxt}{代码清单 12.23（程序 12.2 Stats-ObserverDP）：\texttt{FanClubReport.h}}
+\begin{codeboxt}{代码清单 12.23（程序 12.2 Stats-ObserverDP）：\texttt{Fan\allowbreak{}Club\allowbreak{}Report.\allowbreak{}h}}
 #include <string>
 #include "Observer.h"
 #include "BaseballReporter.h"
@@ -790,9 +790,9 @@ private:
 };
 \end{codeboxt}
 
-该类的 \texttt{update()} 成员函数只获取并处理名字与俱乐部偶像名字相匹配的那名球员的内容。它只打印该偶像的第一次尝试。在获取那次尝试的内容后，\texttt{FanClubReport} 对象就通过把自己从 \texttt{BaseballReporter} 对象上解绑来退订。此后它就不再接收更新通知了。
+该类的 \texttt{update()} 成员函数只获取并处理名字与俱乐部偶像名字相匹配的那名球员的内容。它只打印该偶像的第一次尝试。在获取那次尝试的内容后，\texttt{Fan\allowbreak{}Club\allowbreak{}Report} 对象就通过把自己从 \texttt{Baseball\allowbreak{}Reporter} 对象上解绑来退订。此后它就不再接收更新通知了。
 
-\begin{codeboxt}{代码清单 12.24（程序 12.2 Stats-ObserverDP）：\texttt{FanClubReport.cpp}}
+\begin{codeboxt}{代码清单 12.24（程序 12.2 Stats-ObserverDP）：\texttt{Fan\allowbreak{}Club\allowbreak{}Report.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -842,9 +842,9 @@ FANCLUB BULLETIN
 The first attempt by George resulted in an out.
 \end{codebox}
 
-测试程序创建一个发布者 \texttt{BaseballReporter} 对象，并把它传给每个订阅者报告类的构造函数。每个构造函数都把该订阅者挂接到发布者上。然后，程序调用类 \texttt{BaseballReporter} 的成员函数 \texttt{distribute\_content()}，开始产生随机 \texttt{Event} 对象流。这将生成三份与本节开头所示类似的棒球比赛报告。
+测试程序创建一个发布者 \texttt{Baseball\allowbreak{}Reporter} 对象，并把它传给每个订阅者报告类的构造函数。每个构造函数都把该订阅者挂接到发布者上。然后，程序调用类 \texttt{Baseball\allowbreak{}Reporter} 的成员函数 \texttt{distribute\_\allowbreak{}content(\allowbreak{})\allowbreak{}}，开始产生随机 \texttt{Event} 对象流。这将生成三份与本节开头所示类似的棒球比赛报告。
 
-\begin{codeboxt}{代码清单 12.25（程序 12.2 Stats-ObserverDP）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 12.25（程序 12.2 Stats-ObserverDP）：\texttt{tester.\allowbreak{}cpp}}
 #include "BaseballReporter.h"
 #include "LogReport.h"
 #include "GraphReport.h"
@@ -872,10 +872,10 @@ int main()
 使用观察者设计模式为棒球比赛报告应用的架构建模，给我们带来了几项重要的好处：
 
 \begin{itemize}
-\item \emph{更少硬编码}——发布者类 \texttt{BaseballReporter} 不再硬编码棒球比赛报告。我们可以在运行时向类 \texttt{Subject} 的 \texttt{observers} vector 中添加新的订阅者报告对象，或从中移除已有的报告对象。
+\item \emph{更少硬编码}——发布者类 \texttt{Baseball\allowbreak{}Reporter} 不再硬编码棒球比赛报告。我们可以在运行时向类 \texttt{Subject} 的 \texttt{observers} vector 中添加新的订阅者报告对象，或从中移除已有的报告对象。
 \item \emph{代码更灵活}——创建新的 \texttt{Observer} 子类或删除我们不再需要的子类都会很容易。这支持封装变化原则（2.3.2 节）。
-\item \emph{松耦合的类}——发布者类 \texttt{BaseballReporter} 只知道它的每个订阅者都实现接口 \texttt{Observer}，因而都有一个 \texttt{update()} 成员函数。除此之外，它并不了解每个订阅者是如何实现的。这支持最少知识原则（2.3.2 节），因此发布者类 \texttt{BaseballReporter} 与各个报告类之间是松耦合的。
-\item \emph{单一职责}——每当新的 \texttt{Event} 对象到达时，每个订阅者报告对象都可以选择处理该对象，或完全忽略该事件。每个订阅者都只负责以自己方式生成报告。发布者类 \texttt{BaseballReporter} 只负责生成 \texttt{Event} 对象，它不知道也不关心订阅者如何处理这些事件。类 \texttt{BaseballReporter} 和各订阅者报告类都支持单一职责原则（2.3 节）。
+\item \emph{松耦合的类}——发布者类 \texttt{Baseball\allowbreak{}Reporter} 只知道它的每个订阅者都实现接口 \texttt{Observer}，因而都有一个 \texttt{update()} 成员函数。除此之外，它并不了解每个订阅者是如何实现的。这支持最少知识原则（2.3.2 节），因此发布者类 \texttt{Baseball\allowbreak{}Reporter} 与各个报告类之间是松耦合的。
+\item \emph{单一职责}——每当新的 \texttt{Event} 对象到达时，每个订阅者报告对象都可以选择处理该对象，或完全忽略该事件。每个订阅者都只负责以自己方式生成报告。发布者类 \texttt{Baseball\allowbreak{}Reporter} 只负责生成 \texttt{Event} 对象，它不知道也不关心订阅者如何处理这些事件。类 \texttt{Baseball\allowbreak{}Reporter} 和各订阅者报告类都支持单一职责原则（2.3 节）。
 \end{itemize}
 
 \myGraphic{0.810}{images/CH12_F03_UN07_Mak.png}{}
@@ -884,7 +884,7 @@ int main()
 
 图 12.4 展示了观察者设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
 
-\myGraphic{0.742}{images/CH12_F04_Mak.png}{图 12.4 观察者设计模式的通用模型。可与图 12.3 对照。在运行时，我们可以向发布者 \texttt{Subject} 类的 \texttt{Observer} 对象集合中添加订阅者 \texttt{Observer} 对象，或从中移除它们。每当一个 \texttt{ExemplarSubject} 改变状态时，\texttt{Subject} 类的 \texttt{notify()} 成员函数就遍历 \texttt{observers} 集合，并调用每个 \texttt{ConcreteObserver} 对象的成员函数 \texttt{update()}。每个 \texttt{ConcreteObject} 随后可以选择调用 \texttt{ExemplarSubject} 类的 \texttt{get\_state()} 成员函数来获取新状态。}
+\myGraphic{0.742}{images/CH12_F04_Mak.png}{图 12.4 观察者设计模式的通用模型。可与图 12.3 对照。在运行时，我们可以向发布者 \texttt{Subject} 类的 \texttt{Observer} 对象集合中添加订阅者 \texttt{Observer} 对象，或从中移除它们。每当一个 \texttt{Exemplar\allowbreak{}Subject} 改变状态时，\texttt{Subject} 类的 \texttt{notify()} 成员函数就遍历 \texttt{observers} 集合，并调用每个 \texttt{Concrete\allowbreak{}Observer} 对象的成员函数 \texttt{update()}。每个 \texttt{Concrete\allowbreak{}Object} 随后可以选择调用 \texttt{Exemplar\allowbreak{}Subject} 类的 \texttt{get\_\allowbreak{}state(\allowbreak{})\allowbreak{}} 成员函数来获取新状态。}
 
 表 12.1 展示了示例应用如何应用该模式。
 
@@ -894,10 +894,10 @@ int main()
 \toprule
 设计模式 & 示例应用中的对应项 \\
 \midrule
-子类 \texttt{ExemplarSubject} & 子类 \texttt{BaseballReporter} \\
+子类 \texttt{Exemplar\allowbreak{}Subject} & 子类 \texttt{Baseball\allowbreak{}Reporter} \\
 \texttt{observers} 集合 & \texttt{vector<Observer *> observers} 在类 \texttt{Subject} 中 \\
 类 \texttt{State} & 类 \texttt{Event} \\
-子类 \texttt{ConcreteObserver} & 类 \texttt{LogReport}、\texttt{GraphReport}\texttt{,} 和 \texttt{TableReport} \\
+子类 \texttt{Concrete\allowbreak{}Observer} & 类 \texttt{LogReport}、\texttt{Graph\allowbreak{}Report}\texttt{,} 和 \texttt{Table\allowbreak{}Report} \\
 \bottomrule
 \end{tabularx}
 \end{center}

@@ -87,7 +87,7 @@ TEAM 3
 
 对于我们的示例球队报告应用的第一个版本而言，采用三个 \texttt{Team} 子类来生成球员名单（每种集合形式对应一个子类，见图 11.1），并且为每种集合形式提供一个重载的 \texttt{print()} 成员函数，这样的架构并非不合理。
 
-\myGraphic{0.980}{images/CH11_F01_Mak.png}{图 11.1 每个 \texttt{Team} 子类都将其 \texttt{Player} 对象存储在不同类型的顺序集合中，即数组、vector 或 map。因此，类 \texttt{TeamReport} 有三个重载的 \texttt{print()} 成员函数，每种集合类型各一个。}
+\myGraphic{0.980}{images/CH11_F01_Mak.png}{图 11.1 每个 \texttt{Team} 子类都将其 \texttt{Player} 对象存储在不同类型的顺序集合中，即数组、vector 或 map。因此，类 \texttt{Team\allowbreak{}Report} 有三个重载的 \texttt{print()} 成员函数，每种集合类型各一个。}
 
 类 \texttt{Player} 包含每位球员的学号、姓和名。一支棒球队由九名球员组成，因此为简单起见，我们将集合大小硬编码为九。
 
@@ -234,9 +234,9 @@ Team_3::Team_3() : Team("TEAM 3")   ③
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 录入到 vector 中。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 录入到 map 中。}\par
 
-由于球队球员有三种不同类型的顺序集合，类 \texttt{TeamReport} 有三个重载的 \texttt{print()} 成员函数来打印这些名单。
+由于球队球员有三种不同类型的顺序集合，类 \texttt{Team\allowbreak{}Report} 有三个重载的 \texttt{print()} 成员函数来打印这些名单。
 
-\begin{codeboxt}{代码清单 11.4（程序 11.1 Players）：\texttt{TeamReport.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 11.4（程序 11.1 Players）：\texttt{Team\allowbreak{}Report.\allowbreak{}h}（使用设计模式之前）}
 #include "Team.h"
 
 using namespace std;
@@ -252,7 +252,7 @@ public:
 
 每个 \texttt{print()} 成员函数都必须以适合数组、vector 或 map 的方式，遍历其 \texttt{Player} 对象的顺序集合。
 
-\begin{codeboxt}{代码清单 11.5（程序 11.1 Players）：\texttt{TeamReport.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 11.5（程序 11.1 Players）：\texttt{Team\allowbreak{}Report.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include "Player.h"
 #include "TeamReport.h"
@@ -311,7 +311,7 @@ void TeamReport::print(Team_3& team) const
 
 一个测试程序会打印本节开头给出的那组示例名单。
 
-\begin{codeboxt}{代码清单 11.6（程序 11.1 Players）：\texttt{tester.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 11.6（程序 11.1 Players）：\texttt{tester.\allowbreak{}cpp}（使用设计模式之前）}
 #include "TeamReport.h"
 #include "Team.h"
 
@@ -334,33 +334,33 @@ int main()
 
 \myGraphic{0.886}{images/CH11_F01_UN04_Mak.png}{}
 
-这个版本的名单应用存在若干设计问题，尤其是在类 \texttt{TeamReport} 中：
+这个版本的名单应用存在若干设计问题，尤其是在类 \texttt{Team\allowbreak{}Report} 中：
 
 \begin{itemize}
 \item \emph{重复的代码}——每个重载的 \texttt{print()} 成员函数都必须依据集合的形式，以不同方式遍历其 \texttt{Player} 对象的顺序集合。如果有更多的球队和用于存储球员的顺序集合（比如链表或树），这个问题会变得更加严重。
-\item \emph{类之间未松耦合}——每个重载的 \texttt{print()} 函数都必须知道 \texttt{Player} 对象是如何存储的，才能正确遍历其顺序集合。因此，类 \texttt{TeamReport} 与其 \texttt{Team} 子类之间并未松耦合。
+\item \emph{类之间未松耦合}——每个重载的 \texttt{print()} 函数都必须知道 \texttt{Player} 对象是如何存储的，才能正确遍历其顺序集合。因此，类 \texttt{Team\allowbreak{}Report} 与其 \texttt{Team} 子类之间并未松耦合。
 \end{itemize}
 
 \subsection{11.1.3 使用迭代器设计模式之后}
 
-这是一个迭代器设计模式能够帮助解决的架构问题。核心思路是让客户端代码（我们应用中的类 \texttt{TeamReport}）把遍历不同形式的 \texttt{Player} 对象顺序集合这一任务，委托给各个迭代器类。每个迭代器类都知道如何遍历某种特定形式的序列，并且能够提供对 \texttt{Player} 对象的访问，而无需向客户端代码暴露这些对象是如何存储的。
+这是一个迭代器设计模式能够帮助解决的架构问题。核心思路是让客户端代码（我们应用中的类 \texttt{Team\allowbreak{}Report}）把遍历不同形式的 \texttt{Player} 对象顺序集合这一任务，委托给各个迭代器类。每个迭代器类都知道如何遍历某种特定形式的序列，并且能够提供对 \texttt{Player} 对象的访问，而无需向客户端代码暴露这些对象是如何存储的。
 
 \begin{mySidebar}{迭代器设计模式}
 
 “提供一种顺序访问聚合对象各元素的方法，而无需暴露其底层表示”（GoF 257）。
 \end{mySidebar}
 
-迭代器设计模式使类 \texttt{TeamReport} 能与 \texttt{Team} 子类松耦合。每个子类不再拥有一个 \texttt{ge}\texttt{t}\texttt{\_}\texttt{players()} 成员函数来直接访问其 \texttt{Player} 对象的顺序集合。因此，每个子类都可以隐藏它实现集合的方式。取而代之的是，每个子类拥有一个 \texttt{create\_iterator()} 成员函数，用来创建一个 \texttt{Iterator} 对象，该对象知道如何遍历该子类中的 \texttt{Player} 对象集合。
+迭代器设计模式使类 \texttt{Team\allowbreak{}Report} 能与 \texttt{Team} 子类松耦合。每个子类不再拥有一个 \texttt{ge}\texttt{t}\texttt{\_}\texttt{players()} 成员函数来直接访问其 \texttt{Player} 对象的顺序集合。因此，每个子类都可以隐藏它实现集合的方式。取而代之的是，每个子类拥有一个 \texttt{create\_\allowbreak{}iterator(\allowbreak{})\allowbreak{}} 成员函数，用来创建一个 \texttt{Iterator} 对象，该对象知道如何遍历该子类中的 \texttt{Player} 对象集合。
 
-类 \texttt{TeamReport} 让各个 \texttt{Iterator} 子类来完成遍历 \texttt{Player} 对象序列的工作。每种形式的顺序集合都有一个 \texttt{Iterator} 子类。因此，类 \texttt{TeamReport} 无需知道每个 \texttt{Team} 子类是如何实现其顺序集合的（图 11.2）。
+类 \texttt{Team\allowbreak{}Report} 让各个 \texttt{Iterator} 子类来完成遍历 \texttt{Player} 对象序列的工作。每种形式的顺序集合都有一个 \texttt{Iterator} 子类。因此，类 \texttt{Team\allowbreak{}Report} 无需知道每个 \texttt{Team} 子类是如何实现其顺序集合的（图 11.2）。
 
 \myGraphic{0.847}{images/CH11_F01_UN05_Mak.png}{}
 
-\texttt{Iterator} 超类声明了两个纯虚成员函数：\texttt{next()} 和 \texttt{has\_next()}。它的每个子类都有一个私有的 \texttt{cursor} 成员变量，用于跟踪其序列中当前的 \texttt{Player} 对象。依据顺序集合的类型，游标可以是数组下标、vector 迭代器或 map 迭代器。每个子类构造函数都会将其游标初始化为序列的开头。\texttt{next()} 成员函数返回游标处的 \texttt{Player} 对象（即当前元素），并将游标推进到下一个元素。\texttt{has\_next()} 成员函数在还有更多元素时返回 true，在游标已越过序列末尾时返回 false（代码清单 11.7）。
+\texttt{Iterator} 超类声明了两个纯虚成员函数：\texttt{next()} 和 \texttt{has\_\allowbreak{}next(\allowbreak{})\allowbreak{}}。它的每个子类都有一个私有的 \texttt{cursor} 成员变量，用于跟踪其序列中当前的 \texttt{Player} 对象。依据顺序集合的类型，游标可以是数组下标、vector 迭代器或 map 迭代器。每个子类构造函数都会将其游标初始化为序列的开头。\texttt{next()} 成员函数返回游标处的 \texttt{Player} 对象（即当前元素），并将游标推进到下一个元素。\texttt{has\_\allowbreak{}next(\allowbreak{})\allowbreak{}} 成员函数在还有更多元素时返回 true，在游标已越过序列末尾时返回 false（代码清单 11.7）。
 
-\myGraphic{0.980}{images/CH11_F02_Mak.png}{图 11.2 每个 \texttt{Team} 子类都创建一个适合其 \texttt{Player} 对象顺序集合的迭代器。类 \texttt{TeamReport} 将遍历各种形式的顺序集合的工作委托给各个 \texttt{Iterator} 子类。每个 \texttt{Iterator} 子类都知道如何遍历其形式的顺序集合，并拥有一个私有的 \texttt{cursor} 成员变量来跟踪当前的 \texttt{Player} 对象。类 \texttt{TeamReport} 不知道每个 \texttt{Team} 子类如何存储其 \texttt{Player} 对象序列，因此它与 \texttt{Team} 子类松耦合。图中灰色部分相较图 11.1 在逻辑上没有变化。}
+\myGraphic{0.980}{images/CH11_F02_Mak.png}{图 11.2 每个 \texttt{Team} 子类都创建一个适合其 \texttt{Player} 对象顺序集合的迭代器。类 \texttt{Team\allowbreak{}Report} 将遍历各种形式的顺序集合的工作委托给各个 \texttt{Iterator} 子类。每个 \texttt{Iterator} 子类都知道如何遍历其形式的顺序集合，并拥有一个私有的 \texttt{cursor} 成员变量来跟踪当前的 \texttt{Player} 对象。类 \texttt{Team\allowbreak{}Report} 不知道每个 \texttt{Team} 子类如何存储其 \texttt{Player} 对象序列，因此它与 \texttt{Team} 子类松耦合。图中灰色部分相较图 11.1 在逻辑上没有变化。}
 
-\begin{codeboxt}{代码清单 11.7（程序 11.2 Players-IteratorDP）：\texttt{Iterator.h}}
+\begin{codeboxt}{代码清单 11.7（程序 11.2 Players-IteratorDP）：\texttt{Iterator.\allowbreak{}h}}
 #include "Player.h"
 
 class Iterator
@@ -517,9 +517,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 创建并返回一个 vector 迭代器。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 创建并返回一个 map 迭代器。}\par
 
-我们可以把类 \texttt{TeamReport} 精简到只剩一个 \texttt{print()} 成员函数。
+我们可以把类 \texttt{Team\allowbreak{}Report} 精简到只剩一个 \texttt{print()} 成员函数。
 
-\begin{codeboxt}{代码清单 11.9（程序 11.2 Players-IteratorDP）：\texttt{TeamReport.h}}
+\begin{codeboxt}{代码清单 11.9（程序 11.2 Players-IteratorDP）：\texttt{Team\allowbreak{}Report.\allowbreak{}h}}
 #include "Team.h"
 
 class TeamReport
@@ -529,9 +529,9 @@ public:
 };
 \end{codeboxt}
 
-现在，类 \texttt{TeamReport} 将遍历不同 \texttt{Player} 对象顺序集合的任务委托给各个 \texttt{Iterator} 子类。因此，它的成员函数 \texttt{print()} 的实现变得简单得多，如下一代码清单所示。对 \texttt{create\_iterator()} 的调用依赖多态，为球队的 \texttt{Player} 对象顺序集合创建并返回合适的 \texttt{Iterator} 对象。
+现在，类 \texttt{Team\allowbreak{}Report} 将遍历不同 \texttt{Player} 对象顺序集合的任务委托给各个 \texttt{Iterator} 子类。因此，它的成员函数 \texttt{print()} 的实现变得简单得多，如下一代码清单所示。对 \texttt{create\_\allowbreak{}iterator(\allowbreak{})\allowbreak{}} 的调用依赖多态，为球队的 \texttt{Player} 对象顺序集合创建并返回合适的 \texttt{Iterator} 对象。
 
-\begin{codeboxt}{代码清单 11.10（程序 11.2 Players-IteratorDP）：\texttt{TeamReport.cpp}}
+\begin{codeboxt}{代码清单 11.10（程序 11.2 Players-IteratorDP）：\texttt{Team\allowbreak{}Report.\allowbreak{}cpp}}
 #include <iostream>
 #include "Player.h"
 #include "Team.h"
@@ -566,8 +566,8 @@ void TeamReport::print(Team& team)
 使用迭代器设计模式带来了若干重要好处：
 
 \begin{itemize}
-\item \emph{委托遍历}——类 \texttt{TeamReport} 将遍历顺序集合的工作委托给各个 \texttt{Iterator} 子类，这是委托原则（2.3.2 节）的一个应用。
-\item \emph{类之间松耦合}——类 \texttt{TeamReport} 不再需要知道每个 \texttt{Team} 子类如何实现其顺序集合，这是最少知识原则（2.3.2 节）的一个应用。因此，类 \texttt{TeamReport} 与 \texttt{Team} 子类松耦合。
+\item \emph{委托遍历}——类 \texttt{Team\allowbreak{}Report} 将遍历顺序集合的工作委托给各个 \texttt{Iterator} 子类，这是委托原则（2.3.2 节）的一个应用。
+\item \emph{类之间松耦合}——类 \texttt{Team\allowbreak{}Report} 不再需要知道每个 \texttt{Team} 子类如何实现其顺序集合，这是最少知识原则（2.3.2 节）的一个应用。因此，类 \texttt{Team\allowbreak{}Report} 与 \texttt{Team} 子类松耦合。
 \item \emph{封装的遍历算法}——各个 \texttt{Iterator} 子类封装了用于遍历各种形式顺序集合的不同算法，这是封装变化原则（2.3.2 节）的一个应用。
 \item \emph{减少的代码重复}——遍历算法不再重复，这是不要重复自己原则（2.3.3 节）的一个应用。
 \item \emph{可共享的遍历算法}——在相似的顺序集合之间共享这些算法，或为其他集合添加新算法，都将变得很容易。
@@ -585,11 +585,11 @@ void TeamReport::print(Team& team)
 \toprule
 设计模式 & 示例应用中的应用 \\
 \midrule
-类 \texttt{Client} & 类 \texttt{TeamReport} \\
-超类 \texttt{SequentialCollection} & 超类 \texttt{Team} \\
+类 \texttt{Client} & 类 \texttt{Team\allowbreak{}Report} \\
+超类 \texttt{Sequential\allowbreak{}Collection} & 超类 \texttt{Team} \\
 具体顺序集合 & 子类 \texttt{Team\_1}、\texttt{Team\_2} 和 \texttt{Team\_3} \\
 超类 \texttt{Iterator} & 超类 \texttt{Iterator} \\
-具体迭代器 & \texttt{ArrayIterator}、\texttt{VectorIterator} 和 \texttt{MapIterator} \\
+具体迭代器 & \texttt{Array\allowbreak{}Iterator}、\texttt{Vector\allowbreak{}Iterator} 和 \texttt{Map\allowbreak{}Iterator} \\
 项 & \texttt{Player} 对象 \\
 \bottomrule
 \end{tabularx}
@@ -597,7 +597,7 @@ void TeamReport::print(Team& team)
 
 \begin{mySidebar}{C++ 迭代器}
 
-我们对迭代器设计模式的实现在部分 \texttt{Iterator} 子类中使用了 C++ 原生迭代器（代码清单 11.7），即 \texttt{vector<Player *>::\allowbreak{}iterator} 和 \texttt{map<long,\allowbreak{} Player *>::\allowbreak{}iterator}。C++ 原生迭代器并不完全符合迭代器设计模式。它们没有迭代器超类，因此无法运用面向接口编程原则，编写一个像成员函数 \texttt{TeamReport::print()} 那样（代码清单 11.10）在运行时利用多态获取合适迭代器的函数。如果我们需要借助多态来遍历不同的顺序集合，迭代器设计模式可以作为 C++ 迭代器的良好包装。
+我们对迭代器设计模式的实现在部分 \texttt{Iterator} 子类中使用了 C++ 原生迭代器（代码清单 11.7），即 \texttt{vector<Player *>::\allowbreak{}iterator} 和 \texttt{map<long,\allowbreak{} Player *>::\allowbreak{}iterator}。C++ 原生迭代器并不完全符合迭代器设计模式。它们没有迭代器超类，因此无法运用面向接口编程原则，编写一个像成员函数 \texttt{Team\allowbreak{}Report::\allowbreak{}print(\allowbreak{})\allowbreak{}} 那样（代码清单 11.10）在运行时利用多态获取合适迭代器的函数。如果我们需要借助多态来遍历不同的顺序集合，迭代器设计模式可以作为 C++ 迭代器的良好包装。
 \end{mySidebar}
 
 \section{访问者设计模式封装了作用于数据集合的不同算法}
@@ -675,7 +675,7 @@ WINNINGS REPORT
 
 \myGraphic{0.980}{images/CH11_F06_Mak.png}{图 11.6 校内体育报告应用第一个版本的四个主要类。为实现层次化树结构，除 \texttt{Hall} 之外的每个类都聚合层次结构中紧邻其下的那个类。每个类都有成员变量和成员函数，用来实现生成报告的算法。\texttt{Intramural} 类的 \texttt{Hall} 对象 vector 不属于该层次结构。}
 
-类 \texttt{Intramural} 有私有成员变量 \texttt{sports}，它是树数据结构下一层的 \texttt{Sport} 对象 vector。它还有私有成员变量 \texttt{halls}，一个用于跟踪所有宿舍楼的 vector。我们不能简单地依赖让所有 \texttt{Hall} 对象都被 \texttt{Game} 对象唯一指向，因为一个宿舍楼可能参加不止一场（或零场）比赛。类 \texttt{Sport} 有私有成员 \texttt{games}，它是树下一层中该运动的 \texttt{Game} 对象 vector。类 \texttt{Game} 有私有成员变量 \texttt{winner} 和 \texttt{loser}，它们分别指向表示获胜和落败宿舍楼的 \texttt{Hall} 对象，位于树的最底层。它还有私有成员变量 \texttt{winner\_points} 和 \texttt{loser\_points}。
+类 \texttt{Intramural} 有私有成员变量 \texttt{sports}，它是树数据结构下一层的 \texttt{Sport} 对象 vector。它还有私有成员变量 \texttt{halls}，一个用于跟踪所有宿舍楼的 vector。我们不能简单地依赖让所有 \texttt{Hall} 对象都被 \texttt{Game} 对象唯一指向，因为一个宿舍楼可能参加不止一场（或零场）比赛。类 \texttt{Sport} 有私有成员 \texttt{games}，它是树下一层中该运动的 \texttt{Game} 对象 vector。类 \texttt{Game} 有私有成员变量 \texttt{winner} 和 \texttt{loser}，它们分别指向表示获胜和落败宿舍楼的 \texttt{Hall} 对象，位于树的最底层。它还有私有成员变量 \texttt{winner\_\allowbreak{}points} 和 \texttt{loser\_\allowbreak{}points}。
 
 两个枚举类提供了枚举常量。每个类都有一个重载的 \texttt{<<} 输出运算符，用于生成报告。
 
@@ -714,7 +714,7 @@ inline ostream& operator <<(ostream& ostr, const HallName& hall)
 }
 \end{codeboxt}
 
-每个 \texttt{Hall} 对象代表一个宿舍楼。它的私有 \texttt{win\_count} 成员变量记录该宿舍楼赢得比赛的次数。这个数字会为每个宿舍楼出现在获胜报告中。
+每个 \texttt{Hall} 对象代表一个宿舍楼。它的私有 \texttt{win\_\allowbreak{}count} 成员变量记录该宿舍楼赢得比赛的次数。这个数字会为每个宿舍楼出现在获胜报告中。
 
 \begin{codeboxt}{代码清单 11.12（程序 11.3 Results）：\texttt{Hall.h}（使用设计模式之前）}
 #include "Enums.h"
@@ -737,7 +737,7 @@ private:
 };
 \end{codeboxt}
 
-成员函数 \texttt{print\_win\_count()} 打印获胜报告中的一行。例如，它可以打印
+成员函数 \texttt{print\_\allowbreak{}win\_\allowbreak{}count(\allowbreak{})\allowbreak{}} 打印获胜报告中的一行。例如，它可以打印
 
 \begin{codebox}
 North Hall won 2 game(s)
@@ -756,7 +756,7 @@ void Hall::print_win_count() const       ①
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 打印获胜报告中的一行。}\par
 
-每个 \texttt{Game} 对象代表两个宿舍楼之间进行的一场校内比赛。它的两个私有成员变量 \texttt{winner} 和 \texttt{loser} 分别指向代表赢得和输掉该比赛的宿舍楼的对象。成员变量 \texttt{winner\_points} 和 \texttt{loser\_points} 分别是获胜者和落败者的比赛得分。
+每个 \texttt{Game} 对象代表两个宿舍楼之间进行的一场校内比赛。它的两个私有成员变量 \texttt{winner} 和 \texttt{loser} 分别指向代表赢得和输掉该比赛的宿舍楼的对象。成员变量 \texttt{winner\_\allowbreak{}points} 和 \texttt{loser\_\allowbreak{}points} 分别是获胜者和落败者的比赛得分。
 
 \begin{codeboxt}{代码清单 11.14（程序 11.3 Results）：\texttt{Game.h}（使用设计模式之前）}
 #include "Hall.h"
@@ -786,7 +786,7 @@ private:
 };
 \end{codeboxt}
 
-成员函数 \texttt{print\_game\_score()} 打印单场比赛的结果，作为得分报告的一部分。例如，它可以打印
+成员函数 \texttt{print\_\allowbreak{}game\_\allowbreak{}score(\allowbreak{})\allowbreak{}} 打印单场比赛的结果，作为得分报告的一部分。例如，它可以打印
 
 \begin{codebox}
 West Hall beat East Hall 5 to 3
@@ -836,7 +836,7 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 该运动已进行比赛的 vector。}\par
 
-成员函数 \texttt{print\_game\_scores()} 打印运动类型，然后遍历 \texttt{games} vector，打印该类型所有比赛的得分。这部分输出是得分报告的一部分（代码清单 11.17）。例如，该函数可以打印
+成员函数 \texttt{print\_\allowbreak{}game\_\allowbreak{}scores(\allowbreak{})\allowbreak{}} 打印运动类型，然后遍历 \texttt{games} vector，打印该类型所有比赛的得分。这部分输出是得分报告的一部分（代码清单 11.17）。例如，该函数可以打印
 
 \begin{codebox}
   volleyball
@@ -845,7 +845,7 @@ private:
     South Hall beat  West Hall 15 to 14
 \end{codebox}
 
-成员函数 \texttt{print\_game\_count()} 打印该运动类型已进行的比赛场数。这个计数会出现在活动报告的一行中。例如，
+成员函数 \texttt{print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} 打印该运动类型已进行的比赛场数。这个计数会出现在活动报告的一行中。例如，
 
 \begin{codebox}
     baseball: 2 game(s)
@@ -875,9 +875,9 @@ void Sport::print_game_count() const      ②
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 打印该运动的比赛得分，作为得分报告的一部分。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 打印活动报告中的一行。}\par
 
-类 \texttt{Intramural} 是树的根。私有成员变量 \texttt{sports} 和 \texttt{halls} 是分别用于跟踪运动和宿舍楼的 vector。成员函数 \texttt{add\_sport()} 和 \texttt{add\_hall()} 将 \texttt{Sport} 和 \texttt{Hall} 对象追加到这些 vector 中。
+类 \texttt{Intramural} 是树的根。私有成员变量 \texttt{sports} 和 \texttt{halls} 是分别用于跟踪运动和宿舍楼的 vector。成员函数 \texttt{add\_\allowbreak{}sport(\allowbreak{})\allowbreak{}} 和 \texttt{add\_\allowbreak{}hall(\allowbreak{})\allowbreak{}} 将 \texttt{Sport} 和 \texttt{Hall} 对象追加到这些 vector 中。
 
-\begin{codeboxt}{代码清单 11.18（程序 11.3 Results）：\texttt{Intramural.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 11.18（程序 11.3 Results）：\texttt{Intramural.\allowbreak{}h}（使用设计模式之前）}
 #include <map>
 #include "Sport.h"
 #include "Hall.h"
@@ -907,12 +907,12 @@ private:
 类 \texttt{Intramural} 的公有打印成员函数生成这三份校内体育报告（代码清单 11.19）：
 
 \begin{itemize}
-\item \emph{得分报告}——成员函数 \texttt{print\_scores\_report()} 遍历各个 \texttt{Sport} 对象，并对每个对象调用成员函数 \texttt{print\_game\_scores()}。
-\item \emph{活动报告}——成员函数 \texttt{print\_\allowbreak{}activities\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Sport} 对象，并对每个对象调用成员函数 \texttt{print\_game\_count()}。
-\item \emph{获胜报告}——成员函数 \texttt{print\_\allowbreak{}winnings\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Hall} 对象，并对每个对象调用成员函数 \texttt{print\_win\_count()}。
+\item \emph{得分报告}——成员函数 \texttt{print\_\allowbreak{}scores\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Sport} 对象，并对每个对象调用成员函数 \texttt{print\_\allowbreak{}game\_\allowbreak{}scores(\allowbreak{})\allowbreak{}}。
+\item \emph{活动报告}——成员函数 \texttt{print\_\allowbreak{}activities\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Sport} 对象，并对每个对象调用成员函数 \texttt{print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}}。
+\item \emph{获胜报告}——成员函数 \texttt{print\_\allowbreak{}winnings\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Hall} 对象，并对每个对象调用成员函数 \texttt{print\_\allowbreak{}win\_\allowbreak{}count(\allowbreak{})\allowbreak{}}。
 \end{itemize}
 
-\begin{codeboxt}{代码清单 11.19（程序 11.3 Results）：\texttt{Intramural.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 11.19（程序 11.3 Results）：\texttt{Intramural.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "Sport.h"
@@ -945,9 +945,9 @@ void Intramural::print_winnings_report() const
 
 \myGraphic{0.439}{images/CH11_F07_Mak.png}{图 11.7 生成每一份报告都必须在主要类的成员函数之间形成一条调用链。}
 
-为了生成示例数据，测试程序首先调用函数 \texttt{build\_tree()}，该函数以硬编码方式构建一棵树数据结构并返回指向树根的指针。然后，程序调用根 \texttt{Intramural} 节点的成员函数，打印这三份校内比赛报告。
+为了生成示例数据，测试程序首先调用函数 \texttt{build\_\allowbreak{}tree(\allowbreak{})\allowbreak{}}，该函数以硬编码方式构建一棵树数据结构并返回指向树根的指针。然后，程序调用根 \texttt{Intramural} 节点的成员函数，打印这三份校内比赛报告。
 
-\begin{codeboxt}{代码清单 11.20（程序 11.3 Results）：\texttt{tester.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 11.20（程序 11.3 Results）：\texttt{tester.\allowbreak{}cpp}（使用设计模式之前）}
 #include "Enums.h"
 #include "Intramural.h"
 #include "Sport.h"
@@ -1019,18 +1019,18 @@ Intramural *build_tree()
 
 \section{使用访问者设计模式之后}
 
-访问者设计模式消除了这些缺陷。它为我们这个示例校内比赛报告应用建模了一种软件架构，将用于生成报告的算法代码与维护树结构数据集合的代码分离开来。我们的应用将有三个 \texttt{Visitor} 类，每个类封装一个报告生成算法。\texttt{Visitor} 是一个接口，每个实现该接口的类都必须实现访问不同类型树节点的成员函数，以执行该类的算法（图 11.8）。在我们的示例中，这三个 \texttt{Visitor} 类是 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor}。它们分别实现生成得分报告、活动报告和获胜报告的算法。我们将能够修改或添加新的 \texttt{Visitor} 类及其算法，而不会影响数据集合。
+访问者设计模式消除了这些缺陷。它为我们这个示例校内比赛报告应用建模了一种软件架构，将用于生成报告的算法代码与维护树结构数据集合的代码分离开来。我们的应用将有三个 \texttt{Visitor} 类，每个类封装一个报告生成算法。\texttt{Visitor} 是一个接口，每个实现该接口的类都必须实现访问不同类型树节点的成员函数，以执行该类的算法（图 11.8）。在我们的示例中，这三个 \texttt{Visitor} 类是 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor}、\texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 和 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor}。它们分别实现生成得分报告、活动报告和获胜报告的算法。我们将能够修改或添加新的 \texttt{Visitor} 类及其算法，而不会影响数据集合。
 
 \begin{mySidebar}{访问者设计模式}
 
 “表示一个作用于某对象结构各元素的操作。访问者使你可以在不改变各元素的类的前提下，定义作用于这些元素的新操作”（GoF 331）。
 \end{mySidebar}
 
-\myGraphic{0.980}{images/CH11_F08_Mak.png}{图 11.8 相较图 11.6 在逻辑上没有变化的部分以灰色显示。与之前的图一样，数据集合的树节点是类 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 的对象。现在，每个树节点类都实现接口 \texttt{Node}，并拥有成员函数 \texttt{accept()} 来接受一个 \texttt{Visitor} 对象。三个 \texttt{Visitor} 类 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} 各自实现接口 \texttt{Visitor} 并封装一个报告生成算法。每个 \texttt{Visitor} 类都有访问树节点的成员函数，每种节点类型对应一个访问函数。}
+\myGraphic{0.980}{images/CH11_F08_Mak.png}{图 11.8 相较图 11.6 在逻辑上没有变化的部分以灰色显示。与之前的图一样，数据集合的树节点是类 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 的对象。现在，每个树节点类都实现接口 \texttt{Node}，并拥有成员函数 \texttt{accept()} 来接受一个 \texttt{Visitor} 对象。三个 \texttt{Visitor} 类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor}、\texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 和 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 各自实现接口 \texttt{Visitor} 并封装一个报告生成算法。每个 \texttt{Visitor} 类都有访问树节点的成员函数，每种节点类型对应一个访问函数。}
 
-每个 \texttt{Visitor} 类都实现 Visitor 接口并封装生成某份特定报告的算法。类 \texttt{ScoresReportVisitor} 实现生成得分报告的算法。类似地，类 \texttt{ActivitiesReportVisitor} 实现生成活动报告的算法。最后，类 \texttt{WinningsReportVisitor} 实现生成获胜报告的算法。
+每个 \texttt{Visitor} 类都实现 Visitor 接口并封装生成某份特定报告的算法。类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor} 实现生成得分报告的算法。类似地，类 \texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 实现生成活动报告的算法。最后，类 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 实现生成获胜报告的算法。
 
-每个 \texttt{Visitor} 类都有成员函数 \texttt{visit\_Intramural()}、\texttt{visit\_Sport()}、\texttt{visit\_Game()} 和 \texttt{visit\_Hall()}，它们分别访问树数据结构中的 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 节点。
+每个 \texttt{Visitor} 类都有成员函数 \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}}、\texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}}、\texttt{visit\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} 和 \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}}，它们分别访问树数据结构中的 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 节点。
 
 \begin{codeboxt}{代码清单 11.21（程序 11.4 Results-VisitorDP）：\texttt{Visitor.h}}
 #include <map>
@@ -1103,9 +1103,9 @@ public:
 
 每个 \texttt{Node} 类都必须实现成员函数 \texttt{accept()}，它接受任意 \texttt{Visitor} 对象。为接受访问，节点会利用多态调用该访问者中适合此节点类型的访问成员函数。
 
-\texttt{accept()} 函数使应用能够在运行时把某种类型的节点（如 \texttt{Intramural,}）绑定到某种类型的访问者（如 \texttt{ScoresReportVisitor}）。在 \texttt{Intramural} 节点接受一个 \texttt{ScoresReportVisitor} 访问者之后，该节点会调用访问者的 \texttt{visit\_Intramural()} 成员函数（代码清单 11.23）。通过把指向自身的指针（\texttt{this}）传递给访问者的成员函数，节点让访问者可以访问该节点的公有成员函数。随后，访问者便可以利用该节点及其成员函数执行生成得分报告的算法。这个 \texttt{accept()} 函数还会遍历树中的 \texttt{Sport} 和 \texttt{Hall} 对象，让这些对象中的每一个都接受该访问者。该函数向各个 \texttt{Visitor} 类隐藏了数据集合的实现。
+\texttt{accept()} 函数使应用能够在运行时把某种类型的节点（如 \texttt{Intramural,\allowbreak{}}）绑定到某种类型的访问者（如 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor}）。在 \texttt{Intramural} 节点接受一个 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor} 访问者之后，该节点会调用访问者的 \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} 成员函数（代码清单 11.23）。通过把指向自身的指针（\texttt{this}）传递给访问者的成员函数，节点让访问者可以访问该节点的公有成员函数。随后，访问者便可以利用该节点及其成员函数执行生成得分报告的算法。这个 \texttt{accept()} 函数还会遍历树中的 \texttt{Sport} 和 \texttt{Hall} 对象，让这些对象中的每一个都接受该访问者。该函数向各个 \texttt{Visitor} 类隐藏了数据集合的实现。
 
-\begin{codeboxt}{代码清单 11.23（程序 11.4 Results-VisitorDP）：\texttt{Intramural.h}}
+\begin{codeboxt}{代码清单 11.23（程序 11.4 Results-VisitorDP）：\texttt{Intramural.\allowbreak{}h}}
 #include <vector>
 #include "Node.h"
 #include "Sport.h"
@@ -1142,9 +1142,9 @@ private:
 
 \myGraphic{0.980}{images/CH11_F08_UN10_Mak.png}{}
 
-类似地，\texttt{Node} 类 \texttt{Sport} 实现成员函数 \texttt{accept()}，它接着利用多态确定要调用哪个 \texttt{Visitor} 类的 \texttt{visit\_Sport()} 成员函数（代码清单 11.24）。它会遍历各个 \texttt{Game} 对象，让每一个都接受该访问者。
+类似地，\texttt{Node} 类 \texttt{Sport} 实现成员函数 \texttt{accept()}，它接着利用多态确定要调用哪个 \texttt{Visitor} 类的 \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} 成员函数（代码清单 11.24）。它会遍历各个 \texttt{Game} 对象，让每一个都接受该访问者。
 
-由于 \texttt{accept()} 函数把指向节点的指针（\texttt{this}）传递给了访问者的 \texttt{visit\_Sport()} 成员函数，该访问函数可以调用节点的公有 \texttt{get\_type()} 和 \texttt{get\_games\_count()} 成员函数。
+由于 \texttt{accept()} 函数把指向节点的指针（\texttt{this}）传递给了访问者的 \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} 成员函数，该访问函数可以调用节点的公有 \texttt{get\_\allowbreak{}type(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}games\_\allowbreak{}count(\allowbreak{})\allowbreak{}} 成员函数。
 
 \begin{codeboxt}{代码清单 11.24（程序 11.4 Results-VisitorDP）：\texttt{Sport.h}}
 #include <vector>
@@ -1180,7 +1180,7 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态确定要调用哪个 Visitor 类的 visit\_Sport() 成员函数。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 让每个 Game 对象接受该访问者。}\par
 
-\texttt{Node} 类 \texttt{Game} 同样如此。\texttt{Game} 节点有公有成员函数 \texttt{get\_winner()}、\texttt{get\_loser()}、\texttt{get\_winner\_points()} 和 \texttt{get\_loser\_points()}，访问者的 \texttt{visit\_Game()} 成员函数可以调用它们。
+\texttt{Node} 类 \texttt{Game} 同样如此。\texttt{Game} 节点有公有成员函数 \texttt{get\_\allowbreak{}winner(\allowbreak{})\allowbreak{}}、\texttt{get\_\allowbreak{}loser(\allowbreak{})\allowbreak{}}、\texttt{get\_\allowbreak{}winner\_\allowbreak{}points(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}loser\_\allowbreak{}points(\allowbreak{})\allowbreak{}}，访问者的 \texttt{visit\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} 成员函数可以调用它们。
 
 \begin{codeboxt}{代码清单 11.25（程序 11.4 Results-VisitorDP）：\texttt{Game.h}}
 #include "Node.h"
@@ -1221,7 +1221,7 @@ private:
 
 \myGraphic{0.850}{images/CH11_F08_UN11_Mak.png}{}
 
-至于 \texttt{Node} 类 \texttt{Hall}，它有公有成员函数 \texttt{get\_name()} 和 \texttt{get\_win\_count()}，访问者的 \texttt{visit\_Hall()} 成员函数可以调用它们。
+至于 \texttt{Node} 类 \texttt{Hall}，它有公有成员函数 \texttt{get\_\allowbreak{}name(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}win\_\allowbreak{}count(\allowbreak{})\allowbreak{}}，访问者的 \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}} 成员函数可以调用它们。
 
 \begin{codeboxt}{代码清单 11.26（程序 11.4 Results-VisitorDP）：\texttt{Hall.h}}
 #include "Enums.h"
@@ -1250,31 +1250,31 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态确定要调用哪个 Visitor 类的 visit\_Hall() 成员函数。}\par
 
-在我们这个版本的体育报告应用中，\texttt{Visitor} 类 \texttt{ScoresReportVisitor} 封装了原本分散在 \texttt{Intramural}、\texttt{Sport} 和 \texttt{Game} 各类中用于生成报告的全部代码（表 11.2）。
+在我们这个版本的体育报告应用中，\texttt{Visitor} 类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor} 封装了原本分散在 \texttt{Intramural}、\texttt{Sport} 和 \texttt{Game} 各类中用于生成报告的全部代码（表 11.2）。
 
 \begin{center}
-{\bfseries 表 11.2 \texttt{Visitor} 类 \texttt{ScoresReportVisitor} 封装了生成得分报告的算法。}\par\vspace{3bp}
+{\bfseries 表 11.2 \texttt{Visitor} 类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor} 封装了生成得分报告的算法。}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 第一个版本 & 使用 ScoresReportVisitor 类的版本 \\
 \midrule
-\texttt{Intramural::\allowbreak{}print\_\allowbreak{}scores\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_Intramural()} \\
-\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}scores(\allowbreak{})\allowbreak{}} & \texttt{visit\_Sport()} \\
-\texttt{Game::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}score(\allowbreak{})\allowbreak{}} & \texttt{visit\_Game()} \\
+\texttt{Intramural::\allowbreak{}print\_\allowbreak{}scores\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} \\
+\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}scores(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} \\
+\texttt{Game::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}score(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-子类 \texttt{ScoresReportVisitor} 的各个访问成员函数封装了生成得分报告的算法（代码清单 11.27）：
+子类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor} 的各个访问成员函数封装了生成得分报告的算法（代码清单 11.27）：
 
 \begin{enumerate}
-\item 成员函数 \texttt{visit\_Intramural()} 打印报告标题 \texttt{SCORES REPORT}。
-\item 成员函数 \texttt{visit\_Sport()} 打印运动类型的名称。
-\item 成员函数 \texttt{visit\_Game()} 打印一场比赛的结果。
-\item 成员函数 \texttt{visit\_Hall()} 不执行任何操作。
+\item 成员函数 \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} 打印报告标题 \texttt{SCORES REPORT}。
+\item 成员函数 \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} 打印运动类型的名称。
+\item 成员函数 \texttt{visit\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} 打印一场比赛的结果。
+\item 成员函数 \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}} 不执行任何操作。
 \end{enumerate}
 
-\begin{codeboxt}{代码清单 11.27（程序 11.4 Results-VisitorDP）：\texttt{ScoresReportVisitor.cpp}}
+\begin{codeboxt}{代码清单 11.27（程序 11.4 Results-VisitorDP）：\texttt{Scores\allowbreak{}Report\allowbreak{}Visitor.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "Enums.h"
@@ -1316,30 +1316,30 @@ void ScoresReportVisitor::visit_Hall(Hall *hall)
 
 \myGraphic{0.907}{images/CH11_F08_UN12_Mak.png}{}
 
-\texttt{Visitor} 类 \texttt{ActivitiesReportVisitor} 的各个访问成员函数封装了原本驻留在 \texttt{Intramural} 和 \texttt{Sport} 类中用于生成体育报告的全部代码（表 11.3）。
+\texttt{Visitor} 类 \texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 的各个访问成员函数封装了原本驻留在 \texttt{Intramural} 和 \texttt{Sport} 类中用于生成体育报告的全部代码（表 11.3）。
 
 \begin{center}
-{\bfseries 表 11.3 \texttt{Visitor} 类 \texttt{ActivitiesReportVisitor} 封装了生成活动报告的算法。}\par\vspace{3bp}
+{\bfseries 表 11.3 \texttt{Visitor} 类 \texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 封装了生成活动报告的算法。}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 第一个版本 & 使用 ActivitiesReportVisitor 类的版本 \\
 \midrule
-\texttt{Intramural::\allowbreak{}print\_\allowbreak{}activities\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_Intramural()} \\
-\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} & \texttt{visit\_Sport()} \\
+\texttt{Intramural::\allowbreak{}print\_\allowbreak{}activities\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} \\
+\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-子类 \texttt{ActivitiesReportVisitor} 的各个访问成员函数实现了生成体育报告的算法（代码清单 11.28）。
+子类 \texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 的各个访问成员函数实现了生成体育报告的算法（代码清单 11.28）。
 
 \begin{enumerate}
-\item 成员函数 \texttt{visit\_Intramural()} 打印报告标题 \texttt{ACTIVITIES REPORT}。
-\item 成员函数 \texttt{visit\_Sport()} 打印该运动类型的比赛场数。
-\item 成员函数 \texttt{visit\_Game()} 不执行任何操作。
-\item 成员函数 \texttt{visit\_Hall()} 不执行任何操作。
+\item 成员函数 \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} 打印报告标题 \texttt{ACTIVITIES REPORT}。
+\item 成员函数 \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} 打印该运动类型的比赛场数。
+\item 成员函数 \texttt{visit\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} 不执行任何操作。
+\item 成员函数 \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}} 不执行任何操作。
 \end{enumerate}
 
-\begin{codeboxt}{代码清单 11.28（程序 11.4 Results-VisitorDP）：\texttt{ActivitiesReportVisitor.\allowbreak{}cpp}}
+\begin{codeboxt}{代码清单 11.28（程序 11.4 Results-VisitorDP）：\texttt{Activities\allowbreak{}Report\allowbreak{}Visitor.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "Enums.h"
@@ -1371,30 +1371,30 @@ void ActivitiesReportVisitor::visit_Hall(Hall *hall)
 }
 \end{codeboxt}
 
-\texttt{Visitor} 类 \texttt{WinningsReportVisitor} 的各个访问成员函数封装了原本驻留在 \texttt{Intramural} 和 \texttt{Sport} 类中用于生成获胜报告的全部代码（表 11.4）。
+\texttt{Visitor} 类 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 的各个访问成员函数封装了原本驻留在 \texttt{Intramural} 和 \texttt{Sport} 类中用于生成获胜报告的全部代码（表 11.4）。
 
 \begin{center}
-{\bfseries 表 11.4 \texttt{Visitor} 类 \texttt{WinningsReportVisitor} 封装了生成获胜报告的算法。}\par\vspace{3bp}
+{\bfseries 表 11.4 \texttt{Visitor} 类 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 封装了生成获胜报告的算法。}\par\vspace{3bp}
 \begin{tabularx}{\textwidth}{XX}
 \toprule
 第一个版本 & 使用 WinningsReportVisitor 类的版本 \\
 \midrule
-\texttt{Intramural::\allowbreak{}print\_\allowbreak{}halls\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_Intramural()} \\
-\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} & \texttt{visit\_Hall()} \\
+\texttt{Intramural::\allowbreak{}print\_\allowbreak{}halls\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} \\
+\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} & \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
-子类 \texttt{WinningsReportVisitor} 的各个访问成员函数实现了生成宿舍楼报告的算法（代码清单 11.29）：
+子类 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 的各个访问成员函数实现了生成宿舍楼报告的算法（代码清单 11.29）：
 
 \begin{enumerate}
-\item 成员函数 \texttt{visit\_Intramural()} 打印报告标题 \texttt{WINNINGS REPORT}。
-\item 成员函数 \texttt{visit\_Sport()} 不执行任何操作。
-\item 成员函数 \texttt{visit\_Game()} 不执行任何操作。
-\item 成员函数 \texttt{visit\_Hall()} 打印某个宿舍楼的获胜次数。
+\item 成员函数 \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}} 打印报告标题 \texttt{WINNINGS REPORT}。
+\item 成员函数 \texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}} 不执行任何操作。
+\item 成员函数 \texttt{visit\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} 不执行任何操作。
+\item 成员函数 \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}} 打印某个宿舍楼的获胜次数。
 \end{enumerate}
 
-\begin{codeboxt}{代码清单 11.29（程序 11.4 Results-VisitorDP）：\texttt{WinningsReportVisitor.\allowbreak{}cpp}}
+\begin{codeboxt}{代码清单 11.29（程序 11.4 Results-VisitorDP）：\texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "Enums.h"
@@ -1428,9 +1428,9 @@ void WinningsReportVisitor::visit_Hall(Hall *hall)
 
 \myGraphic{0.828}{images/CH11_F08_UN13_Mak.png}{}
 
-构建好示例树数据结构之后，测试程序创建 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} 对象。然后，它通过让 \texttt{intramural\_node}（树根）依次接受每个访问者对象来生成每一份报告。
+构建好示例树数据结构之后，测试程序创建 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor}、\texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 和 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 对象。然后，它通过让 \texttt{intramural\_\allowbreak{}node}（树根）依次接受每个访问者对象来生成每一份报告。
 
-\begin{codeboxt}{代码清单 11.30（程序 11.4 Results-VisitorDP）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 11.30（程序 11.4 Results-VisitorDP）：\texttt{tester.\allowbreak{}cpp}}
 #include "Intramural.h"
 #include "Sport.h"
 #include "Game.h"
@@ -1497,7 +1497,7 @@ Intramural *build_tree()
 使用访问者设计模式为我们这个校内比赛报告应用第二个版本的架构建模，其关键好处包括
 
 \begin{itemize}
-\item \emph{封装的算法}——用于生成并打印比赛报告（Games Report）、体育报告（Sports Report）和宿舍楼报告（Residence Halls Report）的算法分别封装在 \texttt{Visitor} 类 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} 中。这就是封装变化原则（2.3.2 节）。将有可能在修改、删除某个报告算法或添加新算法时，不影响其他类。
+\item \emph{封装的算法}——用于生成并打印比赛报告（Games Report）、体育报告（Sports Report）和宿舍楼报告（Residence Halls Report）的算法分别封装在 \texttt{Visitor} 类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor}、\texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 和 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} 中。这就是封装变化原则（2.3.2 节）。将有可能在修改、删除某个报告算法或添加新算法时，不影响其他类。
 \item \emph{职责单一的类}——\texttt{Node} 类 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 只负责维护树数据结构。\texttt{Visitor} 类只负责生成报告。这就是单一职责原则（2.3 节）。
 \item \emph{松耦合}——树数据结构与报告生成算法之间松耦合，各个算法之间也松耦合。\texttt{Node} 类不知道报告生成算法是什么，也不知道它们由 \texttt{Visitor} 类如何实现。这就是最少知识原则（2.3.2 节）。我们将能够在修改、删除算法或添加新算法时，不修改数据结构或已有的算法。
 \end{itemize}
@@ -1517,10 +1517,10 @@ Intramural *build_tree()
 设计模式 & 示例应用中的应用 \\
 \midrule
 超类 \texttt{Element} & 接口 \texttt{Node} \\
-子类 \texttt{ConcreteElementA} 等 & 类 \texttt{Intramural}\texttt{,} \texttt{Sport}\texttt{,} \texttt{Game} 和 \texttt{Hall} \\
+子类 \texttt{Concrete\allowbreak{}Element\allowbreak{}A} 等 & 类 \texttt{Intramural}\texttt{,} \texttt{Sport}\texttt{,} \texttt{Game} 和 \texttt{Hall} \\
 超类 \texttt{Visitor} & 接口 \texttt{Visitor} \\
-子类 \texttt{ConcreteVisitor1} 等 & 类 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} \\
-成员函数 \texttt{visit\_\allowbreak{}ConcreteElementA(\allowbreak{})\allowbreak{}} 等 & 成员函数 \texttt{visit\_Intramural()}、\texttt{visit\_Sport()}、\texttt{vis}\texttt{it\_Game()} 和 \texttt{visit\_Hall()} \\
+子类 \texttt{Concrete\allowbreak{}Visitor1} 等 & 类 \texttt{Scores\allowbreak{}Report\allowbreak{}Visitor}、\texttt{Activities\allowbreak{}Report\allowbreak{}Visitor} 和 \texttt{Winnings\allowbreak{}Report\allowbreak{}Visitor} \\
+成员函数 \texttt{visit\_\allowbreak{}Concrete\allowbreak{}Element\allowbreak{}A(\allowbreak{})\allowbreak{}} 等 & 成员函数 \texttt{visit\_\allowbreak{}Intramural(\allowbreak{})\allowbreak{}}、\texttt{visit\_\allowbreak{}Sport(\allowbreak{})\allowbreak{}}、\texttt{vis}\texttt{it\_\allowbreak{}Game(\allowbreak{})\allowbreak{}} 和 \texttt{visit\_\allowbreak{}Hall(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}

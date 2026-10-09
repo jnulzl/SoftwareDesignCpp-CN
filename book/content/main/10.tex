@@ -41,7 +41,7 @@
 
 \subsection{10.1.2 使用适配器设计模式之前}
 
-假设由于缺乏协调，每个体育组织报告信息的方式各不相同，而且它们都不愿改变自己的报告方式。因此，类 \texttt{AttendanceReport} 需要三个重载的公有 \texttt{print()} 成员函数（图 10.1），每个体育项目对应一个。这些 \texttt{print()} 函数各自调用私有的 \texttt{legacy\_print()} 函数来完成实际的打印，但它只能接受一个 \texttt{AttendanceData} 参数。由于它是遗留代码，而且应用的其他部分可能依赖它，我们不希望修改这个函数。
+假设由于缺乏协调，每个体育组织报告信息的方式各不相同，而且它们都不愿改变自己的报告方式。因此，类 \texttt{Attendance\allowbreak{}Report} 需要三个重载的公有 \texttt{print()} 成员函数（图 10.1），每个体育项目对应一个。这些 \texttt{print()} 函数各自调用私有的 \texttt{legacy\_\allowbreak{}print(\allowbreak{})\allowbreak{}} 函数来完成实际的打印，但它只能接受一个 \texttt{Attendance\allowbreak{}Data} 参数。由于它是遗留代码，而且应用的其他部分可能依赖它，我们不希望修改这个函数。
 
 以下是这个上座率报告应用的示例输出：
 
@@ -56,7 +56,7 @@ Volleyball
 
 该报告需要一些枚举常量和重载的运算符 \texttt{<<} 函数（代码清单 10.1）。
 
-\myGraphic{0.980}{images/CH10_F01_Mak.png}{图 10.1 在应用的第一个版本中，类 \texttt{BaseballData}、\texttt{FootballInfo} 和 \texttt{VolleyballStats} 以不同的方式呈现各自的场地和上座率数据。因此，类 \texttt{AttendanceReport} 需要一个嵌套的私有类 \texttt{ConvertedData} 和三个重载的公有 \texttt{print()} 成员函数。每个函数都调用私有的 \texttt{legacy\_print()} 成员函数。橄榄球和排球项目的 \texttt{print()} 函数使用类 \texttt{ConvertedData}，把 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 的数据分别转换成 \texttt{AttendanceData} 格式。\texttt{BaseballData} 已经就是这种格式。}
+\myGraphic{0.980}{images/CH10_F01_Mak.png}{图 10.1 在应用的第一个版本中，类 \texttt{Baseball\allowbreak{}Data}、\texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 以不同的方式呈现各自的场地和上座率数据。因此，类 \texttt{Attendance\allowbreak{}Report} 需要一个嵌套的私有类 \texttt{Converted\allowbreak{}Data} 和三个重载的公有 \texttt{print()} 成员函数。每个函数都调用私有的 \texttt{legacy\_\allowbreak{}print(\allowbreak{})\allowbreak{}} 成员函数。橄榄球和排球项目的 \texttt{print()} 函数使用类 \texttt{Converted\allowbreak{}Data}，把 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 的数据分别转换成 \texttt{Attendance\allowbreak{}Data} 格式。\texttt{Baseball\allowbreak{}Data} 已经就是这种格式。}
 
 \begin{codeboxt}{代码清单 10.1（程序 10.1 Fans）：\texttt{Enums.h}（设计模式之前）}
 #include <iostream>
@@ -77,9 +77,9 @@ inline ostream& operator <<(ostream& ostr, const Venue& venue)
 }
 \end{codeboxt}
 
-类 \texttt{AttendanceReport} 的遗留 \texttt{legacy\_print()} 成员函数要求以 \texttt{AttendanceData} 对象的形式提供场地和上座率数据（代码清单 10.2）。我们不希望修改 \texttt{legacy\_print()}。
+类 \texttt{Attendance\allowbreak{}Report} 的遗留 \texttt{legacy\_\allowbreak{}print(\allowbreak{})\allowbreak{}} 成员函数要求以 \texttt{Attendance\allowbreak{}Data} 对象的形式提供场地和上座率数据（代码清单 10.2）。我们不希望修改 \texttt{legacy\_\allowbreak{}print(\allowbreak{})\allowbreak{}}。
 
-\begin{codeboxt}{代码清单 10.2（程序 10.1 Fans）：\texttt{AttendanceData.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.2（程序 10.1 Fans）：\texttt{Attendance\allowbreak{}Data.\allowbreak{}h}（设计模式之前）}
 #include "Enums.h"
 
 class AttendanceData
@@ -92,9 +92,9 @@ public:
 };
 \end{codeboxt}
 
-只有类 \texttt{BaseballData} 符合这个接口（代码清单 10.3）。
+只有类 \texttt{Baseball\allowbreak{}Data} 符合这个接口（代码清单 10.3）。
 
-\begin{codeboxt}{代码清单 10.3（程序 10.1 Fans）：\texttt{BaseballData.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.3（程序 10.1 Fans）：\texttt{Baseball\allowbreak{}Data.\allowbreak{}h}（设计模式之前）}
 #include "Enums.h"
 #include "AttendanceData.h"
 
@@ -106,9 +106,9 @@ public:
 };
 \end{codeboxt}
 
-类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 不符合 \texttt{AttendanceData} 接口。也许橄榄球和排球项目的代码是从某个库中获取的，我们无法访问它们的源文件。类 \texttt{FootballInfo} 以标准模板库中的 \texttt{pair} 对象来呈现其场地和上座率数据。
+类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 不符合 \texttt{Attendance\allowbreak{}Data} 接口。也许橄榄球和排球项目的代码是从某个库中获取的，我们无法访问它们的源文件。类 \texttt{Football\allowbreak{}Info} 以标准模板库中的 \texttt{pair} 对象来呈现其场地和上座率数据。
 
-\begin{codeboxt}{代码清单 10.4（程序 10.1 Fans）：\texttt{FootballInfo.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.4（程序 10.1 Fans）：\texttt{Football\allowbreak{}Info.\allowbreak{}h}（设计模式之前）}
 #include <utility>
 #include "Enums.h"
 
@@ -130,9 +130,9 @@ private:
 };
 \end{codeboxt}
 
-类 \texttt{VolleyballStats} 以 \texttt{struct} 来呈现其场地和上座率数据（代码清单 10.5）。
+类 \texttt{Volleyball\allowbreak{}Stats} 以 \texttt{struct} 来呈现其场地和上座率数据（代码清单 10.5）。
 
-\begin{codeboxt}{代码清单 10.5（程序 10.1 Fans）：\texttt{VolleyballStats.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.5（程序 10.1 Fans）：\texttt{Volleyball\allowbreak{}Stats.\allowbreak{}h}（设计模式之前）}
 #include "Enums.h"
 
 typedef struct
@@ -157,9 +157,9 @@ private:
 };
 \end{codeboxt}
 
-在类 \texttt{AttendanceReport} 中，我们需要三个重载的公有 \texttt{print()} 成员函数，分别接受 \texttt{AttendanceReport}、\texttt{FootballInfo} 和 \texttt{VolleyballStats} 参数。每个 \texttt{print()} 函数都调用私有的遗留函数 \texttt{legacy\_print()}，而后者只能接受一个 \texttt{AttendanceData} 对象。我们不希望修改这些遗留代码。因此，其中两个 \texttt{print()} 函数必须使用类 \texttt{ConvertedData}，把其参数数据转换成 \texttt{AttendanceData} 对象。
+在类 \texttt{Attendance\allowbreak{}Report} 中，我们需要三个重载的公有 \texttt{print()} 成员函数，分别接受 \texttt{Attendance\allowbreak{}Report}、\texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 参数。每个 \texttt{print()} 函数都调用私有的遗留函数 \texttt{legacy\_\allowbreak{}print(\allowbreak{})\allowbreak{}}，而后者只能接受一个 \texttt{Attendance\allowbreak{}Data} 对象。我们不希望修改这些遗留代码。因此，其中两个 \texttt{print()} 函数必须使用类 \texttt{Converted\allowbreak{}Data}，把其参数数据转换成 \texttt{Attendance\allowbreak{}Data} 对象。
 
-\begin{codeboxt}{代码清单 10.6（程序 10.1 Fans）：\texttt{AttendanceReport.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.6（程序 10.1 Fans）：\texttt{Attendance\allowbreak{}Report.\allowbreak{}h}（设计模式之前）}
 #include <string>
 #include "AttendanceData.h"
 #include "FootballInfo.h"
@@ -205,9 +205,9 @@ private:
 
 \myGraphic{0.800}{images/CH10_F01_UN03_Mak.png}{}
 
-一个 \texttt{print()} 成员函数从该类的 \texttt{pair} 对象中获取 \texttt{FootballInfo} 的场地和观众人数，另一个 \texttt{print()} 成员函数从该类的 \texttt{struct} 中获取 \texttt{VolleyballStats} 的场地和观众人数。两者都必须使用内部的 \texttt{ConvertedData} 类来转换各自的数据。由于类 \texttt{BaseballData} 实现了 \texttt{AttendanceData} 接口，它的数据不需要转换。
+一个 \texttt{print()} 成员函数从该类的 \texttt{pair} 对象中获取 \texttt{Football\allowbreak{}Info} 的场地和观众人数，另一个 \texttt{print()} 成员函数从该类的 \texttt{struct} 中获取 \texttt{Volleyball\allowbreak{}Stats} 的场地和观众人数。两者都必须使用内部的 \texttt{Converted\allowbreak{}Data} 类来转换各自的数据。由于类 \texttt{Baseball\allowbreak{}Data} 实现了 \texttt{Attendance\allowbreak{}Data} 接口，它的数据不需要转换。
 
-\begin{codeboxt}{代码清单 10.7（程序 10.1 Fans）：\texttt{AttendanceReport.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.7（程序 10.1 Fans）：\texttt{Attendance\allowbreak{}Report.\allowbreak{}cpp}（设计模式之前）}
 #include <iostream>
 #include <string>
 #include "AttendanceData.h"
@@ -261,7 +261,7 @@ void AttendanceReport::legacy_print(const AttendanceData& data) const
 
 测试程序生成了想要的报告，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 10.8（程序 10.1 Fans）：\texttt{tester.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.8（程序 10.1 Fans）：\texttt{tester.\allowbreak{}cpp}（设计模式之前）}
 #include "BaseballData.h"
 #include "FootballInfo.h"
 #include "VolleyballStats.h"
@@ -285,25 +285,25 @@ int main()
 这个版本的上座率报告应用有几个重大缺陷，包括
 
 \begin{itemize}
-\item \emph{类承担多项职责}——类 \texttt{AttendanceReport} 既负责转换数据，又负责打印报告。
-\item \emph{类之间不是松耦合}——类 \texttt{AttendanceReport} 必须了解类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 的内部实现，才能获取它们的场地和观众人数。
-\item \emph{架构设计不灵活}——如果出现另一个场地和上座率数据来源，例如篮球赛的数据，就需要修改类 \texttt{AttendanceReport}。
+\item \emph{类承担多项职责}——类 \texttt{Attendance\allowbreak{}Report} 既负责转换数据，又负责打印报告。
+\item \emph{类之间不是松耦合}——类 \texttt{Attendance\allowbreak{}Report} 必须了解类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 的内部实现，才能获取它们的场地和观众人数。
+\item \emph{架构设计不灵活}——如果出现另一个场地和上座率数据来源，例如篮球赛的数据，就需要修改类 \texttt{Attendance\allowbreak{}Report}。
 \end{itemize}
 
 \subsection{10.1.3 使用适配器设计模式之后}
 
-我们来看看适配器设计模式如何消除这些缺陷。它把数据转换代码封装起来，从而将这项职责从类 \texttt{AttendanceReport} 中移除。该模式引入了两个类 \texttt{FootballData} 和 \texttt{VolleyballData}，它们都实现 \texttt{AttendanceData} 接口（图 10.2）。类 \texttt{FootballData} 是包装（聚合）类 \texttt{FootballInfo} 的适配器。类似地，类 \texttt{VolleyballData} 是包装类 \texttt{VolleyballStats} 的适配器。这样一来，类 \texttt{AttendanceReport} 只需要一个公有 \texttt{print()} 成员函数，并且总是向它传入一个 \texttt{AttendanceData} 对象。
+我们来看看适配器设计模式如何消除这些缺陷。它把数据转换代码封装起来，从而将这项职责从类 \texttt{Attendance\allowbreak{}Report} 中移除。该模式引入了两个类 \texttt{Football\allowbreak{}Data} 和 \texttt{Volleyball\allowbreak{}Data}，它们都实现 \texttt{Attendance\allowbreak{}Data} 接口（图 10.2）。类 \texttt{Football\allowbreak{}Data} 是包装（聚合）类 \texttt{Football\allowbreak{}Info} 的适配器。类似地，类 \texttt{Volleyball\allowbreak{}Data} 是包装类 \texttt{Volleyball\allowbreak{}Stats} 的适配器。这样一来，类 \texttt{Attendance\allowbreak{}Report} 只需要一个公有 \texttt{print()} 成员函数，并且总是向它传入一个 \texttt{Attendance\allowbreak{}Data} 对象。
 
 \begin{mySidebar}{适配器设计模式}
 
 “把一个类的接口转换成客户期望的另一种接口。适配器让原本因为接口不兼容而无法协同工作的类能够一起工作”（GoF 139）。
 \end{mySidebar}
 
-适配器 \texttt{FootballData} 实现 \texttt{AttendanceData} 接口。它包装类 \texttt{FootballInfo} 并执行数据转换。成员变量 \texttt{football\_info} 指向被包装的 \texttt{FootballInfo} 对象。成员函数 \texttt{get\_venue()} 和 \texttt{get\_attendance()} 从 \texttt{FootballInfo} 类的 \texttt{info} 成员变量（一个 \texttt{pair} 对象）中提取场地和上座率数据（代码清单 10.9）。
+适配器 \texttt{Football\allowbreak{}Data} 实现 \texttt{Attendance\allowbreak{}Data} 接口。它包装类 \texttt{Football\allowbreak{}Info} 并执行数据转换。成员变量 \texttt{football\_\allowbreak{}info} 指向被包装的 \texttt{Football\allowbreak{}Info} 对象。成员函数 \texttt{get\_\allowbreak{}venue(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}attendance(\allowbreak{})\allowbreak{}} 从 \texttt{Football\allowbreak{}Info} 类的 \texttt{info} 成员变量（一个 \texttt{pair} 对象）中提取场地和上座率数据（代码清单 10.9）。
 
-\myGraphic{0.980}{images/CH10_F02_Mak.png}{图 10.2 这个版本的应用使用适配器设计模式。适配器 \texttt{FootballData} 和 \texttt{VolleyballData} 各自实现 \texttt{AttendanceData} 接口。它们分别包装类 \texttt{FootballInfo} 和 \texttt{VolleyballStats}，并封装数据转换代码。图中以灰色显示的部分与图 10.1 相比在逻辑上没有变化。}
+\myGraphic{0.980}{images/CH10_F02_Mak.png}{图 10.2 这个版本的应用使用适配器设计模式。适配器 \texttt{Football\allowbreak{}Data} 和 \texttt{Volleyball\allowbreak{}Data} 各自实现 \texttt{Attendance\allowbreak{}Data} 接口。它们分别包装类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats}，并封装数据转换代码。图中以灰色显示的部分与图 10.1 相比在逻辑上没有变化。}
 
-\begin{codeboxt}{代码清单 10.9（程序 10.2 Fans-AdapterDP）：\texttt{FootballData.cpp}}
+\begin{codeboxt}{代码清单 10.9（程序 10.2 Fans-AdapterDP）：\texttt{Football\allowbreak{}Data.\allowbreak{}cpp}}
 #include "AttendanceData.h"
 #include "FootballInfo.h"
 
@@ -328,9 +328,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 转换并返回上座率数据。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 包装一个 FootballInfo 对象。}\par
 
-类似地，适配器 \texttt{VolleyballData} 实现 \texttt{AttendanceData} 接口，包装类 \texttt{VolleyballStats} 并执行数据转换。成员变量 \texttt{volleyball\_stats} 指向被包装的 \texttt{VolleyballStats} 对象。成员函数 \texttt{get\_venue()} 和 \texttt{get\_attendance()} 从 \texttt{VolleyballStats} 类的 \texttt{stats} 成员变量（一个 \texttt{struct}）中提取场地和上座率数据（代码清单 10.10）。
+类似地，适配器 \texttt{Volleyball\allowbreak{}Data} 实现 \texttt{Attendance\allowbreak{}Data} 接口，包装类 \texttt{Volleyball\allowbreak{}Stats} 并执行数据转换。成员变量 \texttt{volleyball\_\allowbreak{}stats} 指向被包装的 \texttt{Volleyball\allowbreak{}Stats} 对象。成员函数 \texttt{get\_\allowbreak{}venue(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}attendance(\allowbreak{})\allowbreak{}} 从 \texttt{Volleyball\allowbreak{}Stats} 类的 \texttt{stats} 成员变量（一个 \texttt{struct}）中提取场地和上座率数据（代码清单 10.10）。
 
-\begin{codeboxt}{代码清单 10.10（程序 10.2 Fans-AdapterDP）：\texttt{VolleyballData.cpp}}
+\begin{codeboxt}{代码清单 10.10（程序 10.2 Fans-AdapterDP）：\texttt{Volleyball\allowbreak{}Data.\allowbreak{}cpp}}
 #include "AttendanceData.h"
 #include "VolleyballStats.h"
 class VolleyballData : public AttendanceData
@@ -356,9 +356,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 转换并返回上座率数据。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 包装一个 VolleyballStats 对象。}\par
 
-类 \texttt{AttendanceReport} 现在只需要一个公有 \texttt{print()} 成员函数，它接受一个 \texttt{AttendanceData} 参数。它不再进行任何数据转换。
+类 \texttt{Attendance\allowbreak{}Report} 现在只需要一个公有 \texttt{print()} 成员函数，它接受一个 \texttt{Attendance\allowbreak{}Data} 参数。它不再进行任何数据转换。
 
-\begin{codeboxt}{代码清单 10.11（程序 10.2 Fans-AdapterDP）：\texttt{AttendanceReport.h}}
+\begin{codeboxt}{代码清单 10.11（程序 10.2 Fans-AdapterDP）：\texttt{Attendance\allowbreak{}Report.\allowbreak{}h}}
 #include <iostream>
 #include <string>
 #include "AttendanceData.h"
@@ -381,7 +381,7 @@ private:
 
 测试程序创建这两个适配器类，并安排每个适配器去适配其对应的对象。输出与之前相同。
 
-\begin{codeboxt}{代码清单 10.12（程序 10.2 Fans-AdapterDP）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 10.12（程序 10.2 Fans-AdapterDP）：\texttt{tester.\allowbreak{}cpp}}
 #include "BaseballData.h"
 #include "FootballData.h"
 #include "VolleyballData.h"
@@ -414,9 +414,9 @@ int main()
 使用适配器设计模式为上座率报告应用建模，带来了几项重要的好处：
 
 \begin{itemize}
-\item \emph{封装了数据转换}——适配器类 \texttt{FootballData} 和 \texttt{VolleyballData} 分别封装了来自类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 的数据转换。这就是封装变化原则（2.3.2 节）。
-\item \emph{单一类职责}——类 \texttt{AttendanceReport} 现在只承担打印报告的职责，不再承担数据转换职责。这就是单一职责原则（2.3 节）。适配器类 \texttt{FootballData} 和 \texttt{VolleyballData} 各自只承担转换数据这一职责。
-\item \emph{松耦合的类}——通过运用最少知识原则（2.3.2 节），类 \texttt{AttendanceReport} 与数据类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 之间是松耦合的。我们无需修改类 \texttt{AttendanceReport}，就能添加新的数据类及其适配器。
+\item \emph{封装了数据转换}——适配器类 \texttt{Football\allowbreak{}Data} 和 \texttt{Volleyball\allowbreak{}Data} 分别封装了来自类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 的数据转换。这就是封装变化原则（2.3.2 节）。
+\item \emph{单一类职责}——类 \texttt{Attendance\allowbreak{}Report} 现在只承担打印报告的职责，不再承担数据转换职责。这就是单一职责原则（2.3 节）。适配器类 \texttt{Football\allowbreak{}Data} 和 \texttt{Volleyball\allowbreak{}Data} 各自只承担转换数据这一职责。
+\item \emph{松耦合的类}——通过运用最少知识原则（2.3.2 节），类 \texttt{Attendance\allowbreak{}Report} 与数据类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} 之间是松耦合的。我们无需修改类 \texttt{Attendance\allowbreak{}Report}，就能添加新的数据类及其适配器。
 \end{itemize}
 
 \subsection{10.1.4 适配器的通用模型}
@@ -433,11 +433,11 @@ int main()
 \toprule
 设计模式 & 示例应用中的对应项 \\
 \midrule
-接口 \texttt{Target} & 接口 \texttt{AttendanceData} \\
-类 \texttt{Adapter} & 类 \texttt{FootballData} 和 \texttt{VolleyballData} \\
-类 \texttt{Adaptee} & 类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} \\
-函数 \texttt{request}\texttt{()} & 函数 \texttt{get\_venue()} 和 \texttt{get\_attendance()} \\
-函数 \texttt{specific\_request()} & \texttt{FootballInfo::\allowbreak{}get\_\allowbreak{}info(\allowbreak{})\allowbreak{}.\allowbreak{}first}\newline{} \texttt{FootballInfo::\allowbreak{}get\_\allowbreak{}info(\allowbreak{})\allowbreak{}.\allowbreak{}second}\newline{} \texttt{VolleyballStats::\allowbreak{}get\_\allowbreak{}stats(\allowbreak{})\allowbreak{}.\allowbreak{}venue}\newline{} \texttt{VolleyballStats::\allowbreak{}get\_\allowbreak{}state(\allowbreak{})\allowbreak{}.\allowbreak{}attendance} \\
+接口 \texttt{Target} & 接口 \texttt{Attendance\allowbreak{}Data} \\
+类 \texttt{Adapter} & 类 \texttt{Football\allowbreak{}Data} 和 \texttt{Volleyball\allowbreak{}Data} \\
+类 \texttt{Adaptee} & 类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats} \\
+函数 \texttt{request}\texttt{()} & 函数 \texttt{get\_\allowbreak{}venue(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}attendance(\allowbreak{})\allowbreak{}} \\
+函数 \texttt{specific\_\allowbreak{}request(\allowbreak{})\allowbreak{}} & \texttt{Football\allowbreak{}Info::\allowbreak{}get\_\allowbreak{}info(\allowbreak{})\allowbreak{}.\allowbreak{}first}\newline{} \texttt{Football\allowbreak{}Info::\allowbreak{}get\_\allowbreak{}info(\allowbreak{})\allowbreak{}.\allowbreak{}second}\newline{} \texttt{Volleyball\allowbreak{}Stats::\allowbreak{}get\_\allowbreak{}stats(\allowbreak{})\allowbreak{}.\allowbreak{}venue}\newline{} \texttt{Volleyball\allowbreak{}Stats::\allowbreak{}get\_\allowbreak{}state(\allowbreak{})\allowbreak{}.\allowbreak{}attendance} \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -446,11 +446,11 @@ int main()
 
 适配器设计模式还有一种替代模型，它依靠多重继承而非包装来简化适配器类（图 10.4）。
 
-\myGraphic{0.980}{images/CH10_F04_Mak.png}{图 10.4 在适配器设计模式的替代版本中，适配器类 \texttt{FootballData} 实现 \texttt{AttendanceData} 接口，并继承（而非聚合）类 \texttt{FootballInfo}。适配器类 \texttt{VolleyballData} 实现 \texttt{AttendanceData} 接口，并继承类 \texttt{VolleyballStats}。两个适配器类都不做包装。图中以灰色显示的部分与图 10.2 相比在逻辑上没有变化。}
+\myGraphic{0.980}{images/CH10_F04_Mak.png}{图 10.4 在适配器设计模式的替代版本中，适配器类 \texttt{Football\allowbreak{}Data} 实现 \texttt{Attendance\allowbreak{}Data} 接口，并继承（而非聚合）类 \texttt{Football\allowbreak{}Info}。适配器类 \texttt{Volleyball\allowbreak{}Data} 实现 \texttt{Attendance\allowbreak{}Data} 接口，并继承类 \texttt{Volleyball\allowbreak{}Stats}。两个适配器类都不做包装。图中以灰色显示的部分与图 10.2 相比在逻辑上没有变化。}
 
-适配器类 \texttt{FootballData} 实现 \texttt{AttendanceData} 接口，并继承类 \texttt{FootballInfo}。
+适配器类 \texttt{Football\allowbreak{}Data} 实现 \texttt{Attendance\allowbreak{}Data} 接口，并继承类 \texttt{Football\allowbreak{}Info}。
 
-\begin{codeboxt}{代码清单 10.13（程序 10.3 Fans-AdapterDPx）：\texttt{FootballData.h}}
+\begin{codeboxt}{代码清单 10.13（程序 10.3 Fans-AdapterDPx）：\texttt{Football\allowbreak{}Data.\allowbreak{}h}}
 #include "AttendanceData.h"
 #include "FootballInfo.h"
 
@@ -475,9 +475,9 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 继承自 AttendanceData}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 继承自 FootballInfo}\par
 
-类似地，适配器类 \texttt{VolleyballData} 实现 \texttt{AttendanceData} 接口，并继承类 \texttt{VolleyballStats}。
+类似地，适配器类 \texttt{Volleyball\allowbreak{}Data} 实现 \texttt{Attendance\allowbreak{}Data} 接口，并继承类 \texttt{Volleyball\allowbreak{}Stats}。
 
-\begin{codeboxt}{代码清单 10.14（程序 10.3 Fans-AdapterDPx）：\texttt{VolleyballData.h}}
+\begin{codeboxt}{代码清单 10.14（程序 10.3 Fans-AdapterDPx）：\texttt{Volleyball\allowbreak{}Data.\allowbreak{}h}}
 #include "AttendanceData.h"
 #include "VolleyballStats.h"
 
@@ -502,9 +502,9 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 继承自 AttendanceData}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 继承自 VolleyballStats}\par
 
-测试程序更简单，因为它不必了解类 \texttt{FootballInfo} 和 \texttt{VolleyballStats}，只需了解它们的适配器。
+测试程序更简单，因为它不必了解类 \texttt{Football\allowbreak{}Info} 和 \texttt{Volleyball\allowbreak{}Stats}，只需了解它们的适配器。
 
-\begin{codeboxt}{代码清单 10.15（程序 10.3 Fans-AdapterDPx）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 10.15（程序 10.3 Fans-AdapterDPx）：\texttt{tester.\allowbreak{}cpp}}
 #include "BaseballData.h"
 #include "FootballData.h"
 #include "VolleyballData.h"
@@ -569,11 +569,11 @@ int main()
 
 \subsection{10.2.2 使用外观设计模式之前}
 
-类 \texttt{AthleticsDept} 和 \texttt{Administration} 各自都要开展筹款，因此每个类都必须与类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 交互（图 10.6）。类 \texttt{AthleticsDept} 和 \texttt{Administration} 各自都调用类 \texttt{Alumni} 的 \texttt{send\_solicitations()} 成员函数、类 \texttt{BoosterClubs} 的 \texttt{schedule\_meetings()} 成员函数，以及类 \texttt{Students} 的 \texttt{collect\_fees()} 成员函数。
+类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} 各自都要开展筹款，因此每个类都必须与类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 交互（图 10.6）。类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} 各自都调用类 \texttt{Alumni} 的 \texttt{send\_\allowbreak{}solicitations(\allowbreak{})\allowbreak{}} 成员函数、类 \texttt{Booster\allowbreak{}Clubs} 的 \texttt{schedule\_\allowbreak{}meetings(\allowbreak{})\allowbreak{}} 成员函数，以及类 \texttt{Students} 的 \texttt{collect\_\allowbreak{}fees(\allowbreak{})\allowbreak{}} 成员函数。
 
-\myGraphic{0.980}{images/CH10_F06_Mak.png}{图 10.6 为了开展筹款，类 \texttt{AthleticsDept} 和 \texttt{Administration} 各自都必须调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 中相应的成员函数。}
+\myGraphic{0.980}{images/CH10_F06_Mak.png}{图 10.6 为了开展筹款，类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} 各自都必须调用类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 中相应的成员函数。}
 
-类 \texttt{Alumni} 的成员函数 \texttt{send\_solicitations()} 是筹款的一部分。
+类 \texttt{Alumni} 的成员函数 \texttt{send\_\allowbreak{}solicitations(\allowbreak{})\allowbreak{}} 是筹款的一部分。
 
 \begin{codeboxt}{代码清单 10.16（程序 10.4 Funds）：\texttt{Alumni.h}（设计模式之前）}
 #include <iostream>
@@ -590,9 +590,9 @@ public:
 };
 \end{codeboxt}
 
-类 \texttt{BoosterClubs} 的成员函数 \texttt{schedule\_meetings()} 也是筹款的一部分。
+类 \texttt{Booster\allowbreak{}Clubs} 的成员函数 \texttt{schedule\_\allowbreak{}meetings(\allowbreak{})\allowbreak{}} 也是筹款的一部分。
 
-\begin{codeboxt}{代码清单 10.17（程序 10.4 Funds）：\texttt{BoosterClubs.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.17（程序 10.4 Funds）：\texttt{Booster\allowbreak{}Clubs.\allowbreak{}h}（设计模式之前）}
 #include <iostream>
 
 using namespace std;
@@ -607,9 +607,9 @@ public:
 };
 \end{codeboxt}
 
-最后，类 \texttt{Students} 的成员函数 \texttt{collect\_fees()} 是筹款的又一部分。
+最后，类 \texttt{Students} 的成员函数 \texttt{collect\_\allowbreak{}fees(\allowbreak{})\allowbreak{}} 是筹款的又一部分。
 
-\begin{codeboxt}{代码清单 10.18（程序 10.4 Funds）：\texttt{Students.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.18（程序 10.4 Funds）：\texttt{Students.\allowbreak{}h}（设计模式之前）}
 #include <iostream>
 
 using namespace std;
@@ -624,9 +624,9 @@ public:
 };
 \end{codeboxt}
 
-为了开展筹款，类 \texttt{AthleticsDept} 的成员函数 \texttt{raise\_funds()} 调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 的成员函数。
+为了开展筹款，类 \texttt{Athletics\allowbreak{}Dept} 的成员函数 \texttt{raise\_\allowbreak{}funds(\allowbreak{})\allowbreak{}} 调用类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 的成员函数。
 
-\begin{codeboxt}{代码清单 10.19（程序 10.4 Funds）：\texttt{AthleticsDept.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.19（程序 10.4 Funds）：\texttt{Athletics\allowbreak{}Dept.\allowbreak{}h}（设计模式之前）}
 #include <iostream>
 #include "Alumni.h"
 #include "BoosterClubs.h"
@@ -652,9 +652,9 @@ public:
 };
 \end{codeboxt}
 
-为了协助筹款，类 \texttt{Administration} 的成员函数 \texttt{aid\_fundraising()} 调用同样的成员函数。
+为了协助筹款，类 \texttt{Administration} 的成员函数 \texttt{aid\_\allowbreak{}fundraising(\allowbreak{})\allowbreak{}} 调用同样的成员函数。
 
-\begin{codeboxt}{代码清单 10.20（程序 10.4 Funds）：\texttt{Administration.h}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.20（程序 10.4 Funds）：\texttt{Administration.\allowbreak{}h}（设计模式之前）}
 #include <iostream>
 #include "Alumni.h"
 #include "BoosterClubs.h"
@@ -682,9 +682,9 @@ public:
 
 \myGraphic{0.918}{images/CH10_F06_UN07_Mak.png}{}
 
-测试程序调用类 \texttt{AthleticsDept} 和 \texttt{Administration} 来开展筹款。
+测试程序调用类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} 来开展筹款。
 
-\begin{codeboxt}{代码清单 10.21（程序 10.4 Funds）：\texttt{tester.cpp}（设计模式之前）}
+\begin{codeboxt}{代码清单 10.21（程序 10.4 Funds）：\texttt{tester.\allowbreak{}cpp}（设计模式之前）}
 #include "AthleticsDept.h"
 #include "Administration.h"
 
@@ -716,26 +716,26 @@ Collect student fees.
 这个版本的筹款应用的缺陷包括
 
 \begin{itemize}
-\item \emph{重复的代码}——类 \texttt{AthleticsDept} 和 \texttt{Administration} 都调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 的筹款成员函数。
-\item \emph{代码不灵活}——如果我们为筹款添加更多类，类 \texttt{AthleticsDept} 和 \texttt{Administration} 都需要修改。
+\item \emph{重复的代码}——类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} 都调用类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 的筹款成员函数。
+\item \emph{代码不灵活}——如果我们为筹款添加更多类，类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} 都需要修改。
 \end{itemize}
 
 \subsection{10.2.3 使用外观设计模式之后}
 
-外观设计模式减少了重复的代码，并把筹款接口隐藏在类 \texttt{FundRaiser} 这个外观类之后。该外观类提供的接口比类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 提供的接口更简单、层次更高。
+外观设计模式减少了重复的代码，并把筹款接口隐藏在类 \texttt{Fund\allowbreak{}Raiser} 这个外观类之后。该外观类提供的接口比类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 提供的接口更简单、层次更高。
 
 \begin{mySidebar}{外观设计模式}
 
 “为子系统中的一组接口提供一个统一的接口。外观定义了一个更高层的接口，使这个接口更易于使用”（GoF 183）。
 \end{mySidebar}
 
-类 \texttt{AthleticsDept} 的 \texttt{raise\_funds()} 成员函数和类 \texttt{Administration} 的 \texttt{the aid\_fundraising()} 成员函数都只需调用类 \texttt{FundRaiser} 的成员函数 \texttt{do\_fund\_raising()}（图 10.7）。
+类 \texttt{Athletics\allowbreak{}Dept} 的 \texttt{raise\_\allowbreak{}funds(\allowbreak{})\allowbreak{}} 成员函数和类 \texttt{Administration} 的 \texttt{the aid\_\allowbreak{}fundraising(\allowbreak{})\allowbreak{}} 成员函数都只需调用类 \texttt{Fund\allowbreak{}Raiser} 的成员函数 \texttt{do\_\allowbreak{}fund\_\allowbreak{}raising(\allowbreak{})\allowbreak{}}（图 10.7）。
 
-\myGraphic{0.980}{images/CH10_F07_Mak.png}{图 10.7 依据外观设计模式建模的架构把筹款的细节隐藏在类 \texttt{FundRaiser} 这个外观类之后，该外观类提供一个更高层的接口，简化了对由类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 组成的子系统的使用。}
+\myGraphic{0.980}{images/CH10_F07_Mak.png}{图 10.7 依据外观设计模式建模的架构把筹款的细节隐藏在类 \texttt{Fund\allowbreak{}Raiser} 这个外观类之后，该外观类提供一个更高层的接口，简化了对由类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 组成的子系统的使用。}
 
-外观类 \texttt{FundRaiser} 的成员函数 \texttt{do\_fund\_raising()} 通过调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 的成员函数与它们交互。
+外观类 \texttt{Fund\allowbreak{}Raiser} 的成员函数 \texttt{do\_\allowbreak{}fund\_\allowbreak{}raising(\allowbreak{})\allowbreak{}} 通过调用类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 的成员函数与它们交互。
 
-\begin{codeboxt}{代码清单 10.22（程序 10.5 Funds-FaçadeDP）：\texttt{FundRaiser.h}}
+\begin{codeboxt}{代码清单 10.22（程序 10.5 Funds-FaçadeDP）：\texttt{Fund\allowbreak{}Raiser.\allowbreak{}h}}
 #include "Alumni.h"
 #include "BoosterClubs.h"
 #include "Students.h"
@@ -756,9 +756,9 @@ public:
 };
 \end{codeboxt}
 
-类 \texttt{AthleticsDept} 只需与外观类交互，调用它的 \texttt{do\_fund\_raising()} 成员函数。
+类 \texttt{Athletics\allowbreak{}Dept} 只需与外观类交互，调用它的 \texttt{do\_\allowbreak{}fund\_\allowbreak{}raising(\allowbreak{})\allowbreak{}} 成员函数。
 
-\begin{codeboxt}{代码清单 10.23（程序 10.5 Funds-FaçadeDP）：\texttt{AthleticsDept.h}}
+\begin{codeboxt}{代码清单 10.23（程序 10.5 Funds-FaçadeDP）：\texttt{Athletics\allowbreak{}Dept.\allowbreak{}h}}
 #include <iostream>
 #include "FundRaiser.h"
 
@@ -780,7 +780,7 @@ public:
 
 类似地，类 \texttt{Administration} 也只需与外观类交互。
 
-\begin{codeboxt}{代码清单 10.24（程序 10.5 Funds-FaçadeDP）：\texttt{Administration.h}}
+\begin{codeboxt}{代码清单 10.24（程序 10.5 Funds-FaçadeDP）：\texttt{Administration.\allowbreak{}h}}
 #include <iostream>
 #include "FundRaiser.h"
 
@@ -806,16 +806,16 @@ public:
 
 \begin{itemize}
 \item \emph{减少了代码重复}——外观类封装了所有筹款操作，这些代码只需出现一次。这就是不要重复自己原则（2.3.3 节）。
-\item \emph{松耦合的类}——类 AthleticsDept 和 Administration 对类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 没有任何依赖。这就是最少知识原则（2.3.2 节）。
-\item \emph{代码更灵活}——如果我们为筹款再添加一个类，例如 \texttt{CorporateSponsors,} 只有外观类需要修改。这就是封装变化原则（2.3.2 节）。
-\item \emph{子系统更易于使用}——外观类用一个隐藏子系统接口的简单接口，使 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 子系统更易于使用。
+\item \emph{松耦合的类}——类 AthleticsDept 和 Administration 对类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 没有任何依赖。这就是最少知识原则（2.3.2 节）。
+\item \emph{代码更灵活}——如果我们为筹款再添加一个类，例如 \texttt{Corporate\allowbreak{}Sponsors,\allowbreak{}} 只有外观类需要修改。这就是封装变化原则（2.3.2 节）。
+\item \emph{子系统更易于使用}——外观类用一个隐藏子系统接口的简单接口，使 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 子系统更易于使用。
 \end{itemize}
 
 \subsection{10.2.4 外观的通用模型}
 
 图 10.8 展示了外观设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
 
-\myGraphic{0.645}{images/CH10_F08_Mak.png}{图 10.8 外观设计模式的通用模型。可与图 10.7 对照。类 \texttt{Façade} 隐藏了子系统类的接口，并使由类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 组成的子系统更易于使用。}
+\myGraphic{0.645}{images/CH10_F08_Mak.png}{图 10.8 外观设计模式的通用模型。可与图 10.7 对照。类 \texttt{Façade} 隐藏了子系统类的接口，并使由类 \texttt{Alumni}、\texttt{Booster\allowbreak{}Clubs} 和 \texttt{Students} 组成的子系统更易于使用。}
 
 表 10.2 展示了示例应用如何应用该模式。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
 
@@ -825,9 +825,9 @@ public:
 \toprule
 设计模式 & 示例应用中的对应项 \\
 \midrule
-类 \texttt{ClientA}\texttt{,} \texttt{ClientB}\texttt{,} 等 & 类 \texttt{AthleticsDept} 和 \texttt{Administration} \\
-类 \texttt{Façade} & 类 \texttt{FundRaiser} \\
-类 \texttt{SubsystemClass1}\texttt{,} \texttt{SubsystemClass} \texttt{2} 等 & 类 \texttt{Alumni}\texttt{,} \texttt{BoosterClubs}\texttt{,} 和 \texttt{Students} \\
+类 \texttt{ClientA}\texttt{,} \texttt{ClientB}\texttt{,} 等 & 类 \texttt{Athletics\allowbreak{}Dept} 和 \texttt{Administration} \\
+类 \texttt{Façade} & 类 \texttt{Fund\allowbreak{}Raiser} \\
+类 \texttt{Subsystem\allowbreak{}Class1}\texttt{,} \texttt{Subsystem\allowbreak{}Class} \texttt{2} 等 & 类 \texttt{Alumni}\texttt{,} \texttt{Booster\allowbreak{}Clubs}\texttt{,} 和 \texttt{Students} \\
 \bottomrule
 \end{tabularx}
 \end{center}

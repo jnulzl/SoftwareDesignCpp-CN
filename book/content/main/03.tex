@@ -321,7 +321,7 @@ string & 否。应用使用 C++ 内置的字符串。 \\
 \midrule
 \texttt{Catalogue} & 图书清单 & \texttt{booklist}（指向 \texttt{Book} 对象的指针的 vector） \\
 \texttt{Book} & 图书属性 & \texttt{attributes}（指向该书属性的指针） \\
-\texttt{Attributes} & 属性值 & \texttt{attribute\_}\texttt{map}（键—值对的 map） \\
+\texttt{Attributes} & 属性值 & \texttt{attribute\_\allowbreak{}}\texttt{map}（键—值对的 map） \\
 \texttt{Form} & 输入值 & 为各个图书属性分别设置的成员变量 \\
 \bottomrule
 \end{tabularx}
@@ -342,7 +342,7 @@ update & \texttt{Catalogue} & \texttt{update()} 更新 booklist 中的一本书 
 delete & \texttt{Catalogue} & \texttt{delete()} 从 booklist 中删除一本书 \\
 search & \texttt{Catalogue} & \texttt{find()} 在 booklist 中查找匹配的图书 \\
 verify & \texttt{Form} & \texttt{verify()} 验证表单字段中的用户输入 \\
-match & \texttt{Attributes} & \texttt{is\_match()} 检查属性对是否匹配 \\
+match & \texttt{Attributes} & \texttt{is\_\allowbreak{}match(\allowbreak{})\allowbreak{}} 检查属性对是否匹配 \\
 \bottomrule
 \end{tabularx}
 \end{center}

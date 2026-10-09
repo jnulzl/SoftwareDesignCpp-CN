@@ -64,9 +64,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 设值函数}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 隐藏的状态实现}\par
 
-如图 5.1 所示，公有取值函数 \texttt{get\_price()} 的调用者并不知道该类如何实现状态。该函数返回私有 \texttt{price} 成员变量的当前值。或者，该函数也可以通过其他隐藏的手段获取价格，例如在价格数据库中动态查找。使用 \texttt{Item} 类的代码不应依赖任何特定的实现。
+如图 5.1 所示，公有取值函数 \texttt{get\_\allowbreak{}price(\allowbreak{})\allowbreak{}} 的调用者并不知道该类如何实现状态。该函数返回私有 \texttt{price} 成员变量的当前值。或者，该函数也可以通过其他隐藏的手段获取价格，例如在价格数据库中动态查找。使用 \texttt{Item} 类的代码不应依赖任何特定的实现。
 
-\myGraphic{0.980}{images/CH05_F01_Mak.png}{图 5.1 取值函数让代码能够从 \texttt{Item} 对象的隐藏状态中获取价格值。设值函数让代码能够修改 \texttt{Item} 对象隐藏状态中的 \texttt{price} 值。两个函数都不透露该类如何实现状态。例如，我们稍后也许决定让成员函数 \texttt{get\_price()} 从数据库中动态查找价格。我们将能够做出这一改动，而无需修改该函数的调用者。}
+\myGraphic{0.980}{images/CH05_F01_Mak.png}{图 5.1 取值函数让代码能够从 \texttt{Item} 对象的隐藏状态中获取价格值。设值函数让代码能够修改 \texttt{Item} 对象隐藏状态中的 \texttt{price} 值。两个函数都不透露该类如何实现状态。例如，我们稍后也许决定让成员函数 \texttt{get\_\allowbreak{}price(\allowbreak{})\allowbreak{}} 从数据库中动态查找价格。我们将能够做出这一改动，而无需修改该函数的调用者。}
 
 通过隐藏类实现状态的方式，再提供公有的取值函数和设值函数，我们就能控制代码在运行时如何探查或修改对象的状态。例如，运行时检查可以防止设值函数用无效值破坏对象的状态：
 
@@ -314,19 +314,19 @@ void Date::print()
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 应用公历规则返回下一个日期。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 应用公历规则返回上一个日期。}\par
 
-成员函数 \texttt{add\_days()} 从该日期开始，如果参数 \texttt{n} 的值为正，则逐日向未来迭代 \texttt{n} 天；如果 \texttt{n} 的值为负，则逐日向过去迭代 \texttt{n} 天。成员函数 \texttt{days\_from()} 从该日期开始，逐日迭代以统计向过去或向未来的天数，具体取决于该日期分别落在 \texttt{Date} 参数之后还是之前。两个成员函数都在各自的循环中调用辅助函数 \texttt{previous\_date()} 和 \texttt{next\_date()}。
+成员函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 从该日期开始，如果参数 \texttt{n} 的值为正，则逐日向未来迭代 \texttt{n} 天；如果 \texttt{n} 的值为负，则逐日向过去迭代 \texttt{n} 天。成员函数 \texttt{days\_\allowbreak{}from(\allowbreak{})\allowbreak{}} 从该日期开始，逐日迭代以统计向过去或向未来的天数，具体取决于该日期分别落在 \texttt{Date} 参数之后还是之前。两个成员函数都在各自的循环中调用辅助函数 \texttt{previous\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 和 \texttt{next\_\allowbreak{}date(\allowbreak{})\allowbreak{}}。
 
-辅助函数 \texttt{compare\_to()} 将当前日期与 \texttt{Date} 参数进行比较。如果该日期在参数之前，则返回负值；如果该日期在参数之后，则返回正值；如果两个日期相同，则返回 0。只有值的符号有意义。
+辅助函数 \texttt{compare\_\allowbreak{}to(\allowbreak{})\allowbreak{}} 将当前日期与 \texttt{Date} 参数进行比较。如果该日期在参数之前，则返回负值；如果该日期在参数之后，则返回正值；如果两个日期相同，则返回 0。只有值的符号有意义。
 
-辅助函数 \texttt{previous\_date()} 和 \texttt{next\_date()} 各自都必须应用棘手的公历规则，分别计算并返回该日期的前一天或后一天。
+辅助函数 \texttt{previous\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 和 \texttt{next\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 各自都必须应用棘手的公历规则，分别计算并返回该日期的前一天或后一天。
 
 成员函数 \texttt{print()} 以美国格式打印日期，即 month/day/year。例如，用 9/2/2025 表示 2025 年 9 月 2 日。
 
 \myGraphic{0.818}{images/CH05_F01_UN04_Mak.png}{}
 
-实际情况甚至更糟。成员函数 \texttt{add\_days()} 和 \texttt{days\_from()} 中的每一次迭代在调用 \texttt{previous\_date()} 或 \texttt{next\_date()} 时都会得到一个新的 \texttt{Date} 对象。函数 \texttt{add\_days()} 只返回最后一次迭代所创建的那个 \texttt{Date} 对象。下面的代码清单是一个简单的测试程序。
+实际情况甚至更糟。成员函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 和 \texttt{days\_\allowbreak{}from(\allowbreak{})\allowbreak{}} 中的每一次迭代在调用 \texttt{previous\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 或 \texttt{next\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 时都会得到一个新的 \texttt{Date} 对象。函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 只返回最后一次迭代所创建的那个 \texttt{Date} 对象。下面的代码清单是一个简单的测试程序。
 
-\begin{codeboxt}{代码清单 5.4（程序 5.2 DateArithmetic-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 5.4（程序 5.2 DateArithmetic-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Date.h"
 
@@ -358,7 +358,7 @@ count = 578
 should be date2: 4/3/2027
 \end{codebox}
 
-该应用功能可用，看起来也能正确地执行日期运算。然而，它的效率极低。成员函数 \texttt{add\_days()} 的循环次数必须等于参数 \texttt{n} 的值。成员函数 \texttt{days\_from()} 的循环次数必须等于从该日期到 \texttt{Date} 参数之间的天数，并且每次循环开始时都要调用成员函数 \texttt{compare\_to()}。由于公历规则，在循环内调用辅助函数 \texttt{next\_date()} 和 \texttt{previous\_date()} 代价高昂，而且每次调用都会创建并返回一个 \texttt{Date} 对象。这显然是一个糟糕的设计（图 5.2）。我们需要回溯，想出一个更好的设计。
+该应用功能可用，看起来也能正确地执行日期运算。然而，它的效率极低。成员函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 的循环次数必须等于参数 \texttt{n} 的值。成员函数 \texttt{days\_\allowbreak{}from(\allowbreak{})\allowbreak{}} 的循环次数必须等于从该日期到 \texttt{Date} 参数之间的天数，并且每次循环开始时都要调用成员函数 \texttt{compare\_\allowbreak{}to(\allowbreak{})\allowbreak{}}。由于公历规则，在循环内调用辅助函数 \texttt{next\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 和 \texttt{previous\_\allowbreak{}date(\allowbreak{})\allowbreak{}} 代价高昂，而且每次调用都会创建并返回一个 \texttt{Date} 对象。这显然是一个糟糕的设计（图 5.2）。我们需要回溯，想出一个更好的设计。
 
 \myGraphic{0.340}{images/CH05_F02_Mak.png}{图 5.2 迭代 1 版本的 \texttt{Date} 类能正确地执行日期运算，但做得不好，因为要按照公历规则逐日进行代价高昂的循环。这一版本只配得到一块煤。}
 
@@ -379,7 +379,7 @@ should be date2: 4/3/2027
 某一天的儒略\emph{日期}由年份和该年的第几天组合而成。例如，2024 年 1 月 1 日的儒略日期是 2024-01，2024 年 12 月 31 日的儒略日期是 2024-366（2024 年是闰年）。这同样与儒略日数无关。
 \end{mySidebar}
 
-\texttt{Date} 类的第二次设计迭代（代码清单 5.5）使用儒略日数。与之前版本的类一样，我们希望隐藏实现其对象状态的方式，因此成员变量 \texttt{julian} 是 private。我们不再需要私有成员变量 \texttt{year}、\texttt{month} 和 \texttt{day}。辅助函数 \texttt{to\_julian()} 把年、月、日转换为儒略日数。调用公有构造函数的方式没有改变——我们仍旧向它传入年、月、日这一组三个值。构造函数调用 \texttt{to\_julian()} 由这组三个值计算出对应的儒略日数。一个私有构造函数直接初始化儒略日数。辅助函数 \texttt{to\_ymd()} 把儒略日数转换为对应的年、月、日。
+\texttt{Date} 类的第二次设计迭代（代码清单 5.5）使用儒略日数。与之前版本的类一样，我们希望隐藏实现其对象状态的方式，因此成员变量 \texttt{julian} 是 private。我们不再需要私有成员变量 \texttt{year}、\texttt{month} 和 \texttt{day}。辅助函数 \texttt{to\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 把年、月、日转换为儒略日数。调用公有构造函数的方式没有改变——我们仍旧向它传入年、月、日这一组三个值。构造函数调用 \texttt{to\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 由这组三个值计算出对应的儒略日数。一个私有构造函数直接初始化儒略日数。辅助函数 \texttt{to\_ymd()} 把儒略日数转换为对应的年、月、日。
 
 \begin{codeboxt}{代码清单 5.5（程序 5.3 DateArithmetic-2）：\texttt{Date.h}}
 #include <set>
@@ -420,9 +420,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 隐藏的辅助函数，用于把年、月、日转换为儒略日数}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 隐藏的辅助函数，用于把儒略日数转换为年、月、日}\par
 
-代码清单 5.6 表明，使用儒略日数进行日期运算的效率要高得多。成员函数 \texttt{add\_days()} 只是把参数 \texttt{n} 的值加到当前日期的儒略日数上，从而得到新日期的儒略日数。成员函数 \texttt{days\_from()} 从当前日期的儒略日数中减去另一个日期的儒略日数，从而得到天数。
+代码清单 5.6 表明，使用儒略日数进行日期运算的效率要高得多。成员函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 只是把参数 \texttt{n} 的值加到当前日期的儒略日数上，从而得到新日期的儒略日数。成员函数 \texttt{days\_\allowbreak{}from(\allowbreak{})\allowbreak{}} 从当前日期的儒略日数中减去另一个日期的儒略日数，从而得到天数。
 
-由于我们隐藏了 \texttt{Date} 类的实现，我们得以彻底改变实现，而没有引起使用该类的代码发生变化。我们可以像以前一样调用 \texttt{Date} 构造函数来创建 \texttt{Date} 对象，并原样调用公有取值函数 \texttt{get\_year()}、\texttt{get\_month()} 和 \texttt{get\_day()} 来获取日期的年、月、日。此外，我们可以像以前一样调用公有成员函数 \texttt{add\_days()} 和 \texttt{days\_from()}，并得到相同的预期结果。
+由于我们隐藏了 \texttt{Date} 类的实现，我们得以彻底改变实现，而没有引起使用该类的代码发生变化。我们可以像以前一样调用 \texttt{Date} 构造函数来创建 \texttt{Date} 对象，并原样调用公有取值函数 \texttt{get\_\allowbreak{}year(\allowbreak{})\allowbreak{}}、\texttt{get\_\allowbreak{}month(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}day(\allowbreak{})\allowbreak{}} 来获取日期的年、月、日。此外，我们可以像以前一样调用公有成员函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 和 \texttt{days\_\allowbreak{}from(\allowbreak{})\allowbreak{}}，并得到相同的预期结果。
 
 \begin{codeboxt}{代码清单 5.6（程序 5.3 DateArithmetic-2）：\texttt{Date.cpp}（可以更好）}
 #include <iostream>
@@ -545,9 +545,9 @@ void Date::print()
 
 同一个测试程序（代码清单 5.4）产生相同的输出。
 
-尽管 \texttt{Date} 类的第二次迭代可以非常高效地进行日期运算，但它引入了另一种低效。辅助函数 \texttt{to\_julian()} 计算与公历年、月、日对应的儒略日数。反过来，成员函数 \texttt{to\_ymd()} 计算与儒略日数对应的年、月、日。由于公历规则，两者都很复杂。
+尽管 \texttt{Date} 类的第二次迭代可以非常高效地进行日期运算，但它引入了另一种低效。辅助函数 \texttt{to\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 计算与公历年、月、日对应的儒略日数。反过来，成员函数 \texttt{to\_ymd()} 计算与儒略日数对应的年、月、日。由于公历规则，两者都很复杂。
 
-公有构造函数调用 \texttt{to\_julian()}，由年、月、日的值初始化 \texttt{julian}（代码清单 5.5）。取值函数 \texttt{get\_year()}、\texttt{get\_month()} 和 \texttt{get\_day()} 中的每一个都必须先调用 \texttt{to\_ymd()}，才能分别返回年、月、日。公有成员函数 \texttt{print()} 也必须调用 \texttt{to\_ymd()}。
+公有构造函数调用 \texttt{to\_\allowbreak{}julian(\allowbreak{})\allowbreak{}}，由年、月、日的值初始化 \texttt{julian}（代码清单 5.5）。取值函数 \texttt{get\_\allowbreak{}year(\allowbreak{})\allowbreak{}}、\texttt{get\_\allowbreak{}month(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}day(\allowbreak{})\allowbreak{}} 中的每一个都必须先调用 \texttt{to\_ymd()}，才能分别返回年、月、日。公有成员函数 \texttt{print()} 也必须调用 \texttt{to\_ymd()}。
 
 \myGraphic{0.626}{images/CH05_F02_UN05_Mak.png}{}
 
@@ -615,7 +615,7 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 隐藏的辅助函数，用于让年、月、日这一组三个值变得有效}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 隐藏的辅助函数，用于让 julian 的值变得有效。}\par
 
-布尔成员变量 \texttt{ymd\_valid} 和 \texttt{julian\_valid} 有助于确保在必要时，\texttt{julian} 的值与 \texttt{year}、\texttt{month}、\texttt{day} 这一组三个值保持同步。辅助函数 \texttt{validate\_ymd()} 让这组三个值与 \texttt{julian} 的当前值同步。辅助函数 \texttt{validate\_julian()} 让 \texttt{julian} 的值与这组三个值的当前值同步。
+布尔成员变量 \texttt{ymd\_\allowbreak{}valid} 和 \texttt{julian\_\allowbreak{}valid} 有助于确保在必要时，\texttt{julian} 的值与 \texttt{year}、\texttt{month}、\texttt{day} 这一组三个值保持同步。辅助函数 \texttt{validate\_\allowbreak{}ymd(\allowbreak{})\allowbreak{}} 让这组三个值与 \texttt{julian} 的当前值同步。辅助函数 \texttt{validate\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 让 \texttt{julian} 的值与这组三个值的当前值同步。
 
 \begin{codeboxt}{代码清单 5.8（程序 5.4 DateArithmetic-3）：\texttt{Date.cpp}（高效的混合版本）}
 #include <iostream>
@@ -697,11 +697,11 @@ void Date::print()
 \noindent{\fontsize{9bp}{12bp}\selectfont ④ 让 julian 的值与年、月、日这组三个值的当前值同步。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 在打印年、月、日的值之前先验证它们。}\par
 
-公有取值函数 \texttt{get\_year()}、\texttt{get\_month()} 和 \texttt{get\_year()} 每个都必须先调用辅助函数 \texttt{validate\_ymd()}，以确保它返回的值与 \texttt{julian} 的当前值同步。公有成员函数 \texttt{print(}) 在打印之前也必须调用 \texttt{validate\_ymd()}。公有成员函数 \texttt{add\_days()} 和 \texttt{days\_from()} 都用儒略日数进行日期运算，它们各自都必须调用辅助函数 \texttt{validate\_julian()}，以确保 \texttt{julian} 的值与 \texttt{year}、\texttt{month}、\texttt{day} 的当前值同步。
+公有取值函数 \texttt{get\_\allowbreak{}year(\allowbreak{})\allowbreak{}}、\texttt{get\_\allowbreak{}month(\allowbreak{})\allowbreak{}} 和 \texttt{get\_\allowbreak{}year(\allowbreak{})\allowbreak{}} 每个都必须先调用辅助函数 \texttt{validate\_\allowbreak{}ymd(\allowbreak{})\allowbreak{}}，以确保它返回的值与 \texttt{julian} 的当前值同步。公有成员函数 \texttt{print(}) 在打印之前也必须调用 \texttt{validate\_\allowbreak{}ymd(\allowbreak{})\allowbreak{}}。公有成员函数 \texttt{add\_\allowbreak{}days(\allowbreak{})\allowbreak{}} 和 \texttt{days\_\allowbreak{}from(\allowbreak{})\allowbreak{}} 都用儒略日数进行日期运算，它们各自都必须调用辅助函数 \texttt{validate\_\allowbreak{}julian(\allowbreak{})\allowbreak{}}，以确保 \texttt{julian} 的值与 \texttt{year}、\texttt{month}、\texttt{day} 的当前值同步。
 
-辅助函数 \texttt{validate\_ymd()} 只有在 \texttt{year}、\texttt{month}、\texttt{day} 的值尚未与 \texttt{julian} 的值同步时，才调用代价高昂的辅助函数 \texttt{to\_ymd()}。私有布尔成员变量 \texttt{ymd\_valid} 跟踪这一同步状态。类似地，辅助函数 \texttt{validate\_julian()} 只有在 \texttt{julian} 的值尚未与 \texttt{year}、\texttt{month}、\texttt{day} 的值同步时，才调用代价高昂的辅助函数 \texttt{to\_julian()}。私有布尔成员变量 \texttt{julian\_valid} 跟踪同步状态。
+辅助函数 \texttt{validate\_\allowbreak{}ymd(\allowbreak{})\allowbreak{}} 只有在 \texttt{year}、\texttt{month}、\texttt{day} 的值尚未与 \texttt{julian} 的值同步时，才调用代价高昂的辅助函数 \texttt{to\_ymd()}。私有布尔成员变量 \texttt{ymd\_\allowbreak{}valid} 跟踪这一同步状态。类似地，辅助函数 \texttt{validate\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 只有在 \texttt{julian} 的值尚未与 \texttt{year}、\texttt{month}、\texttt{day} 的值同步时，才调用代价高昂的辅助函数 \texttt{to\_\allowbreak{}julian(\allowbreak{})\allowbreak{}}。私有布尔成员变量 \texttt{julian\_\allowbreak{}valid} 跟踪同步状态。
 
-我们只在即将访问 \texttt{year}、\texttt{month}、\texttt{day} 的值时才调用辅助函数 \texttt{to\_ymd()}。我们只在即将使用 \texttt{julian} 的值进行日期运算时才调用辅助函数 \texttt{to\_julian()}。这是\emph{惰性求值原则}（Lazy Evaluation Principle）的一个例子：我们把计算推迟到需要结果时才进行，从而避免不必要的计算，使代码更高效。
+我们只在即将访问 \texttt{year}、\texttt{month}、\texttt{day} 的值时才调用辅助函数 \texttt{to\_ymd()}。我们只在即将使用 \texttt{julian} 的值进行日期运算时才调用辅助函数 \texttt{to\_\allowbreak{}julian(\allowbreak{})\allowbreak{}}。这是\emph{惰性求值原则}（Lazy Evaluation Principle）的一个例子：我们把计算推迟到需要结果时才进行，从而避免不必要的计算，使代码更高效。
 
 \begin{mySidebar}{惰性求值原则}
 
@@ -720,7 +720,7 @@ void Date::print()
 
 本章中 \texttt{Date} 类的三个版本都没有提供任何公有设值函数。因此，一旦我们在运行时用年、月、日的值构造出一个 \texttt{Date} 对象，该对象就是\emph{不可变}的——没有办法改变它的状态。不可变对象往往有应用逻辑上的合理理由。我们将在 5.7 节进一步了解不可变对象。
 
-代码清单 5.9 展示了 \texttt{Date} 类的另一个版本。这个版本有选择地允许访问其实现的另一部分——它的儒略日数。我们现在把接受一个整数值来初始化成员变量 \texttt{julian} 的构造函数设为 public。公有取值函数 \texttt{get\_julian()} 返回私有数据成员 \texttt{julian} 的值。公有设值函数 \texttt{set\_julian()} 把 \texttt{julian} 设为其参数值，从而改变 \texttt{Date} 对象的状态。因此，在这个版本中，\texttt{Date} 对象是可变的。
+代码清单 5.9 展示了 \texttt{Date} 类的另一个版本。这个版本有选择地允许访问其实现的另一部分——它的儒略日数。我们现在把接受一个整数值来初始化成员变量 \texttt{julian} 的构造函数设为 public。公有取值函数 \texttt{get\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 返回私有数据成员 \texttt{julian} 的值。公有设值函数 \texttt{set\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 把 \texttt{julian} 设为其参数值，从而改变 \texttt{Date} 对象的状态。因此，在这个版本中，\texttt{Date} 对象是可变的。
 
 \begin{codeboxt}{代码清单 5.9（程序 5.5 DateArithmetic-4）：\texttt{Date.h}}
 #include <set>
@@ -754,7 +754,7 @@ public:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 儒略日数的取值函数}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 儒略日数的设值函数}\par
 
-代码清单 5.10 展示了公有成员函数 \texttt{get\_julian()} 和 \texttt{set\_julian()} 的实现。函数 \texttt{set\_julian()} 让代码能够以安全的方式修改私有成员变量 \texttt{julian} 的值。它先检查参数的值再使用，如果值为负就中止程序。实际应用处理这一错误应当比立刻中止更为优雅。类似地，每个构造函数也应当检查其参数值。
+代码清单 5.10 展示了公有成员函数 \texttt{get\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 和 \texttt{set\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 的实现。函数 \texttt{set\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 让代码能够以安全的方式修改私有成员变量 \texttt{julian} 的值。它先检查参数的值再使用，如果值为负就中止程序。实际应用处理这一错误应当比立刻中止更为优雅。类似地，每个构造函数也应当检查其参数值。
 
 \begin{codeboxt}{代码清单 5.10（程序 5.5 DateArithmetic-4）：\texttt{Date.cpp}（最优的混合版本）}
 ...
@@ -778,7 +778,7 @@ void Date::set_julian(const int j)
 
 新的测试程序练习了对 \texttt{Date} 对象儒略日数的访问和设置。
 
-\begin{codeboxt}{代码清单 5.11（程序 5.5 DateArithmetic-4）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 5.11（程序 5.5 DateArithmetic-4）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "Date.h"
@@ -871,9 +871,9 @@ void Date::set_day(const int d)
 }
 \end{codeboxt}
 
-在实际应用中，设值函数 \texttt{set\_day()} 需要对其参数值进行全面得多的验证，还要考虑当前的月份和年份。下面的代码清单是用于这个设计糟糕的 \texttt{Date} 类版本的测试程序。
+在实际应用中，设值函数 \texttt{set\_\allowbreak{}day(\allowbreak{})\allowbreak{}} 需要对其参数值进行全面得多的验证，还要考虑当前的月份和年份。下面的代码清单是用于这个设计糟糕的 \texttt{Date} 类版本的测试程序。
 
-\begin{codeboxt}{代码清单 5.13（程序 5.6 DateArithmetic-5）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 5.13（程序 5.6 DateArithmetic-5）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "Date.h"
@@ -934,9 +934,9 @@ C. 如果该对象是由 \texttt{afunc} 实例化的，那么函数 \texttt{afun
 
 D. 对于由对另一个对象的成员函数的调用所返回的类 \texttt{B} 对象，函数 \texttt{afunc} 不应调用其上的函数 \texttt{bfunc}。
 
-迪米特法则基本上是说，一个类只应调用与它关系密切的对象的成员函数。类 \texttt{DemeterAuto}、\texttt{Engine} 和 \texttt{Sparkplug} 提供了遵守和违反该法则规则的示例。
+迪米特法则基本上是说，一个类只应调用与它关系密切的对象的成员函数。类 \texttt{Demeter\allowbreak{}Auto}、\texttt{Engine} 和 \texttt{Sparkplug} 提供了遵守和违反该法则规则的示例。
 
-\begin{codeboxt}{代码清单 5.14（程序 5.7 DemeterAuto）：\texttt{DemeterAuto.h}}
+\begin{codeboxt}{代码清单 5.14（程序 5.7 DemeterAuto）：\texttt{Demeter\allowbreak{}Auto.\allowbreak{}h}}
 class Sparkplug
 {
 public:
@@ -987,11 +987,11 @@ private:
 
 \section{但实现真的被隐藏了吗？}
 
-要编写一个存储员工记录的应用，我们可以有一个 \texttt{Employee} 类，通过与 \texttt{Date} 类的一对一聚合来记录员工的出生日期（代码清单 5.15）。我们希望应用的普通用户无法修改 \texttt{Employee} 对象——当我们创建了一个对象之后，此类用户不应能够更改员工的 id、姓名和出生日期。三个私有成员变量 \texttt{employee\_id}、\texttt{name} 和 \texttt{birthdate} 都位于隐藏的状态实现中，且该类自身没有设值函数。
+要编写一个存储员工记录的应用，我们可以有一个 \texttt{Employee} 类，通过与 \texttt{Date} 类的一对一聚合来记录员工的出生日期（代码清单 5.15）。我们希望应用的普通用户无法修改 \texttt{Employee} 对象——当我们创建了一个对象之后，此类用户不应能够更改员工的 id、姓名和出生日期。三个私有成员变量 \texttt{employee\_\allowbreak{}id}、\texttt{name} 和 \texttt{birthdate} 都位于隐藏的状态实现中，且该类自身没有设值函数。
 
-然而，我们将使用 \texttt{Date} 类的可变版本（代码清单 5.9 和 5.10），它带有公有的 \texttt{set\_julian()} 设值函数。我们假设应用中另一个类，比如 \texttt{EmployeeForAdmin}，也聚合了 \texttt{Date} 类，但带有设值函数，允许管理员用户修正员工出生日期中的错误。然而，普通用户不应能够修改员工的出生日期。把 \texttt{birthdate} 设为 private 就足够了吗？
+然而，我们将使用 \texttt{Date} 类的可变版本（代码清单 5.9 和 5.10），它带有公有的 \texttt{set\_\allowbreak{}julian(\allowbreak{})\allowbreak{}} 设值函数。我们假设应用中另一个类，比如 \texttt{Employee\allowbreak{}For\allowbreak{}Admin}，也聚合了 \texttt{Date} 类，但带有设值函数，允许管理员用户修正员工出生日期中的错误。然而，普通用户不应能够修改员工的出生日期。把 \texttt{birthdate} 设为 private 就足够了吗？
 
-\begin{codeboxt}{代码清单 5.15（程序 5.8 HiddenDate-1）：\texttt{Employee.h}（有缺陷的设计）}
+\begin{codeboxt}{代码清单 5.15（程序 5.8 HiddenDate-1）：\texttt{Employee.\allowbreak{}h}（有缺陷的设计）}
 #include <iostream>
 #include <string>
 #include "Date.h"
@@ -1027,7 +1027,7 @@ inline ostream& operator <<(ostream& os, const Employee& emp)
 
 既然 \texttt{Employee} 类没有设值函数，\texttt{Employee} 对象就真的不可变吗？代码清单 5.16 是一个测试程序。
 
-\begin{codeboxt}{代码清单 5.16（程序 5.8 HiddenDate-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 5.16（程序 5.8 HiddenDate-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Employee.h"
 
@@ -1085,7 +1085,7 @@ Employee #1234567890
 
 有一些补救办法可以确保 \texttt{Employee} 对象不可变，如代码清单 5.17 所示。类的构造函数应当存储一份传给它的 \texttt{Date} 对象的副本。取值函数应当返回一个指向内嵌 \texttt{Date} 对象副本的指针。这样，就不可能更改嵌入 \texttt{Employee} 对象中的出生日期了。
 
-\begin{codeboxt}{代码清单 5.17（程序 5.9 HiddenDate-2）：\texttt{Employee.h}（修正后的设计）}
+\begin{codeboxt}{代码清单 5.17（程序 5.9 HiddenDate-2）：\texttt{Employee.\allowbreak{}h}（修正后的设计）}
 #include <iostream>
 #include <string>
 #include "Date.h"
@@ -1136,9 +1136,9 @@ Employee #1234567890
 
 尽管我们最终认定，对该应用而言拥有许多子类是一个糟糕的设计，但图 5.5 是开闭原则的一个很好的例子：按照该原则，我们应当让一个类对修改关闭，而对子类化开放（2.3.3 节）。它假设我们确信某个类已经捕捉到一组对象的所有共同属性和行为，因此该类的设计不应改变。这支持了代码稳定性。然而，我们允许为那些具有超出共同属性和行为的对象扩展该类。换句话说，被关闭的类是超类，而扩展则是它的子类。
 
-\myGraphic{0.980}{images/CH05_F05_Mak.png}{图 5.5 图书目录应用的一个设计，包含超类 \texttt{Attributes} 及其子类。在 \texttt{Attributes} 的类图中，符号 \texttt{\#} 表示成员函数 \texttt{is\_match(Attributes)} 是 protected——它对子类可见，但对其他代码隐藏。}
+\myGraphic{0.980}{images/CH05_F05_Mak.png}{图 5.5 图书目录应用的一个设计，包含超类 \texttt{Attributes} 及其子类。在 \texttt{Attributes} 的类图中，符号 \texttt{\#} 表示成员函数 \texttt{is\_\allowbreak{}match(\allowbreak{}Attributes)\allowbreak{}} 是 protected——它对子类可见，但对其他代码隐藏。}
 
-开闭原则是另一种设计具有隐藏实现的类的方式。通过把超类的成员变量和成员函数设为 private，我们可以隐藏其子类所继承的状态和行为的共同部分是如何实现的。在类 \texttt{Attributes} 中，成员变量 \texttt{title}、\texttt{last} 和 \texttt{first} 是 private。\texttt{FictionAttrs} 扩展了 \texttt{Attributes}，因此该类如何实现书名——也就是说，子类对象隐藏了它们如何实现自身状态中 \texttt{title}、\texttt{last} 和 \texttt{first} 这几个部分。该类用其私有的 \texttt{year} 和 \texttt{genre} 成员变量扩展了它隐藏的状态实现。
+开闭原则是另一种设计具有隐藏实现的类的方式。通过把超类的成员变量和成员函数设为 private，我们可以隐藏其子类所继承的状态和行为的共同部分是如何实现的。在类 \texttt{Attributes} 中，成员变量 \texttt{title}、\texttt{last} 和 \texttt{first} 是 private。\texttt{Fiction\allowbreak{}Attrs} 扩展了 \texttt{Attributes}，因此该类如何实现书名——也就是说，子类对象隐藏了它们如何实现自身状态中 \texttt{title}、\texttt{last} 和 \texttt{first} 这几个部分。该类用其私有的 \texttt{year} 和 \texttt{genre} 成员变量扩展了它隐藏的状态实现。
 
 \myGraphic{0.893}{images/CH05_F05_UN09_Mak.png}{}
 
@@ -1240,9 +1240,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 供猫使用的隐藏的扩展状态实现}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 供猫使用的隐藏的扩展行为实现}\par
 
-子类 \texttt{Human} 隐藏了它那部分状态（成员变量 \texttt{needs\_glasses}）和行为（成员函数 \texttt{read\_book()}）的实现。同样，子类 \texttt{Cat} 隐藏了它那部分状态（成员变量 \texttt{fur\_factor}）和行为（成员函数 \texttt{shed()}）的实现。由于它们在超类 \texttt{Mammal} 中被声明为纯虚函数，两个子类都必须实现公有成员函数 \texttt{eat()} 和 \texttt{perform()}。每个子类状态（身高和体重）和行为（打鼾）的共同部分的实现都由其超类 \texttt{Mammal} 隐藏。下面的代码清单是一个测试程序。
+子类 \texttt{Human} 隐藏了它那部分状态（成员变量 \texttt{needs\_\allowbreak{}glasses}）和行为（成员函数 \texttt{read\_\allowbreak{}book(\allowbreak{})\allowbreak{}}）的实现。同样，子类 \texttt{Cat} 隐藏了它那部分状态（成员变量 \texttt{fur\_\allowbreak{}factor}）和行为（成员函数 \texttt{shed()}）的实现。由于它们在超类 \texttt{Mammal} 中被声明为纯虚函数，两个子类都必须实现公有成员函数 \texttt{eat()} 和 \texttt{perform()}。每个子类状态（身高和体重）和行为（打鼾）的共同部分的实现都由其超类 \texttt{Mammal} 隐藏。下面的代码清单是一个测试程序。
 
-\begin{codeboxt}{代码清单 5.20（程序 5.10 Mammals）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 5.20（程序 5.10 Mammals）：\texttt{tester.\allowbreak{}cpp}}
 #include "Mammals.h"
 
 int main()

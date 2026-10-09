@@ -6,7 +6,16 @@
 \input{book/ccs.tex}   % 导言区（模板用 \include，这里改用 \input 避免 LaTeX 警告）
 
 \begin{document}
-\begin{sloppypar}   % 避免中英混排的长串被撑出边界
+% 断行松紧度：不要用全局 \sloppypar（tolerance=9999 会容忍「字距被拉到天边」的
+% 极松行，见「关于本书」liveBook 一段）。改用中等容忍度：
+%   \tolerance=2500      允许适当放松，但坏度封顶，字距不会被拉得离谱
+%   \emergencystretch    放不下的段落进入第三轮微调，多给 1em 的总余量
+%   \hfuzz=0.5pt         与原 \sloppypar 相同的溢出报告阈值
+% 配套措施：URL 用 \nolinkurl 排版（可在 . / - 处断行，见 build_latex.py），
+%           xeCJK 字间弹性在 ccs.tex 里收紧为 plus 0.04\baselineskip。
+\tolerance=3000
+\emergencystretch=2em
+\hfuzz=0.5pt
+\hbadness=2500   % 松散度低于此值不打日志（正常行不受影响，只是少刷屏）
 \subfile{book/index.tex}
-\end{sloppypar}
 \end{document}

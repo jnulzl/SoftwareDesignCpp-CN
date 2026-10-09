@@ -87,7 +87,7 @@ private:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 私有的静态常量字符串数组，保存月份名称}\par
 
-成员变量 \texttt{MONTH\_NAMES} 是一个私有的静态常量字符串数组，保存月份名称。重载的 \texttt{<<} 运算符以“月 日, 年”的形式打印日期对象，其中月份是首字母大写的三个字母缩写，例如
+成员变量 \texttt{MONTH\_\allowbreak{}NAMES} 是一个私有的静态常量字符串数组，保存月份名称。重载的 \texttt{<<} 运算符以“月 日, 年”的形式打印日期对象，其中月份是首字母大写的三个字母缩写，例如
 
 \begin{codebox}
 FEB 4, 2025 
@@ -114,7 +114,7 @@ ostream& operator <<(ostream& ostr, const Date& date)
 
 下面的代码清单是一个简短的测试程序。
 
-\begin{codeboxt}{代码清单 6.4（程序 6.2 SurpriseDate-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 6.4（程序 6.2 SurpriseDate-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "Date.h"
 
@@ -139,7 +139,7 @@ MAR 4, 2025
 
 这不过是无处不在的差一错误的一个例子，其根源在于数组下标从 \texttt{0} 而不是 \texttt{1} 开始。让这个意外雪上加霜的是，\texttt{Date} 类存在一个重大不一致：年和月内日的值都是精确的，但月份值却显然必须少 1。对使用 \texttt{Date} 类的程序员来说，这一点并不明显，因此才会出现运行时逻辑错误。
 
-设计良好的类需要消除这个意外。下面的代码清单给出了一种方法。输出 \texttt{<<} 运算符在对 \texttt{MONTH\_NAMES} 字符串数组取下标时，会悄悄地用 \texttt{date.month} 减去 1。
+设计良好的类需要消除这个意外。下面的代码清单给出了一种方法。输出 \texttt{<<} 运算符在对 \texttt{MONTH\_\allowbreak{}NAMES} 字符串数组取下标时，会悄悄地用 \texttt{date.\allowbreak{}month} 减去 1。
 
 \begin{codeboxt}{代码清单 6.5（程序 6.3 SurpriseDate-2）：\texttt{Date.cpp}}
 #include <iostream>
@@ -188,7 +188,7 @@ ostream& operator <<(ostream& ostr, const Date& date)
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 首个占位元素}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 不再需要减去 1}\par
 
-现在，\texttt{MONTH\_NAMES} 有 13 个元素。\texttt{MONTH\_NAMES[0]} 是首个占位元素，运算符 \texttt{<<} 不再需要从 \texttt{month} 中减去 1。我们以多一个未使用的数组元素为代价，消除了这点运行时开销。然后，在类 \texttt{Date} 中，我们必须修改这个私有静态数组的声明：
+现在，\texttt{MONTH\_\allowbreak{}NAMES} 有 13 个元素。\texttt{MONTH\_\allowbreak{}NAMES[0]} 是首个占位元素，运算符 \texttt{<<} 不再需要从 \texttt{month} 中减去 1。我们以多一个未使用的数组元素为代价，消除了这点运行时开销。然后，在类 \texttt{Date} 中，我们必须修改这个私有静态数组的声明：
 
 \begin{codebox}
     static const string MONTH_NAMES[13];
@@ -200,9 +200,9 @@ ostream& operator <<(ostream& ostr, const Date& date)
 
 程序员在使用他人编写的代码时，常常会遇到一类不希望出现的意外，其来源是一个命名糟糕的函数在被调用时做了意料之外的事。我们编写函数时通常清楚自己打算让它做什么，因此可能意识不到所起的名字有歧义或具有误导性。又或者，这个名字在当初编写该函数时是恰当的，但后来我们修改了函数却没有改名。
 
-下面是一个例子，说明一个命名糟糕的函数在被毫无戒心的用户调用后，如何导致运行时逻辑错误。类 \texttt{SortedList} 是 \texttt{vector<int>} 的子类。该类有一个静态函数 \texttt{merge()}，接受三个 \texttt{SortedList} 参数——要合并的 \texttt{list1} 和 \texttt{list2}，以及用于存放合并后元素的 \texttt{merged\_list}。重载的 \texttt{<<} 运算符会打印 \texttt{SortedList} 对象的内容。
+下面是一个例子，说明一个命名糟糕的函数在被毫无戒心的用户调用后，如何导致运行时逻辑错误。类 \texttt{Sorted\allowbreak{}List} 是 \texttt{vector<int>} 的子类。该类有一个静态函数 \texttt{merge()}，接受三个 \texttt{Sorted\allowbreak{}List} 参数——要合并的 \texttt{list1} 和 \texttt{list2}，以及用于存放合并后元素的 \texttt{merged\_\allowbreak{}list}。重载的 \texttt{<<} 运算符会打印 \texttt{Sorted\allowbreak{}List} 对象的内容。
 
-\begin{codeboxt}{代码清单 6.7（程序 6.5 SurpriseMerge-1）：\texttt{SortedList.h}}
+\begin{codeboxt}{代码清单 6.7（程序 6.5 SurpriseMerge-1）：\texttt{Sorted\allowbreak{}List.\allowbreak{}h}}
 #include <iostream>
 #include <vector>
 
@@ -228,9 +228,9 @@ inline ostream& operator <<(ostream& ostr, const SortedList& list)
 }
 \end{codeboxt}
 
-公有静态函数 \texttt{SortedList::merge()} 合并其前两个参数 \texttt{list1} 和 \texttt{list2} 的元素，并把合并后的元素存入第三个参数 \texttt{merged\_list}。但该函数还会从 \texttt{merged\_list} 中移除重复的值。从函数名完全看不出后面这个操作。
+公有静态函数 \texttt{Sorted\allowbreak{}List::\allowbreak{}merge(\allowbreak{})\allowbreak{}} 合并其前两个参数 \texttt{list1} 和 \texttt{list2} 的元素，并把合并后的元素存入第三个参数 \texttt{merged\_\allowbreak{}list}。但该函数还会从 \texttt{merged\_\allowbreak{}list} 中移除重复的值。从函数名完全看不出后面这个操作。
 
-\begin{codeboxt}{代码清单 6.8（程序 6.5 SurpriseMerge-1）：\texttt{SortedList.cpp}（糟糕的意外）}
+\begin{codeboxt}{代码清单 6.8（程序 6.5 SurpriseMerge-1）：\texttt{Sorted\allowbreak{}List.\allowbreak{}cpp}（糟糕的意外）}
 #include "SortedList.h"
 
 void SortedList::merge(const SortedList& list1,
@@ -280,9 +280,9 @@ void SortedList::merge(const SortedList& list1,
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 把 SortedList 类型的 list1 和 list2 合并到 SortedList 类型的 merged\_list 中。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 从 merged\_list 中移除重复的值。}\par
 
-我们的测试程序创建并初始化两个有序的 \texttt{SortedList} 对象 \texttt{list1} 和 \texttt{list2}，并创建 \texttt{SortedList} 对象 \texttt{merged\_list}（代码清单 6.9）。在实际应用中，我们应当检查这两个列表中的值确实是有序的。程序把这三个列表传给函数 \texttt{SortedList::merge()}。根据函数名，我们期望返回时 \texttt{merged\_list} 会包含来自 \texttt{list1} 和 \texttt{list2} 的所有合并后的值。随后程序调用函数 \texttt{print\_frequencies()}，它使用 STL 的 \texttt{map} 来计算并打印 \texttt{merged\_list} 中每个值的出现频率。
+我们的测试程序创建并初始化两个有序的 \texttt{Sorted\allowbreak{}List} 对象 \texttt{list1} 和 \texttt{list2}，并创建 \texttt{Sorted\allowbreak{}List} 对象 \texttt{merged\_\allowbreak{}list}（代码清单 6.9）。在实际应用中，我们应当检查这两个列表中的值确实是有序的。程序把这三个列表传给函数 \texttt{Sorted\allowbreak{}List::\allowbreak{}merge(\allowbreak{})\allowbreak{}}。根据函数名，我们期望返回时 \texttt{merged\_\allowbreak{}list} 会包含来自 \texttt{list1} 和 \texttt{list2} 的所有合并后的值。随后程序调用函数 \texttt{print\_\allowbreak{}frequencies(\allowbreak{})\allowbreak{}}，它使用 STL 的 \texttt{map} 来计算并打印 \texttt{merged\_\allowbreak{}list} 中每个值的出现频率。
 
-\begin{codeboxt}{代码清单 6.9（程序 6.5 SurpriseMerge-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 6.9（程序 6.5 SurpriseMerge-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include <map>
@@ -351,7 +351,7 @@ Frequency table
      13: 1
 \end{codebox}
 
-意外吧！我们遇到了一个严重的逻辑错误。由于该函数出乎意料地移除了所有重复的值，每个频率最多只有 1。一个不会误导程序员的更好函数名或许是 \texttt{merge\_and\_deduplicate}。
+意外吧！我们遇到了一个严重的逻辑错误。由于该函数出乎意料地移除了所有重复的值，每个频率最多只有 1。一个不会误导程序员的更好函数名或许是 \texttt{merge\_\allowbreak{}and\_\allowbreak{}deduplicate}。
 
 \myGraphic{0.980}{images/CH06_00_UN04_Mak.png}{}
 
@@ -367,9 +367,9 @@ Frequency table
 
 看一看代码清单 6.8 中的函数 \texttt{merge()}。随着两个 vector 的长度线性增长，该函数的运行时间却呈指数级增长。
 
-运行时间不断增长，原因在于我们从 \texttt{merged\_list} 中移除重复值的方式。第二个 \texttt{while} 循环里嵌套了第三个 \texttt{while} 循环，而远为优秀的设计根本不需要嵌套循环。在执行合并的第一个 \texttt{while} 循环中，我们可以加入测试，防止重复的值进入 \texttt{merged\_list}，如下面的代码清单所示。利用列表已有序这一点，只要某个值等于上一个追加的值，我们就不把它追加到 \texttt{merged\_list}。
+运行时间不断增长，原因在于我们从 \texttt{merged\_\allowbreak{}list} 中移除重复值的方式。第二个 \texttt{while} 循环里嵌套了第三个 \texttt{while} 循环，而远为优秀的设计根本不需要嵌套循环。在执行合并的第一个 \texttt{while} 循环中，我们可以加入测试，防止重复的值进入 \texttt{merged\_\allowbreak{}list}，如下面的代码清单所示。利用列表已有序这一点，只要某个值等于上一个追加的值，我们就不把它追加到 \texttt{merged\_\allowbreak{}list}。
 
-\begin{codeboxt}{代码清单 6.10（程序 6.6 SurpriseMerge-2）：\texttt{SortedList.cpp}（改进后的性能）}
+\begin{codeboxt}{代码清单 6.10（程序 6.6 SurpriseMerge-2）：\texttt{Sorted\allowbreak{}List.\allowbreak{}cpp}（改进后的性能）}
 #include "SortedList.h"
 
 void SortedList::merge_and_deduplicate(const SortedList& list1,
@@ -411,7 +411,7 @@ void SortedList::merge_and_deduplicate(const SortedList& list1,
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 不要追加重复的值（即等于上一个追加值的值）。}\par
 
-这个改进版的 merge 函数具有良好的可伸缩性。随着两个 \texttt{SortedList} 对象的长度线性增长，函数的运行时间也大致成比例地线性增长。
+这个改进版的 merge 函数具有良好的可伸缩性。随着两个 \texttt{Sorted\allowbreak{}List} 对象的长度线性增长，函数的运行时间也大致成比例地线性增长。
 
 \begin{myWarning}{注意}
 我们通过重新设计代码来\emph{重构}（refactor）代码，以便在某个方面加以改进，例如让它运行得更高效，但不改变其功能或使用方式。重构是开发迭代过程中的常见操作。
@@ -429,7 +429,7 @@ C++ 程序员知道，STL 中的 vector 用起来比数组更方便。STL vector
 
 为保持这个例子简短，我们不做诸如确保 vector 下标在有效范围内这类运行时检查——而真实的应用必须做这些检查。这个类的代码看起来简单直接，却隐藏着严重的性能问题。
 
-\begin{codeboxt}{代码清单 6.11（程序 6.7 SurpriseVector-1）：\texttt{Appointments.h}（性能低下）}
+\begin{codeboxt}{代码清单 6.11（程序 6.7 SurpriseVector-1）：\texttt{Appointments.\allowbreak{}h}（性能低下）}
 #include <vector>
 #include "Date.h"
 
@@ -472,7 +472,7 @@ private:
 
 程序会打印消息，表明它即将执行哪些操作，并打印 vector 的内容以确认操作的结果。执行操作的语句以粗体标出。
 
-\begin{codeboxt}{代码清单 6.12（程序 6.7 SurpriseVector-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 6.12（程序 6.7 SurpriseVector-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <vector>
 #include "Appointments.h"
@@ -592,7 +592,7 @@ Done!
 
 C++ 类的析构函数、拷贝构造函数和拷贝赋值运算符被称为「三大函数」（The Big Three）。经验法则是：如果你需要显式实现其中任何一个而不是使用默认版本，就应当把这三个都实现。
 
-再加上移动构造函数和移动赋值运算符，就得到「五大函数」（The Big Five）。（参见 \href{http://mng.bz/5lpD}{http://mng.bz/5lpD}。）
+再加上移动构造函数和移动赋值运算符，就得到「五大函数」（The Big Five）。（参见 \href{http://mng.bz/5lpD}{\nolinkurl{http://mng.bz/5lpD}}。）
 \end{mySidebar}
 
 由于我们重写了默认的拷贝构造函数和默认的拷贝赋值运算符，我们的实现必须分别显式地执行逐成员的拷贝和赋值。
@@ -795,11 +795,11 @@ Done!
 
 这段令人警醒的输出展示了运行测试程序时 C++ 代表我们自动执行的操作。运行时发生大量自动且隐藏的操作的应用程序，可能导致惨不忍睹的性能。在这个例子中，不仅运行时间更长，而且有大量的内存分配和释放。
 
-为了理解我们对类 \texttt{Date} 插桩后生成的这段输出，我们可以分析测试程序发出的一些调用，并识别出 C++ 在运行时执行的自动操作（图 6.1–6.7）。当 \texttt{Date} 对象 \texttt{d2025}（的一个副本）已在 vector 中时，我们调用 \texttt{appts.append(d2027)}：
+为了理解我们对类 \texttt{Date} 插桩后生成的这段输出，我们可以分析测试程序发出的一些调用，并识别出 C++ 在运行时执行的自动操作（图 6.1–6.7）。当 \texttt{Date} 对象 \texttt{d2025}（的一个副本）已在 vector 中时，我们调用 \texttt{appts.\allowbreak{}append(\allowbreak{}d2027)\allowbreak{}}：
 
-1. 按值把 \texttt{Date} 对象 \texttt{d2027} 参数传给 \texttt{appts.append()} 的调用，于是通过调用拷贝构造函数来拷贝该对象。
+1. 按值把 \texttt{Date} 对象 \texttt{d2027} 参数传给 \texttt{appts.\allowbreak{}append(\allowbreak{})\allowbreak{}} 的调用，于是通过调用拷贝构造函数来拷贝该对象。
 
-2. vector 的成员函数 \texttt{push\_back()} 追加它的 \texttt{Date} 对象 \texttt{d2027} 参数的一个副本，于是调用拷贝构造函数。
+2. vector 的成员函数 \texttt{push\_\allowbreak{}back(\allowbreak{})\allowbreak{}} 追加它的 \texttt{Date} 对象 \texttt{d2027} 参数的一个副本，于是调用拷贝构造函数。
 
 3. vector 必须增长一个元素，于是它分配一个新的、更长的内部动态数组。
 
@@ -811,13 +811,13 @@ Done!
 
 \myGraphic{0.226}{images/CH06_F02_Mak.png}{图 6.2}
 
-6. 从对函数 \texttt{appts.append()} 的调用返回时，它持有的 \texttt{d2027} 副本离开作用域，于是调用 \texttt{Date} 对象 \texttt{d2027} 的析构函数。
+6. 从对函数 \texttt{appts.\allowbreak{}append(\allowbreak{})\allowbreak{}} 的调用返回时，它持有的 \texttt{d2027} 副本离开作用域，于是调用 \texttt{Date} 对象 \texttt{d2027} 的析构函数。
 
 当 \texttt{Date} 对象 \texttt{d2025} 和 \texttt{d2027} 已在 vector 中时，我们调用函数 \texttt{print()}，此时
 
 1. 按值传递 \texttt{Appointments} 参数，于是通过调用每个 \texttt{Date} 对象的拷贝构造函数来拷贝它们。
 
-2. 在函数 \texttt{print()} 中，对 \texttt{appts.get\_dates()} 的调用返回 vector 的一个副本，于是对它的每个 \texttt{Date} 对象调用拷贝构造函数。
+2. 在函数 \texttt{print()} 中，对 \texttt{appts.\allowbreak{}get\_\allowbreak{}dates(\allowbreak{})\allowbreak{}} 的调用返回 vector 的一个副本，于是对它的每个 \texttt{Date} 对象调用拷贝构造函数。
 
 3. 为打印而拷贝 vector 中的 \texttt{Date} 对象 \texttt{d2025}。
 
@@ -827,13 +827,13 @@ Done!
 
 6. 释放 \texttt{Date} 对象 \texttt{d2027} 的副本。
 
-7. 释放 \texttt{appts.get\_dates()} 返回的 vector 中的每个 \texttt{Date} 对象。
+7. 释放 \texttt{appts.\allowbreak{}get\_\allowbreak{}dates(\allowbreak{})\allowbreak{}} 返回的 vector 中的每个 \texttt{Date} 对象。
 
 8. 从函数 \texttt{print()} 返回时，它的 \texttt{Appointments} 副本离开作用域，于是释放该参数及其 vector 中的每个 \texttt{Date} 对象。
 
-当我们把一个 \texttt{Date} 对象插入 vector 时，发生的操作与追加对象时类似。vector 必须增长一个元素，于是它分配一个新的、更长的内部动态数组并释放旧数组。当 Date 对象 \texttt{d2025} 和 \texttt{d2027} 已在 vector 中时，我们调用 \texttt{appts.insert(0, d1969)}，此时
+当我们把一个 \texttt{Date} 对象插入 vector 时，发生的操作与追加对象时类似。vector 必须增长一个元素，于是它分配一个新的、更长的内部动态数组并释放旧数组。当 Date 对象 \texttt{d2025} 和 \texttt{d2027} 已在 vector 中时，我们调用 \texttt{appts.\allowbreak{}insert(\allowbreak{}0,\allowbreak{} d1969)\allowbreak{}}，此时
 
-1. 按值把 \texttt{Date} 对象 \texttt{d1969} 参数传给 \texttt{appts.append()} 的调用，并通过调用拷贝构造函数来拷贝该对象。
+1. 按值把 \texttt{Date} 对象 \texttt{d1969} 参数传给 \texttt{appts.\allowbreak{}append(\allowbreak{})\allowbreak{}} 的调用，并通过调用拷贝构造函数来拷贝该对象。
 
 2. vector 的成员函数 \texttt{insert()} 追加它的 \texttt{Date} 参数的一个副本，于是调用拷贝构造函数。
 
@@ -847,11 +847,11 @@ Done!
 
 \myGraphic{0.291}{images/CH06_F04_Mak.png}{图 6.4}
 
-6. 从对函数 \texttt{appts.insert()} 的调用返回时，它的参数离开作用域，于是调用 \texttt{Date} 对象 \texttt{d1969} 的析构函数。
+6. 从对函数 \texttt{appts.\allowbreak{}insert(\allowbreak{})\allowbreak{}} 的调用返回时，它的参数离开作用域，于是调用 \texttt{Date} 对象 \texttt{d1969} 的析构函数。
 
-当我们调用函数 \texttt{appts.remove()} 以移除 vector 中下标 1 处的对象时，
+当我们调用函数 \texttt{appts.\allowbreak{}remove(\allowbreak{})\allowbreak{}} 以移除 vector 中下标 1 处的对象时，
 
-1. 对 \texttt{appts.at(1)} 的调用返回下标 1 处 \texttt{Date} 对象 \texttt{d2025} 的一个副本。
+1. 对 \texttt{appts.\allowbreak{}at(\allowbreak{}1)\allowbreak{}} 的调用返回下标 1 处 \texttt{Date} 对象 \texttt{d2025} 的一个副本。
 
 2. 释放正从 vector 下标 1 处移除的 \texttt{Date} 对象 \texttt{d2025}：
 
@@ -867,12 +867,12 @@ Done!
 
 \begin{mySidebar}{C++ 标准的 vector 类}
 
-C++ 标准的 \texttt{std::vector} 类管理着一个内部动态数组，其存储在运行时按需自动增长，这使 vector 对程序员来说用起来很方便。\texttt{vector} 类采用了一些策略，以减少每次添加新元素时都需创建新动态数组的需要。我们可以调用它的 \texttt{reserve()} 成员函数来预分配一个指定大小的 vector。当 vector 为了容纳新元素而必须创建一个新的内部动态数组时，它会选择一个最佳的增长量，让新数组的大小超过旧数组的大小。这样，后续添加元素时可能就不再需要创建新数组了。
+C++ 标准的 \texttt{std::\allowbreak{}vector} 类管理着一个内部动态数组，其存储在运行时按需自动增长，这使 vector 对程序员来说用起来很方便。\texttt{vector} 类采用了一些策略，以减少每次添加新元素时都需创建新动态数组的需要。我们可以调用它的 \texttt{reserve()} 成员函数来预分配一个指定大小的 vector。当 vector 为了容纳新元素而必须创建一个新的内部动态数组时，它会选择一个最佳的增长量，让新数组的大小超过旧数组的大小。这样，后续添加元素时可能就不再需要创建新数组了。
 \end{mySidebar}
 
 为缓解应用程序的大部分糟糕性能，我们需要重新设计 \texttt{Appointments} 类，改为使用指向 \texttt{Date} 对象的指针，而不是直接使用 \texttt{Date} 对象。成员变量 \texttt{dates} 现在是一个存放指向 \texttt{Date} 对象的指针的 vector。成员函数 \texttt{append()} 和 \texttt{insert()} 各自接收一个指向 \texttt{Date} 对象的指针，成员函数 \texttt{at()} 返回一个指向 \texttt{Date} 对象的指针。
 
-\begin{codeboxt}{代码清单 6.14（程序 6.9 SurpriseVector-3）：\texttt{Appointments.h}}
+\begin{codeboxt}{代码清单 6.14（程序 6.9 SurpriseVector-3）：\texttt{Appointments.\allowbreak{}h}}
 #include <vector>
 #include "Date.h"
 
@@ -905,7 +905,7 @@ private:
 
 测试程序的新版本动态创建新的 \texttt{Date} 对象。它的变量值以及它传递的参数值都是指向这些 \texttt{Date} 对象的指针。此外，它更合理地把 \texttt{Appointments} 参数 \texttt{appts} 按引用传给 \texttt{print()} 函数，如下面的代码清单所示。
 
-\begin{codeboxt}{代码清单 6.15（程序 6.9 SurpriseVector-3）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 6.15（程序 6.9 SurpriseVector-3）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include <vector>
 #include "Appointments.h"
@@ -1051,9 +1051,9 @@ C++ 语言并不原生支持契约式编程。不过，我们仍然可以用该�
 
 \subsection{6.3.1 按契约编写环形缓冲区}
 
-下面的例子演示了如何对一个实现环形缓冲区的类按契约编程（代码清单 6.16）。一个具有给定容量的动态数组存放整数内容，私有成员变量 \texttt{buffer} 指向它。公有成员函数 \texttt{add()} 在缓冲区尾部插入一个整数元素，公有成员函数 \texttt{remove()} 从缓冲区头部移除一个整数元素并返回该元素的值。成员变量 \texttt{capacity} 是缓冲区能容纳的最大元素数。成员变量 \texttt{head} 和 \texttt{tail} 分别是头元素和尾元素的下标。成员变量 \texttt{count} 记录当前缓冲区中有多少个元素。私有成员函数 \texttt{class\_invariant()} 计算类不变式，若不变式成立则返回 true，否则返回 false。
+下面的例子演示了如何对一个实现环形缓冲区的类按契约编程（代码清单 6.16）。一个具有给定容量的动态数组存放整数内容，私有成员变量 \texttt{buffer} 指向它。公有成员函数 \texttt{add()} 在缓冲区尾部插入一个整数元素，公有成员函数 \texttt{remove()} 从缓冲区头部移除一个整数元素并返回该元素的值。成员变量 \texttt{capacity} 是缓冲区能容纳的最大元素数。成员变量 \texttt{head} 和 \texttt{tail} 分别是头元素和尾元素的下标。成员变量 \texttt{count} 记录当前缓冲区中有多少个元素。私有成员函数 \texttt{class\_\allowbreak{}invariant(\allowbreak{})\allowbreak{}} 计算类不变式，若不变式成立则返回 true，否则返回 false。
 
-\begin{codeboxt}{代码清单 6.16（程序 6.10 CircularBuffer-1）：\texttt{CircularBuffer.h}}
+\begin{codeboxt}{代码清单 6.16（程序 6.10 CircularBuffer-1）：\texttt{Circular\allowbreak{}Buffer.\allowbreak{}h}}
 class CircularBuffer
 {
 public:
@@ -1079,9 +1079,9 @@ private:
 
 在环形缓冲区的实现中（代码清单 6.17），成员函数 \texttt{add()} 在向缓冲区添加一个新值后递增成员变量 \texttt{tail}。\texttt{tail} 的值超过缓冲区容量时会绕回到缓冲区的另一端。成员函数 \texttt{remove()} 在从缓冲区移除一个值后递增成员变量 \texttt{head}。它的值超过缓冲区容量时也会绕回到缓冲区的另一端。
 
-在这个例子中，我们用头注释记录了每个成员函数——这是一种极力推荐的做法，但为了节省篇幅，本书的例子通常不做。注释标签 \texttt{@precondition}、\texttt{@postcondition} 和 \texttt{@invariant} 分别指定函数前置条件、函数后置条件和类不变式。辅助函数 \texttt{class\_invariant()} 实现了类不变式。
+在这个例子中，我们用头注释记录了每个成员函数——这是一种极力推荐的做法，但为了节省篇幅，本书的例子通常不做。注释标签 \texttt{@precondition}、\texttt{@postcondition} 和 \texttt{@invariant} 分别指定函数前置条件、函数后置条件和类不变式。辅助函数 \texttt{class\_\allowbreak{}invariant(\allowbreak{})\allowbreak{}} 实现了类不变式。
 
-\begin{codeboxt}{代码清单 6.17（程序 6.10 CircularBuffer-1）：\texttt{CircularBuffer.cpp}}
+\begin{codeboxt}{代码清单 6.17（程序 6.10 CircularBuffer-1）：\texttt{Circular\allowbreak{}Buffer.\allowbreak{}cpp}}
 #include <cassert>
 #include "CircularBuffer.h"
 
@@ -1154,7 +1154,7 @@ int CircularBuffer::remove()
 
 测试程序对环形缓冲区进行了演练。
 
-\begin{codeboxt}{代码清单 6.18（程序 6.10 CircularBuffer-1）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 6.18（程序 6.10 CircularBuffer-1）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "CircularBuffer.h"
 
@@ -1222,7 +1222,7 @@ Assertion failed: (count > 0), function remove, file CircularBuffer.h, line 51.
 如果前置条件针对的是某个类的成员函数，那么该类必须提供某种公有手段，让调用者能检查前置条件是否成立。由于这是调用者的责任，函数没有义务检查前置条件是否满足。
 \end{mySidebar}
 
-在类 \texttt{CircularBuffer}（代码清单 6.17）中，调用成员函数 \texttt{add()} 的前置条件是缓冲区未满。因此，测试程序（代码清单 6.18）先调用成员函数 \texttt{get\_count()} 来检查计数小于 \texttt{SIZE}。如果缓冲区已满，它就不尝试添加。调用成员函数 \texttt{remove()} 的前置条件是缓冲区非空，测试程序同样先调用 \texttt{get\_count()}，这次检查计数不为 0。如果缓冲区为空，它就不尝试移除。
+在类 \texttt{Circular\allowbreak{}Buffer}（代码清单 6.17）中，调用成员函数 \texttt{add()} 的前置条件是缓冲区未满。因此，测试程序（代码清单 6.18）先调用成员函数 \texttt{get\_\allowbreak{}count(\allowbreak{})\allowbreak{}} 来检查计数小于 \texttt{SIZE}。如果缓冲区已满，它就不尝试添加。调用成员函数 \texttt{remove()} 的前置条件是缓冲区非空，测试程序同样先调用 \texttt{get\_\allowbreak{}count(\allowbreak{})\allowbreak{}}，这次检查计数不为 0。如果缓冲区为空，它就不尝试移除。
 
 如果函数的前置条件成立，而我们调用了该函数，那么函数必须保证自身行为正确。对于函数 \texttt{add()}，这意味着它必须正确地把值添加到缓冲区尾部，并推进成员变量 \texttt{tail}。函数 \texttt{remove()} 必须正确地从缓冲区头部移除一个值，推进成员变量 \texttt{head}，并返回被移除的值。
 
@@ -1242,7 +1242,7 @@ Assertion failed: (count > 0), function remove, file CircularBuffer.h, line 51.
 \item 检查前置条件，若不满足，则中止程序。
 \end{itemize}
 
-在类 \texttt{CircularBuffer} 中，我们为这两个成员函数都选择了中止这一选项。在每个函数中，\texttt{assert()} 检查函数前置条件的值，若前置条件不满足，则立即中止程序。契约式编程允许函数的开发者编写不一定方便调用者的行为。
+在类 \texttt{Circular\allowbreak{}Buffer} 中，我们为这两个成员函数都选择了中止这一选项。在每个函数中，\texttt{assert()} 检查函数前置条件的值，若前置条件不满足，则立即中止程序。契约式编程允许函数的开发者编写不一定方便调用者的行为。
 
 测试程序（代码清单 6.18）在最后一次调用 \texttt{remove()} 时没有先检查该函数的前置条件。缓冲区为空，于是该函数以断言失败中止了程序。
 
@@ -1261,7 +1261,7 @@ Assertion failed: (count > 0), function remove, file CircularBuffer.h, line 51.
 我们可以假定，如果我们调用了一个函数而它返回了，那么它的行为是正确的，后置条件也成立。这样我们就不必在调用之后再做错误检查。（当然，我们仍然可以检查。）
 \end{mySidebar}
 
-在类 \texttt{CircularBuffer}（代码清单 6.17）中，如果我们在确认前置条件满足后调用成员函数 \texttt{add()}，那么该函数必须成功地把新值添加到缓冲区，此后缓冲区不可能为空。在函数返回之前，它会检查自己的后置条件，即成员变量 \texttt{count} 必须大于零。在这个例子中，如果后置条件不满足，函数就中止程序。
+在类 \texttt{Circular\allowbreak{}Buffer}（代码清单 6.17）中，如果我们在确认前置条件满足后调用成员函数 \texttt{add()}，那么该函数必须成功地把新值添加到缓冲区，此后缓冲区不可能为空。在函数返回之前，它会检查自己的后置条件，即成员变量 \texttt{count} 必须大于零。在这个例子中，如果后置条件不满足，函数就中止程序。
 
 如果我们在确认前置条件满足后调用成员函数 \texttt{remove()}，那么该函数必须成功地从缓冲区移除一个值并将其返回，此后缓冲区不可能为满。在函数返回之前，它会检查自己的后置条件，即成员变量 \texttt{count} 必须小于成员变量 \texttt{capacity}。在这个例子中，如果后置条件不满足，函数就中止程序。
 
@@ -1278,13 +1278,13 @@ Assertion failed: (count > 0), function remove, file CircularBuffer.h, line 51.
 \emph{类不变式}是一个涉及类的状态实现的条件（布尔表达式），在运行时每创建一个对象之后（即在每次构造函数调用之后）都必须成立。每当对象被某个设值函数（setter）或任何其他改变对象状态的函数变更之后，它都必须保持成立。类不变式确保不会创建无效的对象，且任何对象都不会进入无效状态。通常，类不变式由该类的成员变量构成。
 \end{mySidebar}
 
-在类 \texttt{CircularBuffer}（代码清单 6.17）中，类不变式规定：成员变量 \texttt{head} 和 \texttt{tail} 的值始终都大于等于 0 且小于缓冲区容量：
+在类 \texttt{Circular\allowbreak{}Buffer}（代码清单 6.17）中，类不变式规定：成员变量 \texttt{head} 和 \texttt{tail} 的值始终都大于等于 0 且小于缓冲区容量：
 
 \begin{codebox}
 (0 <= head < capacity) and (0 <= tail < capacity)
 \end{codebox}
 
-布尔辅助函数 \texttt{class\_invariant()} 执行这项测试，我们必须在该构造函数返回之前，以及成员函数 \texttt{add()} 和 \texttt{remove()} 各自返回之前调用它。构造函数设置对象的初始状态，而这两个函数则修改对象的状态。与这个示例类中的函数前置条件和后置条件一样，只要类不变式不成立，程序就会中止。
+布尔辅助函数 \texttt{class\_\allowbreak{}invariant(\allowbreak{})\allowbreak{}} 执行这项测试，我们必须在该构造函数返回之前，以及成员函数 \texttt{add()} 和 \texttt{remove()} 各自返回之前调用它。构造函数设置对象的初始状态，而这两个函数则修改对象的状态。与这个示例类中的函数前置条件和后置条件一样，只要类不变式不成立，程序就会中止。
 
 这是一个有效的类不变式吗？当对象首次创建时，成员变量 \texttt{head} 和 \texttt{tail} 都被设为 0，这满足不变式中 \texttt{>= 0} 的部分。成员函数 \texttt{add()} 和 \texttt{remove()} 各自把 \texttt{tail} 和 \texttt{head} 加 1，然后对所得之和与成员变量 \texttt{capacity} 做取模运算：
 
@@ -1309,13 +1309,13 @@ tail = tail%capacity
 
 那么在取模运算发生之前，\texttt{tail} 的值可能会短暂地等于 \texttt{capacity} 的值。但是，在函数返回之前，类不变式必须重新成立。
 
-为一个类找到合适的不变式可能很有挑战性。我们为类 \texttt{CircularBuffer} 所选的类不变式本身并不足以确保缓冲区能正确运作。例如，它并不保证成员变量 \texttt{head} 和 \texttt{tail} 的值不会相互越过。类不变式要与成员函数的前置条件和后置条件协同作用，才能保证缓冲区正确运作。
+为一个类找到合适的不变式可能很有挑战性。我们为类 \texttt{Circular\allowbreak{}Buffer} 所选的类不变式本身并不足以确保缓冲区能正确运作。例如，它并不保证成员变量 \texttt{head} 和 \texttt{tail} 的值不会相互越过。类不变式要与成员函数的前置条件和后置条件协同作用，才能保证缓冲区正确运作。
 
 \begin{mySidebar}{证明程序的正确性}
 
 从理论上讲，如果我们能为程序中每个类都指定恰当的类不变式，以及每个成员函数的前置条件和后置条件，我们就能证明该程序是正确的。然而，除了最简单的程序之外，这在实践中都非常困难。
 
-著名计算机科学家唐·高德纳（Don Knuth）曾这样评价自己写的一个程序：“小心上面代码中的 bug；我只是证明了它是正确的，并没有试过它”（\href{https://www-cs-faculty.stanford.edu/~knuth/faq.html}{https://www-cs-faculty.stanford.edu/\textasciitilde{}knuth/faq.html}）。
+著名计算机科学家唐·高德纳（Don Knuth）曾这样评价自己写的一个程序：“小心上面代码中的 bug；我只是证明了它是正确的，并没有试过它”（\href{https://www-cs-faculty.stanford.edu/~knuth/faq.html}{\nolinkurl{https://www-cs-faculty.stanford.edu/\textasciitilde{}knuth/faq.html}}）。
 \end{mySidebar}
 
 \section*{小结}

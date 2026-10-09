@@ -22,7 +22,7 @@
 
 \section{单例设计模式确保一个类只有一个对象}
 
-假设你的应用需要向一台或多台打印机输出打印内容。每当应用需要打印时，它都必须访问一个 \texttt{PrintSpooler} 对象。应用并不知道这个后台处理程序（spooler）对象是否已经存在。如果该对象不存在，就会创建一个，而应用对此毫不知情。每当应用要打印时，它访问的都是同一个 \texttt{PrintSpooler} 对象，因此至多只存在一个 \texttt{PrintSpooler} 对象。所以，该对象就是一个\emph{单例}对象。单例设计模式为支持此类对象的软件架构提供了模型。
+假设你的应用需要向一台或多台打印机输出打印内容。每当应用需要打印时，它都必须访问一个 \texttt{Print\allowbreak{}Spooler} 对象。应用并不知道这个后台处理程序（spooler）对象是否已经存在。如果该对象不存在，就会创建一个，而应用对此毫不知情。每当应用要打印时，它访问的都是同一个 \texttt{Print\allowbreak{}Spooler} 对象，因此至多只存在一个 \texttt{Print\allowbreak{}Spooler} 对象。所以，该对象就是一个\emph{单例}对象。单例设计模式为支持此类对象的软件架构提供了模型。
 
 在具体示例中，假设大学体育馆有一个贵宾包厢（executive suite），仅在特定的体育赛事期间可供使用。只有一张通行证，允许持有人在包厢可用时使用它。这张通行证就是一个单例对象，而且至多只能有一张。
 
@@ -42,7 +42,7 @@
 
 我们应用的第一个版本不使用单例设计模式，因此无法具备全部期望的设计特性。随后，我们将使用该设计模式来重构这个应用。
 
-实现单例对象的一个显而易见的方法，是把它作为全局变量的值。在我们应用的第一个版本中，类 \texttt{ExecutivePass} 就是贵宾通行证的一个直白实现（图 14.1）。
+实现单例对象的一个显而易见的方法，是把它作为全局变量的值。在我们应用的第一个版本中，类 \texttt{Executive\allowbreak{}Pass} 就是贵宾通行证的一个直白实现（图 14.1）。
 
 \myGraphic{0.266}{images/CH14_F01_Mak.png}{图 14.1 我们对单例类的首次尝试}
 
@@ -50,7 +50,7 @@
 
 就像我们在 6.2.2 节对 \texttt{Date} 类所做的那样，我们将重写并插桩拷贝构造函数和拷贝赋值运算符。这样做将展示：如果单例对象设计不当，它是如何失效的。
 
-\begin{codeboxt}{代码清单 14.1（程序 14.1 ExecPass）：\texttt{ExecutivePass.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.1（程序 14.1 ExecPass）：\texttt{Executive\allowbreak{}Pass.\allowbreak{}h}（使用设计模式之前）}
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -89,9 +89,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 拷贝构造函数}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 拷贝赋值运算符}\par
 
-在测试程序中，全局变量 \texttt{pass} 的值就是那个 \texttt{ExecutivePass} 对象。
+在测试程序中，全局变量 \texttt{pass} 的值就是那个 \texttt{Executive\allowbreak{}Pass} 对象。
 
-\begin{codeboxt}{代码清单 14.2（程序 14.1 ExecPass）：\texttt{tester.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.2（程序 14.1 ExecPass）：\texttt{tester.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include "ExecutivePass.h"
 
@@ -149,7 +149,7 @@ copy 2: Executive pass now held by Flo, key = 4658
 
 \subsection{14.1.3 使用单例设计模式之后}
 
-我们可以通过重构代码、使其仿照单例设计模式来修复类 \texttt{ExecutivePass} 存在的问题。
+我们可以通过重构代码、使其仿照单例设计模式来修复类 \texttt{Executive\allowbreak{}Pass} 存在的问题。
 
 \begin{mySidebar}{单例设计模式}
 
@@ -159,18 +159,18 @@ copy 2: Executive pass now held by Flo, key = 4658
 我们必须做出几处重大改动（图 14.2）：
 
 \begin{itemize}
-\item 我们必须把构造函数设为私有。不能允许代码声明一个 \texttt{ExecutivePass} 对象，也不能用 \texttt{new} 动态创建它。我们必须控制单例通行证对象的创建，并且只应在需要时才创建单例对象（惰性构造）。
+\item 我们必须把构造函数设为私有。不能允许代码声明一个 \texttt{Executive\allowbreak{}Pass} 对象，也不能用 \texttt{new} 动态创建它。我们必须控制单例通行证对象的创建，并且只应在需要时才创建单例对象（惰性构造）。
 \item 我们必须禁用拷贝构造函数和拷贝赋值运算符。不能允许代码为单例对象创建副本。
-\item 一个私有的静态 \texttt{ExecutivePass} 成员变量必须指向那个唯一的单例对象（如果它存在的话）。否则，该变量的值必须是 \texttt{nullptr}。
-\item 一个公有的静态 \texttt{obtain()} 成员函数必须返回指向单例对象的指针，并设置谁持有这张通行证。如果对象尚未存在，它必须创建该对象。\texttt{ExecutivePass::obtain()} 就是访问单例对象的全局访问点。
+\item 一个私有的静态 \texttt{Executive\allowbreak{}Pass} 成员变量必须指向那个唯一的单例对象（如果它存在的话）。否则，该变量的值必须是 \texttt{nullptr}。
+\item 一个公有的静态 \texttt{obtain()} 成员函数必须返回指向单例对象的指针，并设置谁持有这张通行证。如果对象尚未存在，它必须创建该对象。\texttt{Executive\allowbreak{}Pass::\allowbreak{}obtain(\allowbreak{})\allowbreak{}} 就是访问单例对象的全局访问点。
 \item 删除单例对象之后，必须能够稍后再创建一个新的。
 \end{itemize}
 
-\myGraphic{0.793}{images/CH14_F02_Mak.png}{图 14.2 一个设计良好的单例对象。构造函数是私有的。拷贝构造函数和拷贝赋值运算符都被禁用。私有静态成员变量 \texttt{single\_instance} 指向该单例对象，公有静态成员函数 \texttt{obtain()} 返回该指针的值。}
+\myGraphic{0.793}{images/CH14_F02_Mak.png}{图 14.2 一个设计良好的单例对象。构造函数是私有的。拷贝构造函数和拷贝赋值运算符都被禁用。私有静态成员变量 \texttt{single\_\allowbreak{}instance} 指向该单例对象，公有静态成员函数 \texttt{obtain()} 返回该指针的值。}
 
 我们把构造函数设为私有，并禁用拷贝构造函数和拷贝赋值运算符。
 
-\begin{codeboxt}{代码清单 14.3（程序 14.2 ExecPass-SingletonDP）：\texttt{ExecutivePass.h}}
+\begin{codeboxt}{代码清单 14.3（程序 14.2 ExecPass-SingletonDP）：\texttt{Executive\allowbreak{}Pass.\allowbreak{}h}}
 #include <iostream>
 #include <string>
 #include <stdlib.h>
@@ -210,9 +210,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 私有构造函数}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 指向单例对象的静态指针}\par
 
-私有静态成员变量 \texttt{single\_instance} 指向单例对象（如果它存在的话）；否则其值为 \texttt{nullptr}（代码清单 14.4）。公有静态成员函数 \texttt{obtain()} 返回指向已存在单例对象的指针。如果单例对象尚未存在，该函数会创建并返回指向一个新创建单例对象的指针。析构函数把 \texttt{single\_instance} 设为 \texttt{nullptr}，这样在应用运行期间，当下次我们的代码需要单例对象时，就能创建一个新的。
+私有静态成员变量 \texttt{single\_\allowbreak{}instance} 指向单例对象（如果它存在的话）；否则其值为 \texttt{nullptr}（代码清单 14.4）。公有静态成员函数 \texttt{obtain()} 返回指向已存在单例对象的指针。如果单例对象尚未存在，该函数会创建并返回指向一个新创建单例对象的指针。析构函数把 \texttt{single\_\allowbreak{}instance} 设为 \texttt{nullptr}，这样在应用运行期间，当下次我们的代码需要单例对象时，就能创建一个新的。
 
-\begin{codeboxt}{代码清单 14.4（程序 14.2 ExecPass-SingletonDP）：\texttt{ExecutivePass.cpp}}
+\begin{codeboxt}{代码清单 14.4（程序 14.2 ExecPass-SingletonDP）：\texttt{Executive\allowbreak{}Pass.\allowbreak{}cpp}}
 #include "ExecutivePass.h"
 
 ExecutivePass *ExecutivePass::single_instance = nullptr;   ①
@@ -237,9 +237,9 @@ ExecutivePass *ExecutivePass::obtain(const string holder)  ③
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 返回指向已存在单例对象的指针。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 如果尚未存在单例对象，则创建一个并返回指向它的指针。}\par
 
-测试程序表明，我们现在拥有了一个行为正确的单例 \texttt{ExecutivePass} 对象。
+测试程序表明，我们现在拥有了一个行为正确的单例 \texttt{Executive\allowbreak{}Pass} 对象。
 
-\begin{codeboxt}{代码清单 14.5（程序 14.2 ExecPass-SingletonDP）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 14.5（程序 14.2 ExecPass-SingletonDP）：\texttt{tester.\allowbreak{}cpp}}
 #include <iostream>
 #include "ExecutivePass.h"
 
@@ -287,7 +287,7 @@ obtain: Executive pass now held by Flo, key = 6249    ④
 
 图 14.3 展示了单例设计模式的通用模型。回想一下，正是依据设计模式的通用模型，我们才能针对某个架构问题创建定制的解决方案（8.1.3 节）。
 
-\myGraphic{0.739}{images/CH14_F03_Mak.png}{图 14.3 组合设计模式的通用模型。请与图 14.2 对照。私有静态成员变量 \texttt{singleton} 指向 \texttt{Singleton} 对象（如果它存在的话）；否则其值为 \texttt{nullptr}。私有静态成员函数 \texttt{get\_singleton()} 返回指向已存在 \texttt{Singleton} 对象的指针。如果单例对象尚未存在，该函数会创建并返回指向一个新创建 \texttt{Singleton} 对象的指针。}
+\myGraphic{0.739}{images/CH14_F03_Mak.png}{图 14.3 组合设计模式的通用模型。请与图 14.2 对照。私有静态成员变量 \texttt{singleton} 指向 \texttt{Singleton} 对象（如果它存在的话）；否则其值为 \texttt{nullptr}。私有静态成员函数 \texttt{get\_\allowbreak{}singleton(\allowbreak{})\allowbreak{}} 返回指向已存在 \texttt{Singleton} 对象的指针。如果单例对象尚未存在，该函数会创建并返回指向一个新创建 \texttt{Singleton} 对象的指针。}
 
 表 14.1 展示了示例应用如何应用该模式。
 
@@ -297,19 +297,19 @@ obtain: Executive pass now held by Flo, key = 6249    ④
 \toprule
 设计模式 & 示例应用中的应用 \\
 \midrule
-类 \texttt{Singleton} & 类 \texttt{ExecutivePass} \\
-静态成员变量 \texttt{singleton} & 静态成员变量 \texttt{single\_instance} \\
-静态成员函数 \texttt{get\_singleton()} & 静态成员函数 \texttt{obtain()} \\
-私有构造函数 \texttt{Singleton()} & 私有构造函数 \texttt{ExecutivePass()} \\
-成员变量 \texttt{singleton\_data} & 成员变量 \texttt{key and holder} \\
-成员函数 \texttt{singleton\_operation()} & 成员函数 \texttt{print()} \\
+类 \texttt{Singleton} & 类 \texttt{Executive\allowbreak{}Pass} \\
+静态成员变量 \texttt{singleton} & 静态成员变量 \texttt{single\_\allowbreak{}instance} \\
+静态成员函数 \texttt{get\_\allowbreak{}singleton(\allowbreak{})\allowbreak{}} & 静态成员函数 \texttt{obtain()} \\
+私有构造函数 \texttt{Singleton(\allowbreak{})\allowbreak{}} & 私有构造函数 \texttt{Executive\allowbreak{}Pass(\allowbreak{})\allowbreak{}} \\
+成员变量 \texttt{singleton\_\allowbreak{}data} & 成员变量 \texttt{key and holder} \\
+成员函数 \texttt{singleton\_\allowbreak{}operation(\allowbreak{})\allowbreak{}} & 成员函数 \texttt{print()} \\
 \bottomrule
 \end{tabularx}
 \end{center}
 
 \begin{mySidebar}{单例对象与多线程}
 
-在多线程程序中创建单例对象时必须格外小心。在我们的示例应用中，类 \texttt{ExecutivePass} 的成员函数 \texttt{obtain()} 会先检查单例对象是否已经存在。如果不存在，就创建一个。但是，当单例对象尚不存在时，如果多个线程同时执行这个成员函数，就可能有多个线程都检测到静态成员变量 \texttt{single\_instance} 的值为 \texttt{nullptr} ，于是这些线程各自都会创建一个单例对象。成员变量 \texttt{single\_instance} 将指向最后创建的那个。第 15 章将介绍多线程程序的设计，以及如何避免这类\emph{竞态条件}。
+在多线程程序中创建单例对象时必须格外小心。在我们的示例应用中，类 \texttt{Executive\allowbreak{}Pass} 的成员函数 \texttt{obtain()} 会先检查单例对象是否已经存在。如果不存在，就创建一个。但是，当单例对象尚不存在时，如果多个线程同时执行这个成员函数，就可能有多个线程都检测到静态成员变量 \texttt{single\_\allowbreak{}instance} 的值为 \texttt{nullptr} ，于是这些线程各自都会创建一个单例对象。成员变量 \texttt{single\_\allowbreak{}instance} 将指向最后创建的那个。第 15 章将介绍多线程程序的设计，以及如何避免这类\emph{竞态条件}。
 \end{mySidebar}
 
 \section{组合设计模式统一对待单个对象与组合对象}
@@ -359,13 +359,13 @@ GRAND TOTAL: $200
 
 我们成本报告应用的第一个版本不使用组合设计模式。在考察了该版本的设计缺陷之后，我们将使用该模式重构这个应用，并看看该模式如何简化代码。
 
-在我们应用的第一个版本中，类 \texttt{ProvisionItem} 是子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 的超类。类 \texttt{ProvisionGroup} 是组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 的超类。每个组合类都聚合了 \texttt{ProvisionItem} 子类的一个子集。这些类共同实现了一个树结构的数据层级（图 14.5）。
+在我们应用的第一个版本中，类 \texttt{Provision\allowbreak{}Item} 是子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 的超类。类 \texttt{Provision\allowbreak{}Group} 是组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 的超类。每个组合类都聚合了 \texttt{Provision\allowbreak{}Item} 子类的一个子集。这些类共同实现了一个树结构的数据层级（图 14.5）。
 
-\myGraphic{0.980}{images/CH14_F05_Mak.png}{图 14.5 类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 是类 \texttt{ProvisionItem} 的子类，每个子类都实现了 \texttt{get\_cost()} 成员函数。组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 是 \texttt{ProvisionGroup} 的子类，每个都聚合了 \texttt{ProvisionItem} 子类的一个子集。}
+\myGraphic{0.980}{images/CH14_F05_Mak.png}{图 14.5 类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 是类 \texttt{Provision\allowbreak{}Item} 的子类，每个子类都实现了 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 成员函数。组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 是 \texttt{Provision\allowbreak{}Group} 的子类，每个都聚合了 \texttt{Provision\allowbreak{}Item} 子类的一个子集。}
 
-类 \texttt{ProvisionItem} 是子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 的超类。该超类实现了公共的 \texttt{get\_id()}、\texttt{get\_cost()} 和 \texttt{print()} 成员函数，并拥有私有成员变量 \texttt{id} 和 \texttt{cost}。
+类 \texttt{Provision\allowbreak{}Item} 是子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 的超类。该超类实现了公共的 \texttt{get\_id()}、\texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 和 \texttt{print()} 成员函数，并拥有私有成员变量 \texttt{id} 和 \texttt{cost}。
 
-\begin{codeboxt}{代码清单 14.6（程序 14.3 CostReport）：\texttt{ProvisionItem.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.6（程序 14.3 CostReport）：\texttt{Provision\allowbreak{}Item.\allowbreak{}h}（使用设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -393,9 +393,9 @@ private:
 };
 \end{codeboxt}
 
-\texttt{ProvisionItem} 的子类 \texttt{Ball}、\texttt{Bat} 和 \texttt{Glove} 表示器材物品。每个子类的构造函数都会调用超类 \texttt{ProvisionItem} 的构造函数，并传入自己的 \texttt{id} 和 \texttt{cost}。
+\texttt{Provision\allowbreak{}Item} 的子类 \texttt{Ball}、\texttt{Bat} 和 \texttt{Glove} 表示器材物品。每个子类的构造函数都会调用超类 \texttt{Provision\allowbreak{}Item} 的构造函数，并传入自己的 \texttt{id} 和 \texttt{cost}。
 
-\begin{codeboxt}{代码清单 14.7（程序 14.3 CostReport）：\texttt{Equipment.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.7（程序 14.3 CostReport）：\texttt{Equipment.\allowbreak{}h}（使用设计模式之前）}
 #include "ProvisionItem.h"
 
 using namespace std;
@@ -447,7 +447,7 @@ public:
 
 子类 \texttt{Socks} 和 \texttt{Shoes} 各自表示一件鞋类物品。
 
-\begin{codeboxt}{代码清单 14.9（程序 14.3 CostReport）：\texttt{Footwear.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.9（程序 14.3 CostReport）：\texttt{Footwear.\allowbreak{}h}（使用设计模式之前）}
 #include "ProvisionItem.h"
 
 using namespace std;
@@ -467,7 +467,7 @@ public:
 
 而子类 Sunscreen 表示一件防晒霜物品。
 
-\begin{codeboxt}{代码清单 14.10（程序 14.3 CostReport）：\texttt{Sunscreen.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.10（程序 14.3 CostReport）：\texttt{Sunscreen.\allowbreak{}h}（使用设计模式之前）}
 #include "ProvisionItem.h"
 
 using namespace std;
@@ -480,9 +480,9 @@ public:
 };
 \end{codeboxt}
 
-类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 是超类 \texttt{ProvisionGroup} 的子类。该超类提供了公共成员变量 \texttt{provisions}，它是一个存放 \texttt{ProvisionItem} 对象的 vector。\texttt{add()} 成员函数把 \texttt{ProvisionItem} 对象追加到该 vector 中，\texttt{remove()} 成员函数则从该 vector 中移除一个 \texttt{ProvisionItem} 对象。
+类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 是超类 \texttt{Provision\allowbreak{}Group} 的子类。该超类提供了公共成员变量 \texttt{provisions}，它是一个存放 \texttt{Provision\allowbreak{}Item} 对象的 vector。\texttt{add()} 成员函数把 \texttt{Provision\allowbreak{}Item} 对象追加到该 vector 中，\texttt{remove()} 成员函数则从该 vector 中移除一个 \texttt{Provision\allowbreak{}Item} 对象。
 
-\begin{codeboxt}{代码清单 14.11（程序 14.3 CostReport）：\texttt{ProvisionGroup.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.11（程序 14.3 CostReport）：\texttt{Provision\allowbreak{}Group.\allowbreak{}h}（使用设计模式之前）}
 #include <vector>
 #include <algorithm>
 #include "ProvisionItem.h"
@@ -537,9 +537,9 @@ public:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 超类 ProvisionGroup 的子类}\par
 
-类 \texttt{CostReport} 创建数据并生成报告。
+类 \texttt{Cost\allowbreak{}Report} 创建数据并生成报告。
 
-\begin{codeboxt}{代码清单 14.12（程序 14.3 CostReport）：\texttt{CostReport.h}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.12（程序 14.3 CostReport）：\texttt{Cost\allowbreak{}Report.\allowbreak{}h}（使用设计模式之前）}
 #include "ProvisionGroups.h"
 #include "Sunscreen.h"
 
@@ -559,9 +559,9 @@ private:
 };
 \end{codeboxt}
 
-构造函数构建数据层级。它创建各个 \texttt{ProvisionItem} 对象，并把它们添加到相应的 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 对象中。它还创建独立的 \texttt{Sunscreen} 对象。
+构造函数构建数据层级。它创建各个 \texttt{Provision\allowbreak{}Item} 对象，并把它们添加到相应的 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 对象中。它还创建独立的 \texttt{Sunscreen} 对象。
 
-\begin{codeboxt}{代码清单 14.13（程序 14.3 CostReport）：\texttt{CostReport.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.13（程序 14.3 CostReport）：\texttt{Cost\allowbreak{}Report.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include <iomanip>
 #include "ProvisionItem.h"
@@ -601,9 +601,9 @@ CostReport::~CostReport()
 ...
 \end{codeboxt}
 
-成员函数 \texttt{generate\_report()} 生成成本报告。它先计算器材、制服和鞋类物品的总成本，然后计算总体的总成本。
+成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 生成成本报告。它先计算器材、制服和鞋类物品的总成本，然后计算总体的总成本。
 
-\begin{codeboxt}{代码清单 14.14（程序 14.3 CostReport）：\texttt{CostReport.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.14（程序 14.3 CostReport）：\texttt{Cost\allowbreak{}Report.\allowbreak{}cpp}（使用设计模式之前）}
 ...
 
 void CostReport::generate_report()
@@ -676,7 +676,7 @@ void CostReport::generate_report()
 
 测试程序生成了期望的成本报告。
 
-\begin{codeboxt}{代码清单 14.15（程序 14.3 CostReport）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 14.15（程序 14.3 CostReport）：\texttt{tester.\allowbreak{}cpp}}
 #include "CostReport.h"
 
 int main()
@@ -693,9 +693,9 @@ int main()
 确实，这个版本的应用存在以下问题
 
 \begin{itemize}
-\item \emph{报告生成器复杂}——类 \texttt{CostReport} 的成员函数 \texttt{generate\_report()} 很复杂。如果改变数据的组织方式，它将难以修改。
-\item \emph{单个对象与组合对象被区别对待}——我们希望树中所有层级的对象，无论是单个对象还是组合对象，都被同等对待。而成员函数 \texttt{generate\_report()} 却区别对待它们。
-\item \emph{报告生成器被硬编码}——成员函数 \texttt{generate\_report()} 被硬编码为只能打印那一份报告。
+\item \emph{报告生成器复杂}——类 \texttt{Cost\allowbreak{}Report} 的成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 很复杂。如果改变数据的组织方式，它将难以修改。
+\item \emph{单个对象与组合对象被区别对待}——我们希望树中所有层级的对象，无论是单个对象还是组合对象，都被同等对待。而成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 却区别对待它们。
+\item \emph{报告生成器被硬编码}——成员函数 \texttt{generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 被硬编码为只能打印那一份报告。
 \item \emph{树不完整}——我们没有构建完整的树形数据结构。例如，鞋类没有成为制服的一部分。对于本应用生成成本报告而言，不完整的树不是问题，但其他应用可能需要完整的树。
 \end{itemize}
 
@@ -708,15 +708,15 @@ int main()
 “将对象组合成树形结构以表示‘部分—整体’层级。组合让客户端统一地对待单个对象和对象组合”（GoF 163）。
 \end{mySidebar}
 
-为了使用这个模型，我们还把类 \texttt{ProvisionItem} 设为类 \texttt{ProvisionGroup} 的超类。这样一来，组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 最终就成了 \texttt{ProvisionItem} 的子类。类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 仍为 \texttt{ProvisionItem} 的子类，而类 \texttt{ProvisionGroup} 维护一个存放 \texttt{ProvisionItem} 对象的 vector（图 14.6）。
+为了使用这个模型，我们还把类 \texttt{Provision\allowbreak{}Item} 设为类 \texttt{Provision\allowbreak{}Group} 的超类。这样一来，组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 最终就成了 \texttt{Provision\allowbreak{}Item} 的子类。类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 仍为 \texttt{Provision\allowbreak{}Item} 的子类，而类 \texttt{Provision\allowbreak{}Group} 维护一个存放 \texttt{Provision\allowbreak{}Item} 对象的 vector（图 14.6）。
 
-\myGraphic{0.980}{images/CH14_F06_Mak.png}{图 14.6 在由组合设计模式建模的成本报告应用第二个版本中，类 \texttt{ProvisionGroup} 本身就是类 \texttt{ProvisionItem} 的子类。这使得类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 最终成为 \texttt{ProvisionItem} 的子类。图中灰色部分相对于图 14.5 在逻辑上没有变化。}
+\myGraphic{0.980}{images/CH14_F06_Mak.png}{图 14.6 在由组合设计模式建模的成本报告应用第二个版本中，类 \texttt{Provision\allowbreak{}Group} 本身就是类 \texttt{Provision\allowbreak{}Item} 的子类。这使得类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 最终成为 \texttt{Provision\allowbreak{}Item} 的子类。图中灰色部分相对于图 14.5 在逻辑上没有变化。}
 
-类 \texttt{ProvisionItem} 和 \texttt{ProvisionGroup} 将拥有相同的成员函数。因此，类 \texttt{ProvisionItem} 增加了成员函数 \texttt{get\_provisions()}、\texttt{add()} 和 \texttt{remove()}。类 \texttt{ProvisionGroup} 继承成员函数 \texttt{get\_cost()} 和 \texttt{print()}。类 \texttt{ProvisionItem} 为其所有成员函数提供了默认实现（代码清单 14.16）。超类 \texttt{ProvisionItem} 的成员函数 \texttt{get\_id()} 和 \texttt{get\_cost()} 没有改变——我们希望子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 继续继承并使用这些函数。成员函数 \texttt{print()} 将接受一个整数参数，用于决定在打印行开头缩进多少个空格（如果有的话）。
+类 \texttt{Provision\allowbreak{}Item} 和 \texttt{Provision\allowbreak{}Group} 将拥有相同的成员函数。因此，类 \texttt{Provision\allowbreak{}Item} 增加了成员函数 \texttt{get\_\allowbreak{}provisions(\allowbreak{})\allowbreak{}}、\texttt{add()} 和 \texttt{remove()}。类 \texttt{Provision\allowbreak{}Group} 继承成员函数 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 和 \texttt{print()}。类 \texttt{Provision\allowbreak{}Item} 为其所有成员函数提供了默认实现（代码清单 14.16）。超类 \texttt{Provision\allowbreak{}Item} 的成员函数 \texttt{get\_id()} 和 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 没有改变——我们希望子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 继续继承并使用这些函数。成员函数 \texttt{print()} 将接受一个整数参数，用于决定在打印行开头缩进多少个空格（如果有的话）。
 
-由于成员函数 \texttt{get\_provisions()}、\texttt{add()} 和 \texttt{remove()} 对单个对象没有意义，因此每个函数的默认实现都会抛出 \texttt{InvalidOperation} 异常。组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 会重写这些成员函数以实现有用的行为，因此它们是虚函数。
+由于成员函数 \texttt{get\_\allowbreak{}provisions(\allowbreak{})\allowbreak{}}、\texttt{add()} 和 \texttt{remove()} 对单个对象没有意义，因此每个函数的默认实现都会抛出 \texttt{Invalid\allowbreak{}Operation} 异常。组合类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 会重写这些成员函数以实现有用的行为，因此它们是虚函数。
 
-\begin{codeboxt}{代码清单 14.16（程序 14.4 CostReport-CompositeDP）：\texttt{ProvisionItem.h}}
+\begin{codeboxt}{代码清单 14.16（程序 14.4 CostReport-CompositeDP）：\texttt{Provision\allowbreak{}Item.\allowbreak{}h}}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -775,9 +775,9 @@ private:
 
 一致性使我们仿照组合设计模式建模的应用能够像对待诸如 \texttt{Footwear} 对象这样的组合对象那样，对待诸如 \texttt{Ball} 对象这样的单个对象。报告生成代码将更为简单——它无需知道正在处理的是单个对象还是组合对象。
 
-类 \texttt{ProvisionGroup} 的公有构造函数和受保护构造函数都会调用其超类 \texttt{ProvisionItem} 的构造函数。如以下代码清单所示，这个组合类重写了成员函数 \texttt{get\_cost()}、\texttt{print()}、\texttt{get\_provisions()}、\texttt{get\_provisions()}、\texttt{add()} 和 \texttt{remove()}，以实现适合组合对象的行为。成员函数 \texttt{get\_cost()} 和 \texttt{print()} 都会遍历 \texttt{provisions} vector 中的 \texttt{ProvisionItem} 对象，分别对每个对象调用 \texttt{get\_cost()} 和 \texttt{print()}。
+类 \texttt{Provision\allowbreak{}Group} 的公有构造函数和受保护构造函数都会调用其超类 \texttt{Provision\allowbreak{}Item} 的构造函数。如以下代码清单所示，这个组合类重写了成员函数 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}}、\texttt{print()}、\texttt{get\_\allowbreak{}provisions(\allowbreak{})\allowbreak{}}、\texttt{get\_\allowbreak{}provisions(\allowbreak{})\allowbreak{}}、\texttt{add()} 和 \texttt{remove()}，以实现适合组合对象的行为。成员函数 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 和 \texttt{print()} 都会遍历 \texttt{provisions} vector 中的 \texttt{Provision\allowbreak{}Item} 对象，分别对每个对象调用 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 和 \texttt{print()}。
 
-\begin{codeboxt}{代码清单 14.17（程序 14.4 CostReport-CompositeDP）：\texttt{ProvisionGroup.h}（第 1 部分，共 2 部分）}
+\begin{codeboxt}{代码清单 14.17（程序 14.4 CostReport-CompositeDP）：\texttt{Provision\allowbreak{}Group.\allowbreak{}h}（第 1 部分，共 2 部分）}
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -850,9 +850,9 @@ private:
 \noindent{\fontsize{9bp}{12bp}\selectfont ② 遍历 ProvisionItem 对象以打印每个对象。}\par
 \noindent{\fontsize{9bp}{12bp}\selectfont ③ 为 ProvisionGroup 对象重写的成员函数}\par
 
-组合子类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 的每个构造函数都会调用超类 \texttt{ProvisionGroup} 的受保护构造函数。
+组合子类 \texttt{Equipment}、\texttt{Uniform} 和 \texttt{Footwear} 的每个构造函数都会调用超类 \texttt{Provision\allowbreak{}Group} 的受保护构造函数。
 
-\begin{codeboxt}{代码清单 14.18（程序 14.4 CostReport-CompositeDP）：\texttt{ProvisionGroup.h}（第 2 部分，共 2 部分）}
+\begin{codeboxt}{代码清单 14.18（程序 14.4 CostReport-CompositeDP）：\texttt{Provision\allowbreak{}Group.\allowbreak{}h}（第 2 部分，共 2 部分）}
 ...
 
 class Equipment : public ProvisionGroup
@@ -874,9 +874,9 @@ public:
 };
 \end{codeboxt}
 
-类 \texttt{CostReport} 增加了一个成员变量 \texttt{provisions}。
+类 \texttt{Cost\allowbreak{}Report} 增加了一个成员变量 \texttt{provisions}。
 
-\begin{codeboxt}{代码清单 14.19（程序 14.4 CostReport-CompositeDP）：\texttt{CostReport.h}（第 2 部分，共 2 部分）}
+\begin{codeboxt}{代码清单 14.19（程序 14.4 CostReport-CompositeDP）：\texttt{Cost\allowbreak{}Report.\allowbreak{}h}（第 2 部分，共 2 部分）}
 #include "ProvisionGroup.h"
 #include "Sunscreen.h"
 
@@ -898,9 +898,9 @@ private:
 };
 \end{codeboxt}
 
-类 \texttt{CostReport} 的构造函数构建了图 14.4 的整个数据树。类 \texttt{Footwear} 成为类 \texttt{Uniform} 下的一个子集合。
+类 \texttt{Cost\allowbreak{}Report} 的构造函数构建了图 14.4 的整个数据树。类 \texttt{Footwear} 成为类 \texttt{Uniform} 下的一个子集合。
 
-\begin{codeboxt}{代码清单 14.20（程序 14.4 CostReport-CompositeDP）：\texttt{CostReport.cpp}}
+\begin{codeboxt}{代码清单 14.20（程序 14.4 CostReport-CompositeDP）：\texttt{Cost\allowbreak{}Report.\allowbreak{}cpp}}
 #include <iostream>
 #include <iomanip>
 #include "ProvisionItem.h"
@@ -953,14 +953,14 @@ void CostReport::generate_report()
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 让 Footwear 成为 Uniform 的子集合。}\par
 
-\texttt{ProvisionItem} 的子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 在这个版本的应用中没有变化，测试程序也没有变化。输出是相同的。
+\texttt{Provision\allowbreak{}Item} 的子类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} 在这个版本的应用中没有变化，测试程序也没有变化。输出是相同的。
 
 我们使用组合设计模式所获得的主要好处有
 
 \begin{itemize}
 \item \emph{一致性}——单个对象的类与组合对象的类共享同一个接口。因此，我们的代码能够像对待组合对象那样对待单个对象。
 \item \emph{简单性}——对树中各组件执行操作（如计算成本和打印）的代码更简单。
-\item \emph{灵活性}——添加新的 \texttt{ProvisionItem} 和 \texttt{ProvisionGroup} 对象或移除已有对象都不难。
+\item \emph{灵活性}——添加新的 \texttt{Provision\allowbreak{}Item} 和 \texttt{Provision\allowbreak{}Group} 对象或移除已有对象都不难。
 \end{itemize}
 
 \subsection{14.2.4 组合的通用模型}
@@ -977,8 +977,8 @@ void CostReport::generate_report()
 \toprule
 设计模式 & 示例应用中的应用 \\
 \midrule
-超类 \texttt{Component} & 超类 \texttt{ProvisionItem} \\
-类 \texttt{Composite} & 类 \texttt{ProvisionGroup} \\
+超类 \texttt{Component} & 超类 \texttt{Provision\allowbreak{}Item} \\
+类 \texttt{Composite} & 类 \texttt{Provision\allowbreak{}Group} \\
 类 \texttt{Leaf} & 类 \texttt{Ball}、\texttt{Bat}、\texttt{Glove}、\texttt{Cap}、\texttt{Jersey}、\texttt{Pants}、\texttt{Socks}、\texttt{Shoes} 和 \texttt{Sunscreen} \\
 \bottomrule
 \end{tabularx}
@@ -1012,7 +1012,7 @@ void CostReport::generate_report()
 
 \myGraphic{0.375}{images/CH14_F08_Mak.png}{图 14.8 我们把对基础门票的增强项实现为 \texttt{Ticket} 类的成员变量。每个增强项都有一个成本。}
 
-类 \texttt{Ticket} 的成员变量实现了门票的增强项及其成本。如以下代码清单所示，成员函数 \texttt{get\_cost()} 计算并返回一张门票的总成本。\texttt{Ticket} 对象的职责是管理门票的增强项并计算其总成本。
+类 \texttt{Ticket} 的成员变量实现了门票的增强项及其成本。如以下代码清单所示，成员函数 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 计算并返回一张门票的总成本。\texttt{Ticket} 对象的职责是管理门票的增强项并计算其总成本。
 
 \begin{codeboxt}{代码清单 14.21（程序 14.5 Enhanced）：\texttt{Ticket.h}（使用设计模式之前）}
 #include <iostream>
@@ -1085,7 +1085,7 @@ inline ostream& operator <<(ostream& ostr, const Ticket& ticket)
 
 一个测试程序创建并打印一些带有增强项的示例门票。
 
-\begin{codeboxt}{代码清单 14.22（程序 14.5 Enhanced）：\texttt{tester.cpp}（使用设计模式之前）}
+\begin{codeboxt}{代码清单 14.22（程序 14.5 Enhanced）：\texttt{tester.\allowbreak{}cpp}（使用设计模式之前）}
 #include <iostream>
 #include <string>
 #include "Ticket.h"
@@ -1160,9 +1160,9 @@ TOTAL COST: $55
 
 装饰器设计模式把每个门票增强项都视为一个装饰，它在概念上包裹了基础门票以及此前的任何增强项（图 14.9）。
 
-\myGraphic{0.980}{images/CH14_F09_Mak.png}{图 14.9 一张增强门票在概念上被任意数量的赛前派对、VIP 座位和饮品券装饰器所包裹。每个装饰器都包裹基础门票以及此前的任何包裹器。为了计算一张增强门票的成本，每个装饰器都会调用它所包裹对象（另一个装饰器或基础门票）的 \texttt{get\_cost()} 成员函数。每个返回值都是该装饰器的成本加上它所包裹对象的总成本。}
+\myGraphic{0.980}{images/CH14_F09_Mak.png}{图 14.9 一张增强门票在概念上被任意数量的赛前派对、VIP 座位和饮品券装饰器所包裹。每个装饰器都包裹基础门票以及此前的任何包裹器。为了计算一张增强门票的成本，每个装饰器都会调用它所包裹对象（另一个装饰器或基础门票）的 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 成员函数。每个返回值都是该装饰器的成本加上它所包裹对象的总成本。}
 
-图中展示了一张用赛前派对增强项装饰的基础门票，它们又被一个 VIP 座位增强项和两张饮品券进一步装饰。每个装饰器都为门票添加了这样一项职责：把装饰器的成本计入门票总价。每个装饰器和门票都有一个 \texttt{get\_cost()} 函数。每个装饰器的函数都返回该装饰器的成本加上它所包裹对象的总成本。
+图中展示了一张用赛前派对增强项装饰的基础门票，它们又被一个 VIP 座位增强项和两张饮品券进一步装饰。每个装饰器都为门票添加了这样一项职责：把装饰器的成本计入门票总价。每个装饰器和门票都有一个 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 函数。每个装饰器的函数都返回该装饰器的成本加上它所包裹对象的总成本。
 
 为了实现这种嵌套包裹的架构，我们把每个装饰器都做成对象，并按它们相互包裹的顺序把这些装饰器对象链接起来。链中的最后一个装饰器与基础门票对象相连（图 14.10）。因此，门票本身被包裹得最深。
 
@@ -1175,9 +1175,9 @@ TOTAL COST: $55
 “动态地给一个对象附加额外的职责。就扩展功能而言，装饰器提供了一种比继承更灵活的替代方案”（GoF 175）。
 \end{mySidebar}
 
-\myGraphic{0.980}{images/CH14_F11_Mak.png}{图 14.11 抽象超类 \texttt{Ticket} 的子类表示基础门票或被一或多个装饰器包裹的门票。\texttt{Decorator} 超类有一个 \texttt{ticket} 链接，指向下一个 \texttt{Decorator} 对象或 \texttt{BaseTicket} 对象。\texttt{Party}、\texttt{VIP} 和 \texttt{Coupon} 是装饰器。它们中一或多个对象可以包裹一个 \texttt{BaseTicket} 对象。每个 \texttt{Decorator} 对象都添加了这样一项职责：把自身的成本计入门票总成本。}
+\myGraphic{0.980}{images/CH14_F11_Mak.png}{图 14.11 抽象超类 \texttt{Ticket} 的子类表示基础门票或被一或多个装饰器包裹的门票。\texttt{Decorator} 超类有一个 \texttt{ticket} 链接，指向下一个 \texttt{Decorator} 对象或 \texttt{Base\allowbreak{}Ticket} 对象。\texttt{Party}、\texttt{VIP} 和 \texttt{Coupon} 是装饰器。它们中一或多个对象可以包裹一个 \texttt{Base\allowbreak{}Ticket} 对象。每个 \texttt{Decorator} 对象都添加了这样一项职责：把自身的成本计入门票总成本。}
 
-抽象类 \texttt{Ticket} 是类 \texttt{BaseTicket} 和超类 \texttt{Decorator} 的超类。
+抽象类 \texttt{Ticket} 是类 \texttt{Base\allowbreak{}Ticket} 和超类 \texttt{Decorator} 的超类。
 
 \begin{codeboxt}{代码清单 14.23（程序 14.6 Enhanced-DecoratorDP）：\texttt{Ticket.h}}
 #include <iostream>
@@ -1209,9 +1209,9 @@ protected:
 \end{codeboxt}
 \noindent{\fontsize{9bp}{12bp}\selectfont ① 创建 Ticket 对象时打印它。}\par
 
-类 \texttt{BaseTicket} 的每个对象都表示尚未被任何装饰的门票。它的成本就是 \texttt{BASE\_PRICE}。
+类 \texttt{Base\allowbreak{}Ticket} 的每个对象都表示尚未被任何装饰的门票。它的成本就是 \texttt{BASE\_\allowbreak{}PRICE}。
 
-\begin{codeboxt}{代码清单 14.24（程序 14.6 Enhanced-DecoratorDP）：\texttt{BaseTicket.h}}
+\begin{codeboxt}{代码清单 14.24（程序 14.6 Enhanced-DecoratorDP）：\texttt{Base\allowbreak{}Ticket.\allowbreak{}h}}
 #include "Ticket.h"
 
 const double BASE_PRICE = 30;
@@ -1225,9 +1225,9 @@ public:
 };
 \end{codeboxt}
 
-超类 \texttt{Decorator} 表示门票的装饰。每个装饰器对象都添加了这样一项职责：把自身的成本计入门票总成本。成员函数 \texttt{get\_cost()} 返回它自身的价格加上它所包裹对象的成本。成员变量 \texttt{ticket} 指向链中的下一个 \texttt{Ticket} 对象，无论是 \texttt{BaseTicket} 对象还是另一个 \texttt{Decorator} 对象。
+超类 \texttt{Decorator} 表示门票的装饰。每个装饰器对象都添加了这样一项职责：把自身的成本计入门票总成本。成员函数 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} 返回它自身的价格加上它所包裹对象的成本。成员变量 \texttt{ticket} 指向链中的下一个 \texttt{Ticket} 对象，无论是 \texttt{Base\allowbreak{}Ticket} 对象还是另一个 \texttt{Decorator} 对象。
 
-\begin{codeboxt}{代码清单 14.25（程序 14.6 Enhanced-DecoratorDP）：\texttt{Decorator.h}}
+\begin{codeboxt}{代码清单 14.25（程序 14.6 Enhanced-DecoratorDP）：\texttt{Decorator.\allowbreak{}h}}
 #include <string>
 #include "Ticket.h"
 
@@ -1297,9 +1297,9 @@ public:
 };
 \end{codeboxt}
 
-测试程序创建 \texttt{BaseTicket} 对象，并通过以任意顺序、任意数量和组合的 \texttt{Decorator} 对象包裹每张门票来装饰它。如果一张门票包含多张饮品券，我们就用多个 \texttt{Coupon} 对象包裹该门票来装饰它。
+测试程序创建 \texttt{Base\allowbreak{}Ticket} 对象，并通过以任意顺序、任意数量和组合的 \texttt{Decorator} 对象包裹每张门票来装饰它。如果一张门票包含多张饮品券，我们就用多个 \texttt{Coupon} 对象包裹该门票来装饰它。
 
-\begin{codeboxt}{代码清单 14.29（程序 14.6 Enhanced-DecoratorDP）：\texttt{tester.cpp}}
+\begin{codeboxt}{代码清单 14.29（程序 14.6 Enhanced-DecoratorDP）：\texttt{tester.\allowbreak{}cpp}}
 #include "BaseTicket.h"
 #include "Party.h"
 #include "VIP.h"
@@ -1399,7 +1399,7 @@ void print(const string name, const Ticket * const ticket)
 
 图 14.12 展示了装饰器设计模式的通用模型。回想一下，正是依据设计模式的通用模型，我们才能针对某个架构问题创建定制的解决方案（8.1.3 节）。
 
-\myGraphic{0.713}{images/CH14_F12_Mak.png}{图 14.12 装饰器设计模式的通用模型。请与图 14.11 对照。一个 \texttt{ConcreteComponent} 对象自身就是一个 \texttt{Component}。被 Decorator 对象包裹的 \texttt{ConcreteComponent} 同样也是一个 \texttt{Component}。超类 \texttt{Decorator} 的 component 成员变量要么指向一个 \texttt{ConcreteComponent} 对象，要么指向一个 \texttt{Decorator} 对象。这条链实现了 \texttt{Decorator} 对象的嵌套包裹。}
+\myGraphic{0.713}{images/CH14_F12_Mak.png}{图 14.12 装饰器设计模式的通用模型。请与图 14.11 对照。一个 \texttt{Concrete\allowbreak{}Component} 对象自身就是一个 \texttt{Component}。被 Decorator 对象包裹的 \texttt{Concrete\allowbreak{}Component} 同样也是一个 \texttt{Component}。超类 \texttt{Decorator} 的 component 成员变量要么指向一个 \texttt{Concrete\allowbreak{}Component} 对象，要么指向一个 \texttt{Decorator} 对象。这条链实现了 \texttt{Decorator} 对象的嵌套包裹。}
 
 表 14.3 展示了示例应用如何应用该模式。
 
@@ -1410,10 +1410,10 @@ void print(const string name, const Ticket * const ticket)
 设计模式 & 示例应用中的应用 \\
 \midrule
 超类 \texttt{Component} & 超类 \texttt{Ticket} \\
-类 \texttt{ConcreteComponent} & 类 \texttt{BaseTicket} \\
+类 \texttt{Concrete\allowbreak{}Component} & 类 \texttt{Base\allowbreak{}Ticket} \\
 超类 \texttt{Decorator} & 超类 \texttt{Decorator} \\
-子类 \texttt{ConcreteDecoratorA}、\texttt{ConcreteDecoratorB} 等 & 类 \texttt{Party}、\texttt{VIP} 和 \texttt{Coupon} \\
-成员函数 \texttt{operation()} & 成员函数 \texttt{get\_cost()} \\
+子类 \texttt{Concrete\allowbreak{}Decorator\allowbreak{}A}、\texttt{Concrete\allowbreak{}Decorator\allowbreak{}B} 等 & 类 \texttt{Party}、\texttt{VIP} 和 \texttt{Coupon} \\
+成员函数 \texttt{operation(\allowbreak{})\allowbreak{}} & 成员函数 \texttt{get\_\allowbreak{}cost(\allowbreak{})\allowbreak{}} \\
 \bottomrule
 \end{tabularx}
 \end{center}
