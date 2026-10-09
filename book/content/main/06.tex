@@ -1,0 +1,1334 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 最小惊奇原则，以及如何避免让你的用户感到意外
+\item 防止意料之外的糟糕运行时性能
+\item 谨慎使用 C++ vector 编程以避免性能问题
+\item 将契约式编程应用于类和它的成员函数
+\end{itemize}
+\end{myChapterIntro}
+
+我们都喜欢惊喜派对，但被函数调用的结果惊到，绝对是设计糟糕的标志。设计良好的软件不应包含任何可能导致运行时逻辑错误或性能低下的意外。
+
+理想情况下，我们设计一个类时，它的对象的行为和性能应当完全符合用户的预期。用户既可能是使用该类的另一位程序员，也可能是与应用程序交互的最终用户。意料之外的行为可能导致运行时逻辑错误，或使应用程序性能不佳。
+
+\myGraphic{0.893}{images/CH06_00_UN01_Mak.png}{}
+
+本章讨论代码中一些常见且不希望出现的意外，以及消除它们的方法。有些糟糕的意外仅仅是 C++ 本身的工作方式所致。然而，代码中的另一些意外则源于本可避免的编码缺陷，例如常见的差一错误。命名良好的函数不会误导另一位程序员，让其以为该函数做的事情与函数名所暗示的不同。通过更高效的编程或更合适的数据结构选择，我们可以避免性能低下的意外。如果我们不了解标准模板库（STL）中诸如 vector 之类的代码如何工作，它也可能让我们的代码执行许多意料之外的操作。契约式编程这一概念可以明确另一位程序员能从我们编写的类中期待什么，从而消除许多意外。
+
+\section{无意外与最小惊奇原则}
+
+糟糕的设计会以多种方式引发意外。\emph{最小惊奇原则}指出，我们的代码中应当尽量没有意外。
+
+\begin{mySidebar}{最小惊奇原则}
+
+对于使用我们代码的程序员（包括日后的我们自己）来说，应当尽量没有意外。意外会导致逻辑错误和运行时错误，并使代码难以维护。
+\end{mySidebar}
+
+本节讨论两类意外来源：差一错误和命名不当的函数。常见的差一错误会在程序中导致难以发现的逻辑错误，但只要我们留意诸如循环执行多少次这类问题，就很容易避免。我们编写并命名不当的函数，可能让另一位程序员误以为该函数做的事情与函数名所暗示的不同，从而遭遇令人困惑的逻辑错误。6.2 节专门讨论另一类隐蔽的意外来源——性能低下。
+
+\myGraphic{0.893}{images/CH06_00_UN02_Mak.png}{}
+
+\subsection{6.1.1 差一错误}
+
+即使是经验丰富的程序员，也很容易犯差一错误，即计算出的值比预期多 1 或少 1，或某个操作的执行次数比预期多一次或少一次。这类具有欺骗性的错误很难发现，而且会引发令人意外的运行时逻辑错误。一个典型的差一错误是循环少转了一次或多转了一次。
+
+\begin{codeboxt}{代码清单 6.1（程序 6.1 SurpriseLoop）：\texttt{loop.cpp}}
+#include <iostream>
+
+using namespace std;
+
+int main()
+{
+    int count = 0;
+
+    for (int i = 5; i <= 10; i++)  ①
+    {
+        count++;
+        cout << "count = " << count << ", i = " << i << endl;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 潜在的差一错误：循环执行的不是 10 − 5 = 5 次，而是 10 − 5 + 1 = 6 次。}\par
+
+确实，这个循环执行了六次：
+
+\begin{codebox}
+count = 1, i = 5
+count = 2, i = 6
+count = 3, i = 7
+count = 4, i = 8
+count = 5, i = 9
+count = 6, i = 10
+\end{codebox}
+
+\myGraphic{0.728}{images/CH06_00_UN03_Mak.png}{}
+
+下面是一个更隐蔽的例子。假设我们有一个应用程序，用于维护预约的日期。代码清单 6.2 展示了一个该应用程序可以使用的 \texttt{Date} 类。它的私有成员变量 \texttt{year}、\texttt{month} 和 \texttt{day} 分别记录一个日期的年、月和月内的日，我们向构造函数传入整数值来初始化这些变量。因此，如果我们传入值 \texttt{2025}、\texttt{2} 和 \texttt{4}，就应当期望创建一个表示 2025 年 2 月 4 日的 \texttt{Date} 对象。为了保持这个例子简短，我们省略对构造函数参数值的检查。
+
+\begin{codeboxt}{代码清单 6.2（程序 6.2 SurpriseDate-1）：\texttt{Date.h}}
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Date
+{
+public:
+    Date(const int y, const int m, const int d)
+        : year(y), month(m), day(d) {}
+
+    friend ostream& operator <<(ostream& ostr, const Date& date);
+
+private:
+    static const string MONTH_NAMES[12];     ①
+
+    int year, month, day;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 私有的静态常量字符串数组，保存月份名称}\par
+
+成员变量 \texttt{MONTH\_NAMES} 是一个私有的静态常量字符串数组，保存月份名称。重载的 \texttt{<<} 运算符以“月 日, 年”的形式打印日期对象，其中月份是首字母大写的三个字母缩写，例如
+
+\begin{codebox}
+FEB 4, 2025 
+\end{codebox}
+
+\begin{codeboxt}{代码清单 6.3（程序 6.2 SurpriseDate-1）：\texttt{Date.cpp}（差一错误）}
+#include <iostream>
+#include "Date.h"
+
+const string Date::MONTH_NAMES[12] =
+{
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+    "JUL”, "AUG", "SEP", "OCT", "NOV", "DEC"
+};
+
+ostream& operator <<(ostream& ostr, const Date& date)
+{
+    ostr << date.MONTH_NAMES[date.month]
+         << " " << date.day << ", " << date.year;
+
+    return ostr;
+}
+\end{codeboxt}
+
+下面的代码清单是一个简短的测试程序。
+
+\begin{codeboxt}{代码清单 6.4（程序 6.2 SurpriseDate-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Date.h"
+
+using namespace std;
+
+int main()
+{
+    Date date(2025, 2, 4);  //2025 年 2 月 4 日
+    cout << date << endl;
+
+    return 0;
+}
+\end{codeboxt}
+
+这个程序的输出是
+
+\begin{codebox}
+MAR 4, 2025
+\end{codebox}
+
+一个糟糕的意外！我们期望的是 \texttt{FEB}，而不是 \texttt{MAR}。
+
+这不过是无处不在的差一错误的一个例子，其根源在于数组下标从 \texttt{0} 而不是 \texttt{1} 开始。让这个意外雪上加霜的是，\texttt{Date} 类存在一个重大不一致：年和月内日的值都是精确的，但月份值却显然必须少 1。对使用 \texttt{Date} 类的程序员来说，这一点并不明显，因此才会出现运行时逻辑错误。
+
+设计良好的类需要消除这个意外。下面的代码清单给出了一种方法。输出 \texttt{<<} 运算符在对 \texttt{MONTH\_NAMES} 字符串数组取下标时，会悄悄地用 \texttt{date.month} 减去 1。
+
+\begin{codeboxt}{代码清单 6.5（程序 6.3 SurpriseDate-2）：\texttt{Date.cpp}}
+#include <iostream>
+#include "Date.h"
+
+const string Date::MONTH_NAMES[12] = ...
+
+ostream& operator <<(ostream& ostr, const Date& date)
+{
+    ostr << date.MONTH_NAMES[date.month - 1]         ①
+         << " " << date.day << ", " << date.year;
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 从月份值中减去 1。}\par
+
+这个简单的修正消除了意外，输出也正确了：
+
+\begin{codebox}
+FEB 4, 2025
+\end{codebox}
+
+对 \texttt{month} 减去 1 会带来一点点运行时开销。但如果在意这点开销，还有另一种解决办法。
+
+\begin{codeboxt}{代码清单 6.6（程序 6.4 SurpriseDate-3）：\texttt{Date.cpp}}
+#include <iostream>
+#include "Date.h"
+
+const string Date::MONTH_NAMES[13] =                  ①
+{
+    "",                                               ②
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+};
+
+ostream& operator <<(ostream& ostr, const Date& date)
+{
+    ostr << date.MONTH_NAMES[date.month]              ③
+         << " " << date.day << ", " << date.year;
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 13 个元素}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 首个占位元素}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 不再需要减去 1}\par
+
+现在，\texttt{MONTH\_NAMES} 有 13 个元素。\texttt{MONTH\_NAMES[0]} 是首个占位元素，运算符 \texttt{<<} 不再需要从 \texttt{month} 中减去 1。我们以多一个未使用的数组元素为代价，消除了这点运行时开销。然后，在类 \texttt{Date} 中，我们必须修改这个私有静态数组的声明：
+
+\begin{codebox}
+    static const string MONTH_NAMES[13];
+\end{codebox}
+
+同样，\texttt{Date} 类按预期运作，测试程序也产生了正确的输出。
+
+\subsection{6.1.2 命名不当的函数会误导调用者}
+
+程序员在使用他人编写的代码时，常常会遇到一类不希望出现的意外，其来源是一个命名糟糕的函数在被调用时做了意料之外的事。我们编写函数时通常清楚自己打算让它做什么，因此可能意识不到所起的名字有歧义或具有误导性。又或者，这个名字在当初编写该函数时是恰当的，但后来我们修改了函数却没有改名。
+
+下面是一个例子，说明一个命名糟糕的函数在被毫无戒心的用户调用后，如何导致运行时逻辑错误。类 \texttt{SortedList} 是 \texttt{vector<int>} 的子类。该类有一个静态函数 \texttt{merge()}，接受三个 \texttt{SortedList} 参数——要合并的 \texttt{list1} 和 \texttt{list2}，以及用于存放合并后元素的 \texttt{merged\_list}。重载的 \texttt{<<} 运算符会打印 \texttt{SortedList} 对象的内容。
+
+\begin{codeboxt}{代码清单 6.7（程序 6.5 SurpriseMerge-1）：\texttt{SortedList.h}}
+#include <iostream>
+#include <vector>
+
+using namespace std;
+class SortedList : public vector<int>
+{
+public:
+    SortedList() {}
+
+    SortedList(const initializer_list<int> init_list)
+        : vector<int>(init_list) {}
+
+    static void merge(const SortedList& list1,
+                      c
+onst SortedList& list2,
+                            SortedList& merged_list);
+};
+
+inline ostream& operator <<(ostream& ostr, const SortedList& list)
+{
+    for (int i : list) cout << " " << i;
+    return ostr;
+}
+\end{codeboxt}
+
+公有静态函数 \texttt{SortedList::merge()} 合并其前两个参数 \texttt{list1} 和 \texttt{list2} 的元素，并把合并后的元素存入第三个参数 \texttt{merged\_list}。但该函数还会从 \texttt{merged\_list} 中移除重复的值。从函数名完全看不出后面这个操作。
+
+\begin{codeboxt}{代码清单 6.8（程序 6.5 SurpriseMerge-1）：\texttt{SortedList.cpp}（糟糕的意外）}
+#include "SortedList.h"
+
+void SortedList::merge(const SortedList& list1,
+                       const SortedList& list2,
+                             SortedList& merged_list)
+{
+    size_t size1 = list1.size();
+    size_t size2 = list2.size();
+
+    int i1 = 0;
+    int i2 = 0;
+
+    while ((i1 < size1) || (i2 < size2))                       ①
+    {                                                          ①
+        if (   (i1 < size1)                                    ①
+            && ((i2 == size2) || (list1[i1] <= list2[i2])))    ①
+        {                                                      ①
+            merged_list.push_back(list1[i1]);                  ①
+            i1++;                                              ①
+        }                                                      ①
+        else                                                   ①
+        {                                                      ①
+            merged_list.push_back(list2[i2]);                  ①
+            i2++;                                              ①
+        }                                                      ①
+    }                                                          ①
+
+    int i = 0;
+
+    while (i < merged_list.size())                             ②
+    {                                                          ②
+        int j = i + 1;    B                                    ②
+                                                               ②
+        while (j < merged_list.size())                         ②
+        {                                                      ②
+            if (merged_list[i] == merged_list[j])              ②
+            {                                                  ②
+                merged_list.erase(merged_list.begin() + j);    ②
+            }                                                  ②
+            else j++;                                          ②
+        }                                                      ②
+                                                               ②
+        i++;                                                   ②
+    }                                                          ②
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 把 SortedList 类型的 list1 和 list2 合并到 SortedList 类型的 merged\_list 中。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 从 merged\_list 中移除重复的值。}\par
+
+我们的测试程序创建并初始化两个有序的 \texttt{SortedList} 对象 \texttt{list1} 和 \texttt{list2}，并创建 \texttt{SortedList} 对象 \texttt{merged\_list}（代码清单 6.9）。在实际应用中，我们应当检查这两个列表中的值确实是有序的。程序把这三个列表传给函数 \texttt{SortedList::merge()}。根据函数名，我们期望返回时 \texttt{merged\_list} 会包含来自 \texttt{list1} 和 \texttt{list2} 的所有合并后的值。随后程序调用函数 \texttt{print\_frequencies()}，它使用 STL 的 \texttt{map} 来计算并打印 \texttt{merged\_list} 中每个值的出现频率。
+
+\begin{codeboxt}{代码清单 6.9（程序 6.5 SurpriseMerge-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include <iomanip>
+#include <map>
+#include "SortedList.h"
+
+using namespace std;
+
+void print_frequencies(const SortedList& merged_list);
+
+int main()
+{
+    SortedList list1 {2, 5, 5, 5, 7, 11, 11, 11, 13, 13};
+    SortedList list2 {0, 1, 2, 2, 2, 2, 4, 4, 5, 6, 7, 7, 9, 11};
+
+    cout << "List 1:" << list1 << endl;
+    cout << "List 2:" << list2 << endl;
+
+    SortedList merged_list;
+    SortedList::merge(list1, list2, merged_list);
+    cout << "Merged:" << merged_list << endl;
+
+    cout << endl;
+    print_frequencies(merged_list);
+    return 0;
+}
+
+void print_frequencies(const SortedList& merged_list)
+{
+    map<int, int> freqs;                                   ①
+
+    cout << "Frequency table" << endl;
+
+    for (int i : merged_list)
+    {
+        if (freqs.find(i) == freqs.end()) freqs[i] = 1;    ②
+        else                              freqs[i]++;
+    }
+
+    for (map<int, int>::iterator it = freqs.begin();
+         it != freqs.end(); it++)
+    {
+        cout << setw(7) << it->first << ": " << it->second << endl;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 合并后的值及其出现频率的 map}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 计算出现频率}\par
+
+输出是
+
+\begin{codebox}
+List 1: 2 5 5 5 7 11 11 11 13 13
+List 2: 0 1 2 2 2 2 4 4 5 6 7 7 9 11
+Merged: 0 1 2 4 5 6 7 9 11 13
+
+Frequency table
+      0: 1
+      1: 1
+      2: 1
+      4: 1
+      5: 1
+      6: 1
+      7: 1
+      9: 1
+     11: 1
+     13: 1
+\end{codebox}
+
+意外吧！我们遇到了一个严重的逻辑错误。由于该函数出乎意料地移除了所有重复的值，每个频率最多只有 1。一个不会误导程序员的更好函数名或许是 \texttt{merge\_and\_deduplicate}。
+
+\myGraphic{0.980}{images/CH06_00_UN04_Mak.png}{}
+
+\section{性能低下是不受欢迎的意外}
+
+糟糕的运行时性能是另一种不良意外，它往往由隐藏的低效编程引起。如果我们没有完全理解某个数据结构如何运作，性能低下甚至可能源于使用 STL 中的数据结构，例如 STL vector。
+
+性能低下会导致运行时间过长，或占用过多内存及其他资源。一个做了它该做的事（即满足功能性需求）却性能不佳（即未能满足某项非功能性性能需求）的应用程序，就是一种不受欢迎的意外。性能低下可能源于对数据结构的粗心使用。当我们调用为某个应用程序编写的函数或某个标准库函数时，并不希望这次调用带来不受欢迎的意外。
+
+\subsection{6.2.1 糟糕的设计会导致意料之外的性能问题}
+
+选择合适的算法是良好设计的重要组成部分。实现了选择不当的算法的函数，可能给毫无戒心的调用者带来意料之外的性能问题，例如运行时间过长。
+
+看一看代码清单 6.8 中的函数 \texttt{merge()}。随着两个 vector 的长度线性增长，该函数的运行时间却呈指数级增长。
+
+运行时间不断增长，原因在于我们从 \texttt{merged\_list} 中移除重复值的方式。第二个 \texttt{while} 循环里嵌套了第三个 \texttt{while} 循环，而远为优秀的设计根本不需要嵌套循环。在执行合并的第一个 \texttt{while} 循环中，我们可以加入测试，防止重复的值进入 \texttt{merged\_list}，如下面的代码清单所示。利用列表已有序这一点，只要某个值等于上一个追加的值，我们就不把它追加到 \texttt{merged\_list}。
+
+\begin{codeboxt}{代码清单 6.10（程序 6.6 SurpriseMerge-2）：\texttt{SortedList.cpp}（改进后的性能）}
+#include "SortedList.h"
+
+void SortedList::merge_and_deduplicate(const SortedList& list1,
+                                       const SortedList& list2,
+                                             SortedList& merged_list)
+{
+    size_t size1 = list1.size();
+    size_t size2 = list2.size();
+
+    size_t merged_size = 0;
+
+    int i1 = 0;
+    int i2 = 0;
+    while ((i1 < size1) || (i2 < size2))
+    {
+        if (   (i1 < size1)
+            && ((i2 == size2) || (list1[i1] <= list2[i2])))
+        {
+            if (   (merged_size == 0)                         ①
+                || (list1[i1] != merged_list[merged_size-1])) ①
+            {
+                merged_list.push_back(list1[i1]);
+                merged_size++;
+            }
+            i1++;
+        }
+        else
+        {
+            if (   (merged_size == 0)                         ①
+                || (list2[i2] != merged_list[merged_size-1])) ① 
+            {
+                merged_list.push_back(list2[i2]);
+                merged_size++;
+            }
+            i2++;
+        }
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 不要追加重复的值（即等于上一个追加值的值）。}\par
+
+这个改进版的 merge 函数具有良好的可伸缩性。随着两个 \texttt{SortedList} 对象的长度线性增长，函数的运行时间也大致成比例地线性增长。
+
+\begin{myWarning}{注意}
+我们通过重新设计代码来\emph{重构}（refactor）代码，以便在某个方面加以改进，例如让它运行得更高效，但不改变其功能或使用方式。重构是开发迭代过程中的常见操作。
+\end{myWarning}
+
+\subsection{6.2.2 C++ vector 令人烦恼的性能}
+
+许多面向对象语言的对象变量在运行时只能被赋予指向对象的指针或引用。然而，C++ 变量可以被直接赋予对象的值。对于那些不加小心地使用它们的程序员来说，值为对象的 C++ 变量可能引发运行时性能意外。
+
+C++ 程序员知道，STL 中的 vector 用起来比数组更方便。STL vector 在内部管理一个隐藏的动态数组来存放它的元素。我们可以把元素插入 vector 的任意位置，或在末尾追加元素。我们可以从 vector 中删除任意元素。我们不需要编写代码来跟踪 vector 的存储需求，因为在我们插入、追加和删除元素时，vector 会自动调整其内部动态数组的大小。然而，我们可能会在无意中招致一些糟糕的性能问题。
+
+\myGraphic{0.809}{images/CH06_00_UN05_Mak.png}{}
+
+下面是一个例子，说明粗心使用 STL vector 如何导致性能问题。假设我们在编写一个用于跟踪预约日期的应用程序。我们可以复用 \texttt{Date} 类（代码清单 6.6）。类 \texttt{Appointments} 把日期保存在私有成员变量 \texttt{dates} 中，它是一个存放 \texttt{Date} 对象的 STL vector（代码清单 6.11）。公有成员函数 \texttt{at()} 返回 vector 中给定下标处的 \texttt{Date} 对象，\texttt{append()} 把一个新 \texttt{Date} 对象追加到 vector 末尾，\texttt{insert()} 把一个 \texttt{Date} 对象插入 vector 中给定的下标处，\texttt{remove()} 从 vector 中移除给定下标处的一个 \texttt{Date} 对象。
+
+为保持这个例子简短，我们不做诸如确保 vector 下标在有效范围内这类运行时检查——而真实的应用必须做这些检查。这个类的代码看起来简单直接，却隐藏着严重的性能问题。
+
+\begin{codeboxt}{代码清单 6.11（程序 6.7 SurpriseVector-1）：\texttt{Appointments.h}（性能低下）}
+#include <vector>
+#include "Date.h"
+
+using namespace std;
+
+class Appointments
+{
+public:
+    vector<Date> get_dates() const { return dates; }
+
+    Date at(const int index) const { return dates[index]; }
+    void append(const Date date)   { dates.push_back(date); }
+
+    void insert(const int index, const Date date)
+    {
+        dates.insert(dates.begin() + index, date);
+    }
+
+    void remove(const int index)
+    {
+        dates.erase(dates.begin() + index);
+    }
+
+private:
+    vector<Date> dates;       ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 存放 Date 对象的私有 vector}\par
+
+一个测试程序（代码清单 6.12）执行以下操作：
+
+\begin{itemize}
+\item 构造 \texttt{Date} 对象。
+\item 把 \texttt{Date} 对象追加到 vector。
+\item 用一个已有的 \texttt{Date} 对象初始化一个 \texttt{Date} 变量。
+\item 把一个已有的 \texttt{Date} 对象赋值给一个 \texttt{Date} 变量。
+\item 把一个 \texttt{Date} 对象插入 vector。
+\item 从 vector 中移除一个 \texttt{Date} 对象。
+\end{itemize}
+
+程序会打印消息，表明它即将执行哪些操作，并打印 vector 的内容以确认操作的结果。执行操作的语句以粗体标出。
+
+\begin{codeboxt}{代码清单 6.12（程序 6.7 SurpriseVector-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include <vector>
+#include "Appointments.h"
+#include "Date.h"
+
+using namespace std;
+
+void print(const Appointments appts);
+
+int main()
+{
+    cout << "TEST CONSTRUCTOR" << endl;
+    Date d1969(1969, 7, 20);                     ①
+    cout << "d1969: " << d1969 << endl;
+    Date d2025(2025, 9,  2);                     ①
+    cout << "d2025: " << d2025 << endl;
+    Date d2027(2027, 4,  3);                     ①
+    cout << "d2027: " << d2027 << endl;
+
+    Appointments appts;
+
+    cout << endl << "TEST APPEND" << endl;
+    cout << "append d2025: " << d2025 << endl;
+    appts.append(d2025);                         ②
+    cout << "append d2027: " << d2027 << endl;
+    appts.append(d2027);                         ②
+    print(appts);
+
+    cout << endl << "TEST INITIALIZATION" << endl;
+    cout << "initialize d = d2025:" << endl;
+    Date d = d2025;                              ③
+    cout << d << endl;
+
+    cout << endl << "TEST ASSIGNMENT" << endl;
+    cout << "assign d = d2027:" << endl;
+    d = d2027;                                   ④
+    cout << d << endl;
+
+    cout << endl << "TEST INSERTION" << endl;
+    cout << "insert " << d1969
+         << " at index [0]:" << endl;
+    appts.insert(0, d1969);                      ⑤
+    print(appts);
+
+    cout << endl << "TEST REMOVAL" << endl;
+    cout << "remove " << appts.at(1)
+         << " at index [1]:" << endl;
+    appts.remove(1);                             ⑥
+    print(appts);
+
+    cout << endl << "Done!" << endl;
+    return 0;
+}
+
+void print(const Appointments appts)
+{
+    int i = 0;
+
+    cout << "printing vector ..." << endl;
+    for (Date date : appts.get_dates())
+    {
+        cout << "[" << i << "] " << date << endl;
+        i++;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 构造三个 Date 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 把其中两个 Date 对象追加到 vector。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 用一个已有的 Date 对象初始化一个 Date 变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 把一个已有的 Date 对象赋值给一个 Date 变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 把一个 Date 对象插入 vector。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 从 vector 中移除一个 Date 对象。}\par
+
+程序的输出：
+
+\begin{codebox}
+TEST CONSTRUCTOR
+d1969: JUL 20, 1969
+d2025: SEP 2, 2025
+d2027: APR 3, 2027
+
+TEST APPEND
+append d2025: SEP 2, 2025
+append d2027: APR 3, 2027
+printing vector ...
+[0] SEP 2, 2025
+[1] APR 3, 2027
+
+TEST INITIALIZATION
+initialize d = d2025:
+SEP 2, 2025
+
+TEST ASSIGNMENT
+assign d = d2027:
+APR 3, 2027
+
+TEST INSERTION
+insert JUL 20, 1969 at index [0]:
+printing vector ...
+[0] JUL 20, 1969
+[1] SEP 2, 2025
+[2] APR 3, 2027
+
+TEST REMOVAL
+remove SEP 2, 2025 at index [1]:
+printing vector ...
+[0] JUL 20, 1969
+[1] APR 3, 2027
+Done!
+\end{codebox}
+
+输出符合我们的预期，看起来平淡无奇。
+
+然而，真正的性能意外在于，在这次简短的测试中，C++ 在运行时背着我们自动做了些什么。稍后我们会看到，这个程序设计糟糕，引发了许多多余的操作。为了揭示这些操作，我们可以向类 \texttt{Date} 添加特殊的输出语句。我们可以对默认构造函数、普通构造函数、拷贝构造函数、拷贝赋值运算符和析构函数的每一次调用进行插桩，让它们输出一条消息。
+
+\begin{mySidebar}{三大函数（The Big Three）}
+
+C++ 类的析构函数、拷贝构造函数和拷贝赋值运算符被称为「三大函数」（The Big Three）。经验法则是：如果你需要显式实现其中任何一个而不是使用默认版本，就应当把这三个都实现。
+
+再加上移动构造函数和移动赋值运算符，就得到「五大函数」（The Big Five）。（参见 \href{http://mng.bz/5lpD}{http://mng.bz/5lpD}。）
+\end{mySidebar}
+
+由于我们重写了默认的拷贝构造函数和默认的拷贝赋值运算符，我们的实现必须分别显式地执行逐成员的拷贝和赋值。
+
+\begin{codeboxt}{代码清单 6.13（程序 6.8 SurpriseVector-2）：\texttt{Date.h}（已插桩）}
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Date
+{
+public:
+    Date() : year(2000), month(1), day(1)
+    {
+        cout << "(default constructor) " << endl;
+    }
+
+    Date(const int y, const int m, const int d)
+        : year(y), month(m), day(d)
+    {
+        cout << "(regular constructor) "; print(); cout << endl;
+    }
+
+    Date(const Date& other)
+    {
+        cout << "(copy constructor) "; other.print(); cout << endl;
+
+        year  = other.year;       ①
+        month = other.month;      ①
+        day   = other.day;        ①
+    }
+
+    Date& operator =(const Date& other)
+    {
+        cout << "(assignment operator) "; other.print();
+        cout << endl;
+
+        if (this == &other) return *this;
+
+        year  = other.year;       ②
+        month = other.month;      ②
+        day   = other.day;        ②
+
+        return *this;
+    }
+
+    ~Date()
+    {
+        cout << «(destructor) «; print(); cout << endl;
+    }
+
+    void print() const;
+
+private:
+    static const string MONTH_NAMES[13];
+
+    int year, month, day;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 显式的逐成员拷贝}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 显式的逐成员赋值}\par
+
+插桩后的程序输出显示了所有对普通构造函数、拷贝构造函数、析构函数和赋值运算符的调用：
+
+\begin{codebox}
+TEST CONSTRUCTOR
+(regular constructor) JUL 20, 1969
+d1969: JUL 20, 1969
+(regular constructor) SEP 2, 2025
+d2025: SEP 2, 2025
+(regular constructor) APR 3, 2027
+d2027: APR 3, 2027
+
+TEST APPEND
+append d2025: SEP 2, 2025
+(copy constructor) SEP 2, 2025
+(copy constructor) SEP 2, 2025
+(destructor) SEP 2, 2025
+append d2027: APR 3, 2027
+(copy constructor) APR 3, 2027         ①
+(copy constructor) APR 3, 2027         ②
+(copy constructor) SEP 2, 2025         ③
+(destructor) SEP 2, 2025               ④
+(destructor) APR 3, 2027               ⑤
+(copy constructor) SEP 2, 2025         ⑥
+(copy constructor) APR 3, 2027         ⑥
+printing vector ...
+(copy constructor) SEP 2, 2025         ⑦
+(copy constructor) APR 3, 2027         ⑦
+(copy constructor) SEP 2, 2025         ⑧
+[0] SEP 2, 2025
+(destructor) SEP 2, 2025               ⑨
+(copy constructor) APR 3, 2027         ⑩
+[1] APR 3, 2027
+(destructor) APR 3, 2027               ⑪
+(destructor) APR 3, 2027               ⑫
+(destructor) SEP 2, 2025               ⑫
+(destructor) APR 3, 2027               ⑬
+(destructor) SEP 2, 2025               ⑬
+
+TEST INITIALIZATION
+initialize d = d2025:
+(copy constructor) SEP 2, 2025         ⑭
+SEP 2, 2025
+
+TEST ASSIGNMENT
+assign d = d2027:
+(assignment operator) APR 3, 2027      ⑮
+APR 3, 2027
+
+TEST INSERTION
+insert JUL 20, 1969 at index [0]:
+(copy constructor) JUL 20, 1969        ⑯
+(copy constructor) JUL 20, 1969        ⑰
+(copy constructor) SEP 2, 2025         ⑱
+(copy constructor) APR 3, 2027         ⑱
+(destructor) APR 3, 2027               ⑲
+(destructor) SEP 2, 2025               ⑲
+(destructor) JUL 20, 1969              ⑳
+(copy constructor) JUL 20, 1969
+(copy constructor) SEP 2, 2025
+(copy constructor) APR 3, 2027
+printing vector ...
+(copy constructor) JUL 20, 1969
+(copy constructor) SEP 2, 2025
+(copy constructor) APR 3, 2027
+(copy constructor) JUL 20, 1969
+[0] JUL 20, 1969
+(destructor) JUL 20, 1969
+(copy constructor) SEP 2, 2025
+[1] SEP 2, 2025
+(destructor) SEP 2, 2025
+(copy constructor) APR 3, 2027
+[2] APR 3, 2027
+(destructor) APR 3, 2027
+(destructor) APR 3, 2027
+(destructor) SEP 2, 2025
+(destructor) JUL 20, 1969
+(destructor) APR 3, 2027
+(destructor) SEP 2, 2025
+(destructor) JUL 20, 1969
+
+TEST REMOVAL
+remove (copy constructor) SEP 2, 2025  ㉑
+SEP 2, 2025 at index [1]:
+(destructor) SEP 2, 2025               ㉒
+(assignment operator) APR 3, 2027      ㉓
+(destructor) APR 3, 2027               ㉔
+(copy constructor) JUL 20, 1969
+(copy constructor) APR 3, 2027
+printing vector ...
+(copy constructor) JUL 20, 1969
+(copy constructor) APR 3, 2027
+(copy constructor) JUL 20, 1969
+[0] JUL 20, 1969
+(destructor) JUL 20, 1969
+(copy constructor) APR 3, 2027
+[1] APR 3, 2027
+(destructor) APR 3, 2027
+(destructor) APR 3, 2027
+(destructor) JUL 20, 1969
+(destructor) APR 3, 2027
+(destructor) JUL 20, 1969
+
+Done!
+(destructor) APR 3, 2027               ㉕
+(destructor) APR 3, 2027               ㉕
+(destructor) JUL 20, 1969              ㉕
+(destructor) APR 3, 2027               ㉖
+(destructor) SEP 2, 2025               ㉖
+(destructor) JUL 20, 1969              ㉖
+\end{codebox}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 按值把 Date 对象 d2027 传给函数 append()。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② vector 的成员函数 push\_back() 拷贝它的 Date 参数 d2027。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ vector 分配了一个更长的内部动态数组，于是把它的 Date 对象 d2025 从旧数组拷贝到新数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 释放旧动态数组中的 Date 对象 d2025，然后释放旧数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 传给函数 append() 的 Date 参数 d2027 离开作用域，于是将其释放。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 按值把 Appointments 参数传给函数 print()，于是拷贝 vector 的 Date 元素 d2025 和 d2027。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 在函数 print() 中，对 appts.get\_dates() 的调用返回 vector 的一个副本，于是拷贝它的 Date 元素 d2025 和 d2027。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 为打印而拷贝 Date 对象 d2025。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 释放 Date 对象 d2025 的副本。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑩ 为打印而拷贝 Date 对象 d2027。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑪ 释放 Date 对象 d2027 的副本。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑫ 释放 appts.get\_dates() 返回的 vector 中的 Date 元素，并释放该 vector。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑬ 从函数 print() 返回时，释放 Appointments 参数及其 vector 中的 Date 元素。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑭ 用已有 Date 对象 d2025 的一个副本初始化一个变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑮ 赋值操作调用赋值运算符。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑯ 按值把 Date 对象 d1969 传给函数 insert()。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑰ vector 的成员函数 insert() 拷贝它的 Date 参数 d1969。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑱ vector 分配了一个更长的内部动态数组，于是把它的 Date 对象 d2025 和 d2027 从旧数组拷贝到新数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑲ 释放旧动态数组中的 Date 对象 d2027 和 d2025，然后释放旧数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑳ 传给函数 insert() 的 Date 参数 d1969 离开作用域，于是将其释放。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ㉑ 对 appts.at(1) 的调用返回 vector 中下标 1 处 Date 对象 d2025 的一个副本。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ㉒ 释放 vector 中下标 1 处的 Date 对象 d2025。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ㉓ 用下标 2 处的 Date 对象 d2027 赋值，替换从 vector 下标 1 处移除的 Date 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ㉔ 释放下标 2 处旧的 Date 对象 d2027}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ㉕ 释放局部 Appointments 对象 appts 及其 vector 中的 Date 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ㉖ 释放局部 Date 对象 d2027、d2025 和 d1969。}\par
+
+这段令人警醒的输出展示了运行测试程序时 C++ 代表我们自动执行的操作。运行时发生大量自动且隐藏的操作的应用程序，可能导致惨不忍睹的性能。在这个例子中，不仅运行时间更长，而且有大量的内存分配和释放。
+
+为了理解我们对类 \texttt{Date} 插桩后生成的这段输出，我们可以分析测试程序发出的一些调用，并识别出 C++ 在运行时执行的自动操作（图 6.1–6.7）。当 \texttt{Date} 对象 \texttt{d2025}（的一个副本）已在 vector 中时，我们调用 \texttt{appts.append(d2027)}：
+
+1. 按值把 \texttt{Date} 对象 \texttt{d2027} 参数传给 \texttt{appts.append()} 的调用，于是通过调用拷贝构造函数来拷贝该对象。
+
+2. vector 的成员函数 \texttt{push\_back()} 追加它的 \texttt{Date} 对象 \texttt{d2027} 参数的一个副本，于是调用拷贝构造函数。
+
+3. vector 必须增长一个元素，于是它分配一个新的、更长的内部动态数组。
+
+4. 把 \texttt{Date} 对象 \texttt{d2025} 从旧动态数组拷贝到新数组，于是调用拷贝构造函数：
+
+\myGraphic{0.224}{images/CH06_F01_Mak.png}{图 6.1}
+
+5. 释放旧动态数组的元素，并调用旧数组中 \texttt{Date} 元素 \texttt{d2025} 的析构函数：
+
+\myGraphic{0.226}{images/CH06_F02_Mak.png}{图 6.2}
+
+6. 从对函数 \texttt{appts.append()} 的调用返回时，它持有的 \texttt{d2027} 副本离开作用域，于是调用 \texttt{Date} 对象 \texttt{d2027} 的析构函数。
+
+当 \texttt{Date} 对象 \texttt{d2025} 和 \texttt{d2027} 已在 vector 中时，我们调用函数 \texttt{print()}，此时
+
+1. 按值传递 \texttt{Appointments} 参数，于是通过调用每个 \texttt{Date} 对象的拷贝构造函数来拷贝它们。
+
+2. 在函数 \texttt{print()} 中，对 \texttt{appts.get\_dates()} 的调用返回 vector 的一个副本，于是对它的每个 \texttt{Date} 对象调用拷贝构造函数。
+
+3. 为打印而拷贝 vector 中的 \texttt{Date} 对象 \texttt{d2025}。
+
+4. 释放 \texttt{Date} 对象 \texttt{d2025} 的副本。
+
+5. 为打印而拷贝 vector 中的 \texttt{Date} 对象 \texttt{d2027}。
+
+6. 释放 \texttt{Date} 对象 \texttt{d2027} 的副本。
+
+7. 释放 \texttt{appts.get\_dates()} 返回的 vector 中的每个 \texttt{Date} 对象。
+
+8. 从函数 \texttt{print()} 返回时，它的 \texttt{Appointments} 副本离开作用域，于是释放该参数及其 vector 中的每个 \texttt{Date} 对象。
+
+当我们把一个 \texttt{Date} 对象插入 vector 时，发生的操作与追加对象时类似。vector 必须增长一个元素，于是它分配一个新的、更长的内部动态数组并释放旧数组。当 Date 对象 \texttt{d2025} 和 \texttt{d2027} 已在 vector 中时，我们调用 \texttt{appts.insert(0, d1969)}，此时
+
+1. 按值把 \texttt{Date} 对象 \texttt{d1969} 参数传给 \texttt{appts.append()} 的调用，并通过调用拷贝构造函数来拷贝该对象。
+
+2. vector 的成员函数 \texttt{insert()} 追加它的 \texttt{Date} 参数的一个副本，于是调用拷贝构造函数。
+
+3. vector 必须增长一个元素，于是它分配一个新的、更长的内部动态数组。
+
+4. 把 \texttt{Date} 对象 \texttt{d2025} 和 \texttt{d2027} 从旧动态数组拷贝到新数组，于是调用它们的拷贝构造函数：
+
+\myGraphic{0.292}{images/CH06_F03_Mak.png}{图 6.3}
+
+5. 释放旧动态数组的元素，并调用旧数组中 \texttt{Date} 对象 \texttt{d2025} 和 \texttt{d2027} 的析构函数：
+
+\myGraphic{0.291}{images/CH06_F04_Mak.png}{图 6.4}
+
+6. 从对函数 \texttt{appts.insert()} 的调用返回时，它的参数离开作用域，于是调用 \texttt{Date} 对象 \texttt{d1969} 的析构函数。
+
+当我们调用函数 \texttt{appts.remove()} 以移除 vector 中下标 1 处的对象时，
+
+1. 对 \texttt{appts.at(1)} 的调用返回下标 1 处 \texttt{Date} 对象 \texttt{d2025} 的一个副本。
+
+2. 释放正从 vector 下标 1 处移除的 \texttt{Date} 对象 \texttt{d2025}：
+
+\myGraphic{0.213}{images/CH06_F05_Mak.png}{图 6.5}
+
+3. 用下标 2 处的 \texttt{Date} 对象 \texttt{d2027} 对它赋值，替换被移除的对象，并调用拷贝赋值运算符：
+
+\myGraphic{0.201}{images/CH06_F06_Mak.png}{图 6.6}
+
+4. 释放下标 2 处旧的 \texttt{Date} 对象 \texttt{d2027}。最后这三步把被移除对象之后的每个对象都上移一个位置，以填补新空出的位置：
+
+\myGraphic{0.201}{images/CH06_F07_Mak.png}{图 6.7}
+
+\begin{mySidebar}{C++ 标准的 vector 类}
+
+C++ 标准的 \texttt{std::vector} 类管理着一个内部动态数组，其存储在运行时按需自动增长，这使 vector 对程序员来说用起来很方便。\texttt{vector} 类采用了一些策略，以减少每次添加新元素时都需创建新动态数组的需要。我们可以调用它的 \texttt{reserve()} 成员函数来预分配一个指定大小的 vector。当 vector 为了容纳新元素而必须创建一个新的内部动态数组时，它会选择一个最佳的增长量，让新数组的大小超过旧数组的大小。这样，后续添加元素时可能就不再需要创建新数组了。
+\end{mySidebar}
+
+为缓解应用程序的大部分糟糕性能，我们需要重新设计 \texttt{Appointments} 类，改为使用指向 \texttt{Date} 对象的指针，而不是直接使用 \texttt{Date} 对象。成员变量 \texttt{dates} 现在是一个存放指向 \texttt{Date} 对象的指针的 vector。成员函数 \texttt{append()} 和 \texttt{insert()} 各自接收一个指向 \texttt{Date} 对象的指针，成员函数 \texttt{at()} 返回一个指向 \texttt{Date} 对象的指针。
+
+\begin{codeboxt}{代码清单 6.14（程序 6.9 SurpriseVector-3）：\texttt{Appointments.h}}
+#include <vector>
+#include "Date.h"
+
+using namespace std;
+
+class Appointments
+{
+public:
+    vector<Date *> get_dates() const { return dates; }
+
+    Date *at(const int index) const { return dates[index]; }      ①
+    void append(Date * const date)  { dates.push_back(date); }    ①
+
+    void insert(const int index, Date * const date)               ①
+    {
+        dates.insert(dates.begin() + index, date);
+    }
+
+    void remove(const int index)    
+    { 
+        dates.erase(dates.begin() + index); 
+    }
+
+private:
+    vector<Date *> dates;                                         ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 使用指向 Date 对象的指针。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 存放指向 Date 对象的指针的 vector}\par
+
+测试程序的新版本动态创建新的 \texttt{Date} 对象。它的变量值以及它传递的参数值都是指向这些 \texttt{Date} 对象的指针。此外，它更合理地把 \texttt{Appointments} 参数 \texttt{appts} 按引用传给 \texttt{print()} 函数，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 6.15（程序 6.9 SurpriseVector-3）：\texttt{tester.cpp}}
+#include <iostream>
+#include <vector>
+#include "Appointments.h"
+#include "Date.h"
+
+using namespace std;
+
+void print(const Appointments& appts);         ①
+
+int main()
+{
+    cout << "TEST CONSTRUCTOR" << endl;
+    Date *d1969 = new Date(1969,  7, 20);      ②
+    cout << "d1969: " << *d1969 << endl;
+    Date *d2025 = new Date(2025,  9,  2);      ②
+    cout << "d2025: " << *d2025 << endl;
+    Date *d2027 = new Date(2027,  4,  3);      ②
+    cout << "d2027: " << *d2027 << endl;
+
+    Appointments appts;
+
+    cout << endl << "TEST APPEND" << endl;
+    cout << "append d2025: " << *d2025 << endl;
+    appts.append(d2025);
+    cout << "append d2027: " << *d2027 << endl;
+    appts.append(d2027);
+    print(appts);
+
+    cout << endl << "TEST INITIALIZATION" << endl;
+    cout << "initialize d = d2025:" << endl;
+    Date *d = d2025;
+    cout << *d << endl;
+
+    cout << endl << "TEST ASSIGNMENT" << endl;
+    cout << "assign d = d2027:" << endl;
+    d = d2027;
+    cout << *d << endl;
+
+    cout << endl << "TEST INSERTION" << endl;
+    cout << "insert " << *d1969
+         << " at index [0]:" << endl;
+    appts.insert(0, d1969);
+    print(appts);
+
+    cout << endl << "TEST REMOVAL" << endl;
+    cout << "remove " << *appts.at(1)
+         << " at index [1]:" << endl;
+    appts.remove(1);
+    print(appts);
+
+    cout << endl << "TEST DESTRUCTOR" << endl;
+    delete d1969;                              ③
+    delete d2025;                              ③
+    delete d2027;                              ③
+
+    cout << endl << "Done!" << endl;
+    return 0;
+}
+
+void print(const Appointments& appts)
+{
+    int i = 0;
+
+    cout << "printing vector ..." << endl;
+    for (Date *date : appts.get_dates())
+    {
+        cout << "[" << i << "] " << *date << endl;
+        i++;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 引用参数 Appointments\&}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 动态创建 Date 对象，并用指向这些对象的指针初始化变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 显式 delete 动态创建的 Date 对象。}\par
+
+这个版本程序的输出表明，即使使用了插桩后的 \texttt{Date} 类（代码清单 6.13），也不再有任何对拷贝构造函数、拷贝赋值运算符和析构函数的多余调用。如果应用的逻辑允许，使用指向对象的指针而不是直接使用对象，可以消除许多性能意外。
+
+\begin{codebox}
+TEST CONSTRUCTOR
+(regular constructor) JUL 20, 1969
+d1969: JUL 20, 1969
+(regular constructor) SEP 2, 2025
+d2025: SEP 2, 2025
+(regular constructor) APR 3, 2027
+d2027: APR 3, 2027
+
+TEST APPEND
+append d2025: SEP 2, 2025
+append d2027: APR 3, 2027
+printing vector ...
+[0] SEP 2, 2025
+[1] APR 3, 2027
+
+TEST INITIALIZATION
+initialize d = d2025:
+SEP 2, 2025
+
+TEST ASSIGNMENT
+assign d = d2027:
+APR 3, 2027
+
+TEST INSERTION
+insert JUL 20, 1969 at index [0]:
+printing vector ...
+[0] JUL 20, 1969
+[1] SEP 2, 2025
+[2] APR 3, 2027
+
+TEST REMOVAL
+remove SEP 2, 2025 at index [1]:
+printing vector ...
+[0] JUL 20, 1969
+[1] APR 3, 2027
+
+TEST DESTRUCTOR
+(destructor) JUL 20, 1969
+(destructor) SEP 2, 2025
+(destructor) APR 3, 2027
+
+Done!
+\end{codebox}
+
+\myGraphic{0.715}{images/CH06_F07_UN06_Mak.png}{}
+
+通过指针或引用来操作对象而不是直接访问它们，我们可以大幅减少对拷贝构造函数、拷贝赋值运算符和析构函数的调用次数。尤其是在对象较大时，拷贝可能是一项开销高昂、耗时的操作。
+
+\section{契约式编程有助于消除意外 [选择性]}
+
+归根结底：绝不要在代码中留下意外！消除我们自己编写的类中的意外，一个办法是为使用该类的程序员提供一份契约。成员函数的契约明确说明：调用者在调用该函数时必须满足哪些\emph{前置条件}（precondition），以及函数返回时调用者可以期望哪些\emph{后置条件}（postcondition）成立。契约还说明了\emph{类不变式}（class invariant）。类不变式必须在运行时对该类的对象成立，即在每次调用成员函数之前和之后都成立。（对象在变更过程中可能暂时违反它。）不变式确保绝不会留下处于无效状态的对象。
+
+通过定义类中成员函数的前置条件和后置条件以及类不变式，类的开发者和使用者都能确信，该类的对象在运行时会按预期正确运作，从而不会出现意外。
+
+\begin{mySidebar}{契约式编程}
+
+\emph{契约式编程}这一概念最早由面向对象编程先驱伯特兰·梅耶（Bertrand Meyer）提出。他的 Eiffel 编程语言提供了相应的构造，允许程序员定义前置条件、后置条件和不变式，语言会在运行时检查它们是否成立。这在调试程序时尤其有用。应用程序部署时可以把这些检查关闭，以免影响性能。
+\end{mySidebar}
+
+C++ 语言并不原生支持契约式编程。不过，我们仍然可以用该语言已有的特性来实现它的概念。虽然对应用程序的每个类都使用契约可能有些过度，但对最关键的类使用契约或许是明智之举。
+
+\myGraphic{0.893}{images/CH06_F07_UN07_Mak.png}{}
+
+本节展示如何按契约来编写一个环形缓冲区类。我们会给它的成员函数添加前置条件和后置条件，并设计一个类不变式。我们将看到契约如何帮助确保该类设计正确。
+
+\subsection{6.3.1 按契约编写环形缓冲区}
+
+下面的例子演示了如何对一个实现环形缓冲区的类按契约编程（代码清单 6.16）。一个具有给定容量的动态数组存放整数内容，私有成员变量 \texttt{buffer} 指向它。公有成员函数 \texttt{add()} 在缓冲区尾部插入一个整数元素，公有成员函数 \texttt{remove()} 从缓冲区头部移除一个整数元素并返回该元素的值。成员变量 \texttt{capacity} 是缓冲区能容纳的最大元素数。成员变量 \texttt{head} 和 \texttt{tail} 分别是头元素和尾元素的下标。成员变量 \texttt{count} 记录当前缓冲区中有多少个元素。私有成员函数 \texttt{class\_invariant()} 计算类不变式，若不变式成立则返回 true，否则返回 false。
+
+\begin{codeboxt}{代码清单 6.16（程序 6.10 CircularBuffer-1）：\texttt{CircularBuffer.h}}
+class CircularBuffer
+{
+public:
+    CircularBuffer(const int cap);
+    ~CircularBuffer() { delete[] buffer; }
+
+    int get_count() const { return count; }
+
+    void add(const int value);
+    int remove();
+
+private:
+    int capacity;
+    int head, tail;
+
+    int count;
+
+    int *buffer;
+
+    bool class_invariant() const;
+};
+\end{codeboxt}
+
+在环形缓冲区的实现中（代码清单 6.17），成员函数 \texttt{add()} 在向缓冲区添加一个新值后递增成员变量 \texttt{tail}。\texttt{tail} 的值超过缓冲区容量时会绕回到缓冲区的另一端。成员函数 \texttt{remove()} 在从缓冲区移除一个值后递增成员变量 \texttt{head}。它的值超过缓冲区容量时也会绕回到缓冲区的另一端。
+
+在这个例子中，我们用头注释记录了每个成员函数——这是一种极力推荐的做法，但为了节省篇幅，本书的例子通常不做。注释标签 \texttt{@precondition}、\texttt{@postcondition} 和 \texttt{@invariant} 分别指定函数前置条件、函数后置条件和类不变式。辅助函数 \texttt{class\_invariant()} 实现了类不变式。
+
+\begin{codeboxt}{代码清单 6.17（程序 6.10 CircularBuffer-1）：\texttt{CircularBuffer.cpp}}
+#include <cassert>
+#include "CircularBuffer.h"
+
+/**
+ * @invariant (0 <= head < capacity) and (0 <= tail < capacity)
+ */
+bool CircularBuffer::class_invariant() const     ①
+{
+    return (0 <= head) && (head < capacity)      ②
+        && (0 <= tail) && (tail < capacity);     ②
+}
+
+/**
+ * Constructor
+ * @parm cap the capacity of the buffer.
+ * @postcondition the buffer is empty.
+ */
+CircularBuffer::CircularBuffer(const int cap)
+    : capacity(cap), head(0), tail(0), count(0),
+      buffer(new int[capacity])
+{
+    assert(class_invariant());                   ③
+}
+
+/**
+ * Add a new value to the tail of the buffer.
+ * @parm value the value to add.
+ * @precondition the buffer is not full.
+ * @postcondition the buffer is not empty.
+ */
+void CircularBuffer::add(const int value)
+{
+    assert(count < capacity);  //未满        ④
+    buffer[tail] = value;
+    tail = (tail + 1)%capacity;
+    count++;
+    assert(count > 0);  //非空              ⑤
+    assert(class_invariant());                    ⑥
+}
+
+/**
+ * Remove a value from the head of the buffer.
+ * @return the removed value.
+ * @precondition the buffer is not empty.
+ * @postcondition the buffer is not full.
+ */
+int CircularBuffer::remove()
+{
+    assert(count > 0);  //非空              ⑦
+
+    int value = buffer[head];
+    head = (head + 1)%capacity;
+    count--;
+
+    assert(count < capacity);  //未满        ⑧
+    assert(class_invariant());                    ⑨
+
+    return value;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 用于测试类不变式的私有成员函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 类不变式}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 检查类不变式。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 检查前置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 检查后置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 检查类不变式。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 检查前置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 检查后置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 检查类不变式。}\par
+
+测试程序对环形缓冲区进行了演练。
+
+\begin{codeboxt}{代码清单 6.18（程序 6.10 CircularBuffer-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include "CircularBuffer.h"
+
+using namespace std;
+
+const int SIZE = 5;
+
+int main()
+{
+    CircularBuffer buffer(SIZE);
+
+    for (int value = 10; value < 100; value+=10)
+    {
+        if (buffer.get_count() < SIZE)       ①
+        {
+            buffer.add(value);
+            cout << "added " << value << endl;
+        }
+    }
+
+    for (int i = 1; i < 10; i++)
+    {
+        if (buffer.get_count() > 0)          ②
+        {
+            int value = buffer.remove();
+            cout << "removed " << value << endl;
+        }
+    }
+
+    int value = buffer.remove();             ③
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 在调用 buffer.add() 之前检查前置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 在调用 buffer.remove() 之前检查前置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 不先检查前置条件就调用函数 remove()。}\par
+
+测试程序的输出是：
+
+\begin{codebox}
+added 10
+added 20
+added 30
+added 40
+added 50
+removed 10
+removed 20
+removed 30
+removed 40
+removed 50
+Assertion failed: (count > 0), function remove, file CircularBuffer.h, line 51.
+\end{codebox}
+
+下面几节会解释该程序的前置条件、后置条件、类不变式和输出。
+
+\subsection{6.3.2 前置条件：调用函数之前必须成立什么}
+
+函数的前置条件在函数被调用时必须成立。\emph{调用者有责任在发出调用之前检查前置条件。}
+
+\begin{mySidebar}{前置条件原则}
+
+函数的\emph{前置条件}是一个条件（布尔表达式），在我们调用该函数时必须成立。按照契约式编程，如果函数的前置条件成立而我们调用了该函数，那么函数必须保证自身行为正确。调用者有责任在发出调用之前检查前置条件。如果前置条件不成立，而我们仍然调用了该函数，那么函数没有义务以适合或方便调用者的方式行事。
+
+如果前置条件针对的是某个类的成员函数，那么该类必须提供某种公有手段，让调用者能检查前置条件是否成立。由于这是调用者的责任，函数没有义务检查前置条件是否满足。
+\end{mySidebar}
+
+在类 \texttt{CircularBuffer}（代码清单 6.17）中，调用成员函数 \texttt{add()} 的前置条件是缓冲区未满。因此，测试程序（代码清单 6.18）先调用成员函数 \texttt{get\_count()} 来检查计数小于 \texttt{SIZE}。如果缓冲区已满，它就不尝试添加。调用成员函数 \texttt{remove()} 的前置条件是缓冲区非空，测试程序同样先调用 \texttt{get\_count()}，这次检查计数不为 0。如果缓冲区为空，它就不尝试移除。
+
+如果函数的前置条件成立，而我们调用了该函数，那么函数必须保证自身行为正确。对于函数 \texttt{add()}，这意味着它必须正确地把值添加到缓冲区尾部，并推进成员变量 \texttt{tail}。函数 \texttt{remove()} 必须正确地从缓冲区头部移除一个值，推进成员变量 \texttt{head}，并返回被移除的值。
+
+由于检查函数前置条件是调用者的责任，函数就免除了检查它的必要。如果函数的前置条件未满足，而我们仍然调用了该函数，会发生什么？函数没有义务以适合调用者的方式行事。例如，如果我们调用成员函数 \texttt{add()}，而缓冲区已经满了，该函数可能的行为包括以下几种：
+
+\begin{itemize}
+\item 假定调用者已检查过前置条件，径直把新值添加到缓冲区，从而覆盖一个已有的值。这还会导致成员变量 \texttt{tail} 的值越过成员变量 \texttt{head} 的值，并使成员变量 \texttt{count} 的值超过缓冲区的容量。
+\item 检查前置条件，若不满足，则不添加新值，而是什么都不做或打印一条错误消息。
+\item 检查前置条件，若不满足，则中止程序。
+\end{itemize}
+
+如果我们不检查成员函数 \texttt{remove()} 的前置条件，并在缓冲区为空时调用它，该函数可能的行为包括以下几种：
+
+\begin{itemize}
+\item 假定调用者已检查过前置条件，径直从缓冲区移除一个值，从而可能返回一个此前已经返回过的值。这还会导致成员变量 \texttt{head} 的值越过成员变量 \texttt{tail} 的值，并使成员变量 \texttt{count} 的值变为负数。
+\item 检查前置条件，若不满足，则不移除值，而是什么都不做、打印一条错误消息，或返回一个占位值。
+\item 检查前置条件，若不满足，则中止程序。
+\end{itemize}
+
+在类 \texttt{CircularBuffer} 中，我们为这两个成员函数都选择了中止这一选项。在每个函数中，\texttt{assert()} 检查函数前置条件的值，若前置条件不满足，则立即中止程序。契约式编程允许函数的开发者编写不一定方便调用者的行为。
+
+测试程序（代码清单 6.18）在最后一次调用 \texttt{remove()} 时没有先检查该函数的前置条件。缓冲区为空，于是该函数以断言失败中止了程序。
+
+\myGraphic{0.793}{images/CH06_F07_UN08_Mak.png}{}
+
+如果函数的前置条件包含这样一点：函数会针对错误的参数值抛出异常，那么我们就把这个异常视为与调用者契约的一部分。这样，调用者就不再需要在调用该函数前检查参数值。
+
+\subsection{6.3.3 后置条件：从函数返回之后必须成立什么}
+
+然而，如果函数在其前置条件满足时被调用，那么\emph{在返回之前满足其后置条件就是函数的责任}。
+
+\begin{mySidebar}{后置条件原则}
+
+函数的\emph{后置条件}是一个条件（布尔表达式），在函数返回时必须成立。按照契约式编程，如果函数在其前置条件满足时被调用，那么\emph{在返回之前满足其后置条件就是函数的责任}。
+
+我们可以假定，如果我们调用了一个函数而它返回了，那么它的行为是正确的，后置条件也成立。这样我们就不必在调用之后再做错误检查。（当然，我们仍然可以检查。）
+\end{mySidebar}
+
+在类 \texttt{CircularBuffer}（代码清单 6.17）中，如果我们在确认前置条件满足后调用成员函数 \texttt{add()}，那么该函数必须成功地把新值添加到缓冲区，此后缓冲区不可能为空。在函数返回之前，它会检查自己的后置条件，即成员变量 \texttt{count} 必须大于零。在这个例子中，如果后置条件不满足，函数就中止程序。
+
+如果我们在确认前置条件满足后调用成员函数 \texttt{remove()}，那么该函数必须成功地从缓冲区移除一个值并将其返回，此后缓冲区不可能为满。在函数返回之前，它会检查自己的后置条件，即成员变量 \texttt{count} 必须小于成员变量 \texttt{capacity}。在这个例子中，如果后置条件不满足，函数就中止程序。
+
+在实际应用中，函数会设法换一种方式去满足自己的后置条件，而不是简单地中止程序。一种可能的补救办法是：如果出了问题就抛出异常。这会改变函数的契约。此时后置条件就变成：函数要么成功，要么抛出了异常。
+
+\myGraphic{0.772}{images/CH06_F07_UN09_Mak.png}{}
+
+\subsection{6.3.4 类不变式：对象状态必须始终保持什么成立}
+
+类不变式确保运行时不会创建无效的对象，并且该类的每个对象都不会进入无效状态。
+
+\begin{mySidebar}{类不变式原则}
+
+\emph{类不变式}是一个涉及类的状态实现的条件（布尔表达式），在运行时每创建一个对象之后（即在每次构造函数调用之后）都必须成立。每当对象被某个设值函数（setter）或任何其他改变对象状态的函数变更之后，它都必须保持成立。类不变式确保不会创建无效的对象，且任何对象都不会进入无效状态。通常，类不变式由该类的成员变量构成。
+\end{mySidebar}
+
+在类 \texttt{CircularBuffer}（代码清单 6.17）中，类不变式规定：成员变量 \texttt{head} 和 \texttt{tail} 的值始终都大于等于 0 且小于缓冲区容量：
+
+\begin{codebox}
+(0 <= head < capacity) and (0 <= tail < capacity)
+\end{codebox}
+
+布尔辅助函数 \texttt{class\_invariant()} 执行这项测试，我们必须在该构造函数返回之前，以及成员函数 \texttt{add()} 和 \texttt{remove()} 各自返回之前调用它。构造函数设置对象的初始状态，而这两个函数则修改对象的状态。与这个示例类中的函数前置条件和后置条件一样，只要类不变式不成立，程序就会中止。
+
+这是一个有效的类不变式吗？当对象首次创建时，成员变量 \texttt{head} 和 \texttt{tail} 都被设为 0，这满足不变式中 \texttt{>= 0} 的部分。成员函数 \texttt{add()} 和 \texttt{remove()} 各自把 \texttt{tail} 和 \texttt{head} 加 1，然后对所得之和与成员变量 \texttt{capacity} 做取模运算：
+
+\begin{codebox}
+    (tail + 1)%capacity 
+\end{codebox}
+
+以及
+
+\begin{codebox}
+    (head + 1)%capacity 
+\end{codebox}
+
+取模运算的结果总是从 0 到小于除数（这里是 \texttt{capacity}）的一个值，因此 \texttt{head} 和 \texttt{tail} 的值始终保持在 \texttt{>= 0} 且 \texttt{< capacity} 的范围内。因此，我们得到一个有效的不变式。
+
+在对象状态变化的过程中，类不变式可能会被违反。例如，在函数 \texttt{add()} 中，如果我们写成
+
+\begin{codebox}
+tail = tail + 1;
+tail = tail%capacity
+\end{codebox}
+
+那么在取模运算发生之前，\texttt{tail} 的值可能会短暂地等于 \texttt{capacity} 的值。但是，在函数返回之前，类不变式必须重新成立。
+
+为一个类找到合适的不变式可能很有挑战性。我们为类 \texttt{CircularBuffer} 所选的类不变式本身并不足以确保缓冲区能正确运作。例如，它并不保证成员变量 \texttt{head} 和 \texttt{tail} 的值不会相互越过。类不变式要与成员函数的前置条件和后置条件协同作用，才能保证缓冲区正确运作。
+
+\begin{mySidebar}{证明程序的正确性}
+
+从理论上讲，如果我们能为程序中每个类都指定恰当的类不变式，以及每个成员函数的前置条件和后置条件，我们就能证明该程序是正确的。然而，除了最简单的程序之外，这在实践中都非常困难。
+
+著名计算机科学家唐·高德纳（Don Knuth）曾这样评价自己写的一个程序：“小心上面代码中的 bug；我只是证明了它是正确的，并没有试过它”（\href{https://www-cs-faculty.stanford.edu/~knuth/faq.html}{https://www-cs-faculty.stanford.edu/\textasciitilde{}knuth/faq.html}）。
+\end{mySidebar}
+
+\section*{小结}
+
+\begin{itemize}
+\item 代码的行为应当符合用户的预期。
+\item 最小惊奇原则指出，设计良好的软件中应当尽量没有意外。有些意外源于 C++ 的工作方式。我们也可能在无意中把意外带入自己的代码。
+\item 差一错误很常见，它们可能导致难以发现的隐蔽运行时逻辑错误。
+\item 命名不当的函数会误导函数的调用者，让其以为该函数做的事情与函数名所暗示的不同。
+\item 设计糟糕的代码可能具有意料之外的糟糕运行时性能，包括运行时间比预期更长，或过度占用内存和其他资源。
+\item C++ 的 STL vector 易于使用且非常强大。然而，在 vector 代码中直接使用对象，会在运行时背着我们自动引发许多对拷贝构造函数、拷贝赋值运算符和析构函数的调用，从而导致性能问题。改用指向对象的指针可以消除许多这类自动调用。
+\item 契约式编程向我们编写的类的使用者保证，他们不会对该类对象在运行时的行为感到意外。
+\item 前置条件原则指出，函数的调用者必须在发出调用之前确保函数的前置条件成立。如果前置条件成立，函数必须保证自身正确执行。
+\item 后置条件原则指出，函数必须在返回之前确保其后置条件成立。
+\item 类不变式原则涉及一个在运行时必须始终成立的条件。它确保该类的任何对象都不会处于无效状态。
+\end{itemize}

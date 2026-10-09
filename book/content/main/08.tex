@@ -1,0 +1,1126 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 模板方法设计模式
+\item 策略设计模式
+\end{itemize}
+\end{myChapterIntro}
+
+每种设计模式（design pattern）都是一种经过行业验证的模型，我们可以据此为一类常见的软件架构问题构建出设计良好的解决方案。设计模式只是一套模型，因为它很少是能直接使用的解决方案——我们以它为基础，为应用中的某个架构问题打造量身定制的解决方案。本章介绍两种设计模式。
+
+\myGraphic{0.893}{images/CH08_00_UN01_Mak.png}{}
+
+应用开发，乃至广义上的编程，都离不开算法和数据。数据是食材，算法则是菜谱的步骤。本章介绍的两个设计模式——模板方法设计模式与策略设计模式——都是针对需要管理多种算法的软件架构所提出的模型。
+
+模板方法设计模式的示例应用会生成体育比赛报告。各报告的基本框架相同，但报告的部分内容有所差异。策略设计模式的示例应用演示了如何部署策略，为不同运动项目招募球员、预订场地。这些策略可以互换，在运行时，应用可以根据运动项目决定部署哪一个。
+
+对于这两种模式，我们都会先给出不使用该模式的示例代码，再给出按该模式建模的示例代码。然后，我们会看到该模式带来的改进。
+
+\begin{myWarning}{注意}
+请务必阅读第 4 部分的引言，其中包含关于设计模式整体的重要信息，并说明了本章及后续章节如何讲解每种模式。此外，如果你不熟悉部分示例中用到的棒球和排球运动，引言中也介绍了这两项运动计分的基本规则。
+\end{myWarning}
+
+\section{模板方法设计模式定义算法的各个步骤}
+
+我们在现实生活中经常使用一些定义日常行为步骤的模板。例如，从停车场车位里倒车出来的步骤：
+
+\begin{enumerate}
+\item 踩下刹车。
+\item 启动汽车。
+\item 挂倒挡。
+\item 轻踩油门，缓慢倒车。
+\item 转动方向盘。
+\item 踩下刹车。
+\item 挂前进挡。
+\item 踩油门，向前行驶。
+\end{enumerate}
+
+无论你驾驶的是什么品牌或型号的汽车，这些步骤及其先后顺序都是必须遵循的。第 1、4、5、6、8 步对大多数汽车来说可能都一样。但第 2、3、7 步可能因车而异。启动汽车可能是转动点火开关里的钥匙，也可能是按下启动按钮。变速杆可能位于方向盘后方或你身旁，也可能换挡需要按一组按钮。
+
+与此类似，应用可能使用一个包含若干步骤、且步骤顺序固定的算法。其中有些步骤可能保持不变，而另一些步骤则可能变化。本节最初的几个代码示例将演示模板方法设计模式如何帮助解决这样一类软件架构问题：算法定义了一组顺序固定的步骤，其中一些步骤是公共的、由超类实现，另一些则由子类实现。
+
+假设某学校的体育部想要一个应用，能在每场棒球和排球比赛后打印一份简短的报告。棒球报告包含某支球队在比赛中的表现数据，并配有一个简单的条形图。这样一份报告的示例如下
+
+\begin{codebox}
+BASEBALL GAME REPORT
+11 singles
+ 7 doubles
+ 1 triples
+ 1 homers
+ 
+         ....5...10...15...20...25...30
+Singles: SSSSSSSSSSS
+Doubles: DDDDDDD
+Triples: T
+ Homers: H
+ 
+End of report
+\end{codebox}
+
+排球报告包含获胜方、获胜比分，以及各队在比赛各回合中是如何得分的。这样一份报告的示例如下
+
+\begin{codebox}
+VOLLEYBALL GAME REPORT
+
+Winner was Team 2
+The winning score was 15 to 11
+
+     ....5...10...15
+  1: 2
+  2:  2
+  3:   2
+  4: 1
+  5:  1
+  6:    2
+  7:   1
+  8:     2
+  9:    1
+ 10:     1
+ 11:      2
+ 12:      1
+ 13:       2
+ 14:       1
+ 15:        2
+ 16:         2
+ 17:        1
+ 18:          2
+ 19:         1
+ 20:           2
+ 21:          1
+ 22:            2
+ 23:             2
+ 24:              2
+ 25:           1
+ 26:               2
+ 
+End of report
+\end{codebox}
+
+报告显示了在全部 26 个回合中每一回合是哪支球队得分，以及实时比分。例如，第 2 队在第 6 回合得分，此后第 1 队有 2 分，第 2 队有 4 分。一旦某队拿到 15 分比赛即结束，因此第 2 队获胜，而第 1 队最终只得了 11 分。所以获胜比分是 15 比 11。
+
+\begin{myWarning}{注意}
+第 4 部分的引言简要介绍了棒球和排球比赛的计分方式。
+\end{myWarning}
+
+\subsection{8.1.1 期望的设计特性}
+
+一个生成棒球和排球报告的应用应具备以下特性：
+
+\begin{itemize}
+\item \emph{DF 1}——报告生成步骤按固定顺序排列。
+\item \emph{DF 2}——两份报告中执行方式相同的对应步骤，其代码也应该相同。
+\item \emph{DF 3}——两份报告中执行方式不同的对应步骤，则在各自报告中为该步骤编写定制代码。
+\item \emph{DF 4}——重复代码很少，甚至没有。
+\end{itemize}
+
+\subsection{8.1.2 使用模板方法设计模式之前}
+
+生成比赛报告由以下步骤组成：
+
+\begin{enumerate}
+\item 打印报告头部。
+\item 获取比赛数据。
+\item 分析数据。
+\item 打印报告。
+\item 打印报告尾部。
+\end{enumerate}
+
+类 \texttt{BaseballReport} 用私有成员函数实现这些步骤（图 8.1）。它依赖类 \texttt{BaseballData}，后者使用随机数生成器为报告生成测试数据。
+
+\myGraphic{0.918}{images/CH08_F01_Mak.png}{图 8.1 类 \texttt{BaseballReport} 的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，由这些函数执行生成棒球比赛报告的各个步骤。它依赖类 \texttt{BaseballData} 为报告生成随机测试数据。}
+
+类 \texttt{BaseballReport} 的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，按正确顺序执行各步骤以生成比赛报告。
+
+\begin{codeboxt}{代码清单 8.1（程序 8.1 Reports）：\texttt{BaseballReport.h}（使用设计模式之前）}
+#include <string>
+#include <vector>
+#include "BaseballData.h"
+
+using namespace std;
+
+class BaseballReport
+{
+public:
+    BaseballReport() : title("BASEBALL GAME REPORT")
+    {
+        singles = doubles = triples = homers = 0;
+    }
+
+    void generate_report()
+    {
+        print_header();      ①
+        acquire_data();      ①
+        analyze_data();      ①
+        print_report();      ①
+        print_footer();      ①
+    }
+
+private:
+    string title;
+    vector<int> hits;
+    int singles, doubles, triples, homers;
+
+    void print_bar(const char ch, const int count) const;
+
+    void print_header() const;
+    void acquire_data();
+    void analyze_data();
+    void print_report() const;
+    void print_footer() const;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 调用各步骤以生成报告。}\par
+
+为了测试我们对类 \texttt{BaseballReport} 的实现，需要一组比赛数据。类 \texttt{BaseballData} 使用随机数生成器生成一个 vector，其中存放某队球员在一场比赛中的击球命中记录。
+
+\begin{codeboxt}{代码清单 8.2（程序 8.1 Reports）：\texttt{BaseballData.h}（使用设计模式之前）}
+#include <vector>
+#include <random>
+#include <time.h>
+
+using namespace std;
+
+class BaseballData
+{
+public:
+    BaseballData()
+        : normal(normal_distribution<double>(0.0, 1.75))
+    {
+        random_number_generator.seed(time(NULL));
+        generate_hits();
+    }
+
+    vector<int> get_hits() const { return hits; }
+
+private:
+    vector<int> hits;                                 ①
+
+    default_random_engine random_number_generator;    ②
+    normal_distribution<double> normal;               ②
+
+    void generate_hits();
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 一场比赛中的累计击球命中}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 随机数生成器}\par
+
+私有成员函数 \texttt{generate\_hits()} 使用随机数生成器生成服从正态分布的整数值，表示该队球员在比赛中的击球命中（一垒安打、二垒安打、三垒安打、本垒打）和出局。它把每次击球命中追加到 vector \texttt{hits} 中，并在出现 27 次出局后停止。
+
+\begin{codeboxt}{代码清单 8.3（程序 8.1 Reports）：\texttt{BaseballData.cpp}（使用设计模式之前）}
+#include <vector>
+#include <random>
+#include "BaseballData.h"
+
+using namespace std;
+
+void BaseballData::generate_hits()
+{
+    int outs = 0;
+
+    while (outs < 27)
+    {
+        double r   = normal(random_number_generator);    ①
+        int    hit = static_cast<int>(abs(r));           ①
+
+        if (hit > 4) hit = 4;
+
+        if (hit != 0) hits.push_back(hit);
+        else          outs++;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 随机生成一次击球命中或出局。}\par
+
+现在可以来实现类 \texttt{BaseballReport} 了（代码清单 8.4）。成员函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 分别打印报告的头部和尾部。成员函数 \texttt{acquire\_data()} 从 \texttt{BaseballData} 对象获取击球命中记录 vector。成员函数 \texttt{analyze\_data()} 统计一垒安打、二垒安打、三垒安打和本垒打的数量。成员函数 \texttt{print\_report()} 打印比赛报告。
+
+\begin{codeboxt}{代码清单 8.4（程序 8.1 Reports）：\texttt{BaseballReport.cpp}（使用设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "BaseballData.h"
+#include "BaseballReport.h"
+
+using namespace std;
+
+void BaseballReport::print_header() const
+{
+    cout << title << endl;
+    cout << endl;
+}
+
+void BaseballReport::acquire_data()
+{
+    BaseballData data;
+    hits = data.get_hits();
+}
+
+void BaseballReport::analyze_data()
+{
+    singles = doubles = triples = homers = 0;
+
+    for (int hit : hits)
+    {
+        switch (hit)
+        {
+            case 1: singles++; break;
+            case 2: doubles++; break;
+            case 3: triples++; break;
+            case 4: homers++;  break;
+
+            default: break;
+        }
+    }
+}
+
+void BaseballReport::print_bar(const char ch, const int count) const
+{
+    for (int i = count; i > 0; i--) cout << ch;
+    cout << endl;
+}
+
+void BaseballReport::print_report() const
+{
+    cout << setw(2) << singles << " singles" << endl;
+    cout << setw(2) << doubles << « doubles» << endl;
+    cout << setw(2) << triples << " triples" << endl;
+    cout << setw(2) << homers  << " homers"  << endl;
+    cout << endl;
+    cout << "         ....5...10...15...20...25...30" << endl;
+    cout << "Singles: "; print_bar('S', singles);
+    cout << "Doubles: "; print_bar('D', doubles);
+    cout << "Triples: "; print_bar('T', triples);
+    cout << " Homers: "; print_bar('H', homers);
+}
+
+void BaseballReport::print_footer() const
+{
+    cout << endl;
+    cout << "End of report" << endl;
+}
+\end{codeboxt}
+
+类 \texttt{VolleyballReport} 遵循相同的步骤来打印排球比赛报告（图 8.2），它依赖类 \texttt{VolleyballData}，后者使用随机数生成器为报告生成测试数据。
+
+\myGraphic{0.980}{images/CH08_F02_Mak.png}{图 8.2 类 \texttt{VolleyballReport} 的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，由这些函数执行生成排球比赛报告的各个步骤。它依赖类 \texttt{VolleyballData} 为报告生成随机测试数据。}
+
+类 \texttt{VolleyballReport} 中的公有成员函数 \texttt{generate\_report()} 调用它的私有成员函数，按正确顺序执行各步骤以生成比赛报告，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 8.5（程序 8.1 Reports）：\texttt{VolleyballReport.h}（使用设计模式之前）}
+#include <string>
+#include <vector>
+#include "VolleyballData.h"
+
+using namespace std;
+
+class VolleyballReport
+{
+public:
+    VolleyballReport()
+        : title("VOLLEYBALL GAME REPORT"),
+          team1_is_winner(false), losers_score(0) {}
+
+    void generate_report()
+    {
+        print_header();      ①
+        acquire_data();      ①
+        analyze_data();      ①
+        print_report();      ①
+        print_footer();      ①
+    }
+
+private:
+    string title;
+    vector<int> points;
+    bool team1_is_winner;
+    int  losers_score;
+
+    void print_header() const;
+    void acquire_data();
+    void analyze_data();
+    void print_report() const;
+    void print_footer() const;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 调用各步骤以生成报告。}\par
+
+与棒球比赛报告类似，类 \texttt{VolleyballData} 使用随机数生成器生成一个 vector，其中存放模拟比赛中两队所得的分数。
+
+\begin{codeboxt}{代码清单 8.6（程序 8.1 Reports）：\texttt{VolleyballData.h}（使用设计模式之前）}
+#include <vector>
+#include <random>
+#include <time.h>
+
+using namespace std;
+
+class VolleyballData
+{
+public:
+    VolleyballData() : uniform(uniform_int_distribution<int>(1, 2))
+    {
+        generator.seed(time(NULL));
+        generate_points();
+    }
+
+    vector<int> get_points() const { return points; }
+
+private:
+    vector<int> points;                            ①
+
+    default_random_engine random_number_generator; ②
+    uniform_int_distribution<int> uniform;         ②
+
+    void generate_points();
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 一场比赛中的累计得分}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 随机数生成器}\par
+
+私有成员函数 \texttt{generate\_points()} 使用均匀随机数生成器决定把每一回合的得分加到第 1 队还是第 2 队（成员变量 \texttt{score1} 和 \texttt{score2}），然后把该队在该回合结束时的比分追加到 vector \texttt{points} 中。为了区分两队的得分，第 2 队的得分为负数。当某队达到 15 分时，模拟比赛结束。
+
+\begin{codeboxt}{代码清单 8.7（程序 8.1 Reports）：\texttt{VolleyballData.cpp}（使用设计模式之前）}
+#include <vector>
+#include <random>
+#include "VolleyballData.h"
+
+using namespace std;
+
+void VolleyballData::generate_points()
+{
+    int score1 = 0;
+    int score2 = 0;
+
+    while ((score1 < 15) && (score2 < 15))
+    {
+        int which_team = uniform(random_number_generator);  ①
+
+        if (which_team == 1)
+        {
+            score1++;
+            points.push_back(score1);
+        }
+        else
+        {
+            score2++;
+            points.push_back(-score2);
+        }
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 随机把该分加到第 1 队或第 2 队。}\par
+
+现在，我们可以来实现类 \texttt{VolleyballReport} 了（代码清单 8.8）。成员函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 分别打印报告的头部和尾部。成员函数 \texttt{acquire\_data()} 从 \texttt{VolleyballData} 对象获取得分 vector。成员函数 \texttt{analyze\_data()} 判断哪支球队赢得了比赛（\texttt{points} vector 中最后一项是正数还是负数？）以及最终比分。成员函数 \texttt{print\_report()} 打印比赛报告。
+
+\begin{codeboxt}{代码清单 8.8（程序 8.1 Reports）\texttt{VolleyballReport.cpp}（使用设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "VolleyballData.h"
+#include "VolleyballReport.h"
+
+using namespace std;
+
+void VolleyballReport::print_header()
+{
+    cout << title << endl;
+    cout << endl;
+}
+
+void VolleyballReport::acquire_data() const
+{
+    VolleyballData data;
+    points = data.get_points();
+}
+
+void VolleyballReport::analyze_data()
+{
+    int final_index = points.size() - 1;
+    team1_is_winner = points[final_index] > 0; ①
+
+    for (int i = final_index; i > 0; i--)      ②
+    {
+        if (   ( team1_is_winner && (points[i] < 0))
+            || (!team1_is_winner && (points[i] > 0)))
+        {
+            losers_score = abs(points[i]);
+            break;
+        }
+    }
+}
+
+void VolleyballReport::print_report() const
+{
+    cout << "Winner was Team ";
+    cout << (team1_is_winner ? "1" : "2") << endl;
+    cout << "The winning score was 15 to " << losers_score << endl;
+    cout << endl;
+    cout << "     ....5...10...15" << endl;
+
+    int i = 0;
+    for (int s : points)                       ③
+    {
+        cout << setw(3) << ++i << ":";
+
+        char ch = s > 0 ? '1' : '2';
+        for (int k = 0; k < abs(s); k++) cout << " ";
+        cout << ch << endl;
+    }
+}
+
+void VolleyballReport::print_footer() const
+{
+    cout << endl;
+    cout << "End of report" << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 判断哪支球队赢得了比赛。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 反向遍历以找出负方的比分。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 遍历得分以打印一个简单的折线图。}\par
+
+测试程序既可以生成排球比赛报告，也可以生成棒球比赛报告，取决于我们在命令行启动程序时用的是 \texttt{-v} 还是 \texttt{-b} 选项。
+
+\begin{codeboxt}{代码清单 8.9（程序 8.1 Reports）：\texttt{tester.cpp}（使用设计模式之前）}
+#include <iostream>
+#include "VolleyballReport.h"
+#include "BaseballReport.h"
+
+using namespace std;
+
+int main(int argc, char *args[])
+{
+    if (argc < 2)
+    {
+        cout << "Usage: report -b | -v" << endl;
+        return -1;
+    }
+
+    if (string(args[1]) == "-b")
+    {
+        BaseballReport baseball;
+        baseball.generate_report();
+    }
+
+    if (string(args[1]) == "-v")
+    {
+        VolleyballReport volleyball;
+        volleyball.generate_report();
+    }
+    return 0;
+}
+\end{codeboxt}
+
+如果以后想生成橄榄球比赛报告，我们就要创建类 \texttt{FootballReport}，它同样会遵循这些步骤。
+
+\myGraphic{0.890}{images/CH08_F02_UN02_Mak.png}{}
+
+诚然，这个解决方案的主要缺陷在于
+
+\begin{itemize}
+\item \emph{重复代码}——在类 \texttt{VolleyballReport} 和 \texttt{BaseballReport} 中，我们重复编写了成员函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 的代码，而这些函数代表的是报告生成中的公共操作。各项运动的报告生成都遵循相同的步骤，因此我们在这两个类中也重复编写了成员函数 \texttt{generate\_report()} 的代码。
+\end{itemize}
+
+\subsection{8.1.3 使用模板方法设计模式之后}
+
+模板方法设计模式正是为这类架构问题而来的，它能减少代码重复。超类勾勒出算法的各个步骤（在示例应用中就是生成比赛报告），并可以实现共享的公共步骤。子类则负责用不同的方式实现其余步骤。超类中有一个成员函数称为\emph{模板方法}（template method），它按恰当的顺序调用执行这些步骤的成员函数（图 8.3）。
+
+\begin{mySidebar}{模板方法设计模式}
+
+“在一个操作中定义算法的骨架，并把某些步骤延迟到子类中。模板方法使子类可以重新定义算法的某些步骤，而不改变算法的结构。”（GoF 325）
+\end{mySidebar}
+
+\myGraphic{0.980}{images/CH08_F03_Mak.png}{图 8.3 这一版本的应用是依据模板方法设计模式建模的。超类 \texttt{GameReport} 按恰当顺序勾勒出算法生成报告的各个步骤。它实现了公共步骤 \texttt{print\_header()} 和 \texttt{print\_footer()}，并把其余步骤 \texttt{acquire\_data()}、\texttt{analyze\_data()} 和 \texttt{print\_report()} 委托给子类 \texttt{BaseballReport} 和 \texttt{VolleyballReport}。超类中的公有模板方法 \texttt{generate\_report()} 按恰当顺序调用各步骤成员函数。图中灰色部分在逻辑上与图 8.1 和图 8.2 相比没有变化。}
+
+用模板方法设计模式为我们的架构建模，会带来以下几项主要好处：
+
+\begin{itemize}
+\item \emph{算法框架}——超类 \texttt{GameReport} 通过声明实现算法各步骤的成员函数，为比赛报告的生成确立了标准。模板方法 \texttt{generate\_report()} 按恰当顺序调用各步骤成员函数。
+\item \emph{减少代码重复}——超类中的步骤函数 \texttt{print\_header()} 和 \texttt{print\_footer()} 定义了公共行为，从而消除了代码重复。这符合不要重复自己原则（Don’t Repeat Yourself Principle，2.3.3 节）。其余步骤函数由子类定义。
+\item \emph{开闭原则}——超类 \texttt{GameReport} 遵循开闭原则（2.3.3 节）。我们不会修改它，但可以用报告子类来扩展它。
+\item \emph{封装步骤}——各报告子类遵循“封装变化之处”原则（2.3.2 节），对生成比赛报告中会变化的步骤加以封装。
+\item \emph{内聚且解耦的类}——每个报告子类都具有内聚性，并与其他报告子类相互解耦。
+\end{itemize}
+
+在超类 \texttt{GameReport} 中，成员函数 \texttt{generate\_report()} 就是模板方法。
+
+\begin{codeboxt}{代码清单 8.10（程序 8.2 Reports-TemplateDP）：\texttt{GameReport.h}}
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class GameReport
+{
+public:
+    GameReport(const string t) : title(t) {}
+    virtual ~GameReport() {}
+
+    void generate_report()                 ①
+    {
+        print_header();
+        acquire_data();
+        analyze_data();
+        print_report();
+        print_footer();
+    }
+
+protected:
+    void print_header() const              ②
+    {
+        cout << title << endl;
+        cout << endl;
+    }
+
+    virtual void acquire_data() = 0;       ③
+    virtual void analyze_data() = 0;       ③
+    virtual void print_report() const = 0; ③
+
+    void print_footer() const              ④
+    {
+        cout << endl;
+        cout << "End of report" << endl;
+    }
+
+private:
+    string title;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 模板方法}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 打印报告头部步骤的公共实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 由子类实现的步骤}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 打印报告尾部步骤的公共实现}\par
+
+类 \texttt{BaseballReport} 现在是 \texttt{GameReport} 的子类。它只需实现棒球比赛报告所特有的成员函数 \texttt{acquire\_data()}、\texttt{analyze\_data()} 和 \texttt{print\_report()}。这些函数的实现与代码清单 8.4 相比没有变化。
+
+\begin{codeboxt}{代码清单 8.11（程序 8.2 Reports-TemplateDP）：\texttt{BaseballReport.h}}
+#include <vector>
+#include "BaseballData.h"
+#include "GameReport.h"
+
+using namespace std;
+
+class BaseballReport : public GameReport
+{
+public:
+    BaseballReport() : GameReport("BASEBALL REPORT")
+    {
+        singles = doubles = triples = homers = 0;
+    }
+
+private:
+    vector<int> hits;
+    int singles, doubles, triples, homers;
+
+    void acquire_data() override;       ①
+    void analyze_data() override;       ①
+    void print_report() const override; ①
+
+    void print_bar(const char ch, const int count);
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 棒球比赛报告特有的步骤}\par
+
+类 \texttt{VolleyballReport} 也是如此。函数 \texttt{acquire\_data()}、\texttt{analyze\_data()} 和 \texttt{print\_report()} 的实现与代码清单 8.8 相比没有变化。
+
+\begin{codeboxt}{代码清单 8.12（程序 8.2 Reports-TemplateDP）：\texttt{VolleyballReport.h}}
+#include <vector>
+#include "GameReport.h"
+#include "VolleyballData.h"
+
+using namespace std;
+
+class VolleyballReport : public GameReport
+{
+
+public:
+    VolleyballReport()
+        : GameReport("VOLLEYBALL REPORT"),
+          team1_is_winner(false), losers_score(0) {}
+
+private:
+    vector<int> points;
+    bool team1_is_winner;
+    int  losers_score;
+
+    void acquire_data() override;       ①
+    void analyze_data() override;       ①
+    void print_report() const override; ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 排球比赛报告特有的步骤}\par
+
+类 \texttt{VolleyballData} 和 \texttt{BaseballData} 没有变化。同一个测试程序（代码清单 8.9）打印出的报告与上一版本相同。
+
+\subsection{8.1.4 模板方法的通用模型}
+
+图 8.4 展示了模板方法设计模式的通用模型。正是依据设计模式的通用模型，我们才能针对某个架构问题打造量身定制的解决方案。
+
+\myGraphic{0.449}{images/CH08_F04_Mak.png}{图 8.4 模板方法设计模式的通用模型。可以拿它和图 8.3 作对比。抽象超类 \texttt{AlgorithmOutline} 的各成员函数勾勒出算法的各个步骤。成员函数 \texttt{template\_method()} 按正确顺序调用代表各步骤的成员函数。超类实现公共步骤，并把可变步骤的实现委托给它的具体子类。表 8.1 展示了示例应用如何采用该模式。}
+
+\begin{center}
+{\bfseries 表 8.1 示例应用对模板方法设计模式的采用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的采用 \\
+\midrule
+\texttt{客户类} & Main \\
+超类 \texttt{AlgorithmOutline} & 超类 \texttt{GameReport} \\
+子类 \texttt{ConcreteAlgorithm} & 子类 \texttt{VolleyballReport} 和 \texttt{BaseballReport} \\
+\texttt{template\_method()} & \texttt{generate\_report()} \\
+公共步骤 & \texttt{print\_\allowbreak{}header(\allowbreak{})\allowbreak{} 和 print\_\allowbreak{}footer(\allowbreak{})\allowbreak{}} \\
+可变步骤 & \texttt{acquire\_\allowbreak{}data(\allowbreak{})\allowbreak{}、analyze\_\allowbreak{}data(\allowbreak{})\allowbreak{} 和 print\_\allowbreak{}report(\allowbreak{})\allowbreak{}} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\myGraphic{0.980}{images/CH08_F04_UN03_Mak.png}{}
+
+\section{策略设计模式封装算法}
+
+接下来这个设计模式延续了“应用必须管理多种算法”这一主题，但处理方式略有不同。策略设计模式为这样一类软件架构问题提供了模型：涉及一族算法，或某个算法的若干变体，它们需要在运行时可以互换。
+
+例如，在游戏程序中，角色可能根据当前局势使用不同的算法或策略来决定下一步行动，比如随机选择一步，或根据机器学习选出一 步。针对这类架构问题，策略设计模式提供了一种解决方案模型：封装每个算法或算法变体，减少代码重复，并让我们能够独立地修改各个算法。
+
+\myGraphic{0.872}{images/CH08_F04_UN04_Mak.png}{}
+
+\begin{mySidebar}{硬编码与运行时灵活性}
+
+\emph{硬编码}（hardcoding）指的是我们写在源文件里的代码。硬编码意味着我们在编写代码时就决定了程序在运行时将如何表现。一旦硬编码，不修改代码就无法改变程序的行为。这还可能导致需要大量的重新测试和文档改写。
+
+许多设计模式都为具有运行时灵活性的软件架构提供了模型，使应用能够在运行时做出行为决策。例如，策略设计模式使应用能够根据某种逻辑判断来选择使用哪个算法。在部署应用之前，我们的测试和文档应覆盖所有算法。如果以后要新增或修改算法，设计良好的架构还能把代码改动降到最少。
+\end{mySidebar}
+
+为了用一个具体例子来演示策略设计模式，我们从一个涉及三项运动的应用入手：棒球、橄榄球和排球。对每项运动，我们都需要执行一个招募球员的算法和一个预订场地的算法。
+
+\subsection{8.2.1 期望的设计特性}
+
+一个为三项运动分别提供不同招募球员和预订场地算法的应用，应具备以下特性：
+
+\begin{itemize}
+\item \emph{DF 1}——每项运动都应为这两个算法实现代码。
+\item \emph{DF 2}——添加或删除运动项目应当简单直接。
+\item \emph{DF 3}——添加、删除或修改各项运动的算法应当简单直接。
+\item \emph{DF 4}——应当能够在运行时选择算法。
+\item \emph{DF 5}——各项运动应当能够共享算法，例如预订某个特定场地的算法。
+\end{itemize}
+
+\subsection{8.2.2 使用策略设计模式之前}
+
+应用的第一版简单直接（图 8.5）。
+
+\myGraphic{0.980}{images/CH08_F05_Mak.png}{图 8.5 我们的体育应用的第一版。抽象类 \texttt{Sport} 含有纯虚成员函数，它们代表招募球员和预订场地的算法，子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都必须实现这些函数。}
+
+类 \texttt{Sport} 是抽象类，带有纯虚成员函数 \texttt{recruit\_players()} 和 \texttt{reserve\_venue()}，由它们调用这两个算法。子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都必须实现这些函数。
+
+\begin{codeboxt}{代码清单 8.13（程序 8.3 Sports）：\texttt{Sport.h}（使用设计模式之前）}
+#include <iostream>
+#include <string>
+
+using namespace std; 
+
+enum class Type { BASEBALL, FOOTBALL, VOLLEYBALL };
+inline ostream& operator <<(ostream& ostr, const Type& type)
+{
+    switch (type)
+    {
+        case Type::BASEBALL   : ostr << "baseball";   break;
+        case Type::FOOTBALL   : ostr << "football";   break;
+        case Type::VOLLEYBALL : ostr << "volleyball"; break;
+    }
+    return ostr;
+}
+
+class Sport
+{
+public:
+    Sport(const Type t) : type(t) {}
+    virtual ~Sport() {}
+    Type get_type() const { return type; }
+
+    virtual string recruit_players() const = 0;      ①
+    virtual string reserve_venue()   const = 0;      ①
+
+private:
+    Type type;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由子类实现}\par
+
+为了让这个示例应用保持简单，每个算法只是返回一个描述性字符串，如下面的代码清单所示。在实际应用中，同一族的算法可以有更复杂的行为。
+
+\begin{codeboxt}{代码清单 8.14（程序 8.3 Sports）：\texttt{Sports.h}（使用设计模式之前）}
+#include <string>
+#include "Sport.h"
+
+using namespace std;
+
+class Baseball : public Sport
+{
+public:
+    Baseball() : Sport(Type::BASEBALL) {}
+
+    string recruit_players() const override
+    {
+        return "baseball players";
+    }
+    string reserve_venue() const override { return "stadium"; }
+};
+
+class Football : public Sport
+{
+public:
+    Football() : Sport(Type::FOOTBALL) {}
+
+    string recruit_players() const override
+    {
+        return "football players";
+    }
+
+    string reserve_venue() const override { return "stadium"; }
+};
+
+class Volleyball : public Sport
+{
+public:
+    Volleyball() : Sport(Type::VOLLEYBALL) {}
+
+    string recruit_players() const override
+    {
+        return "volleyball players";
+    }
+
+    string reserve_venue() const override { return "open field";}
+};
+\end{codeboxt}
+
+我们的测试程序为每项运动生成一份报告。
+
+\begin{codeboxt}{代码清单 8.15（程序 8.3 Sports）\texttt{tester.cpp}（使用设计模式之前）}
+#include <iostream>
+#include "Sport.h"
+#include "Sports.h"
+
+using namespace std;
+
+void generate_report(const Sport& sport);
+
+int main()
+{
+    generate_report(Baseball());
+    generate_report(Football());
+    generate_report(Volleyball());
+
+    return 0;
+}
+
+void generate_report(const Sport& sport)
+{
+    cout << sport.get_type() << endl;
+    cout << «  players: « << sport.recruit_players()  << endl;
+    cout << «    venue: « << sport.reserve_venue() << endl;
+
+    cout << endl;
+}
+\end{codeboxt}
+
+输出为
+
+\begin{codebox}
+baseball
+  players: baseball players
+    venue: stadium
+
+football
+  players: football players
+    venue: stadium
+
+volleyball
+  players: volleyball players
+    venue: open field 
+\end{codebox}
+
+这个解决方案依赖继承——\texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 各自都“是一个”\texttt{Sport}。我们可以看出这一架构设计存在一些严重缺陷：
+
+\begin{itemize}
+\item \emph{重复代码}——例如，表示场地算法的语句块 \texttt{\{ return "stadium"; \}} 重复出现了多次。如果运动项目更多，或者算法行为更复杂，这会成为一个严重问题。
+\item \emph{缺乏封装}——例如，如果体育场不可用，而使用它的运动项目必须改用其他场地，我们就需要修改多处代码。
+\item \emph{本应共享的代码却难以复用}——如果另一项运动也需要体育场作为场地，我们不重复代码就无法轻松复用它。
+\item \emph{球员和场地被硬编码}——要更改它们就必须重写代码。
+\end{itemize}
+
+\subsection{8.2.3 使用策略设计模式之后}
+
+策略设计模式提供了一种可用于解决这一架构问题的模型（图 8.6）。该解决方案对两族算法采用组合——即 has-a 关系。算法被组织成超类和子类。类 \texttt{Sport} 借助接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy}，运用了聚合以及面向接口编程原则（2.3.3 节）。类 \texttt{Sport} 拥有一个由成员变量 \texttt{player\_strategy} 指向的球员算法族，还拥有一个由成员变量 \texttt{venue\_strategy} 指向的场地算法族。策略设计模式把每个算法称为一个策略，因此这些命名很贴切。现在 \texttt{Sport} 的各个子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都简单多了。
+
+\begin{mySidebar}{策略设计模式}
+
+“定义一族算法，把每个算法分别封装起来，并使它们可以互换。策略让算法能够独立于使用它的客户而变化。”（GoF 315）
+\end{mySidebar}
+
+\myGraphic{0.980}{images/CH08_F06_Mak.png}{图 8.6 这一版本的应用依据策略设计模式为各运动队和场地建模。球员算法族实现 \texttt{PlayerStrategy} 接口，场地算法族实现 \texttt{VenueStrategy} 接口。类 \texttt{Sport} 用 has-a 关系聚合这些算法。每个球员算法和场地算法都有一个 \texttt{strategy()} 成员函数。现在子类 \texttt{Baseball}、\texttt{Football} 和 \texttt{Volleyball} 都简单多了，每个子类各自设置 \texttt{Sport} 超类的成员变量 \texttt{player\_strategy} 和 \texttt{venue\_strategy}。}
+
+采用策略设计模式的优势包括以下几点：
+
+\begin{itemize}
+\item \emph{可复用的共享代码}——例如，子类 \texttt{Stadium} 遵循不要重复自己原则（2.2.3 节）。棒球队和橄榄球队都在体育场比赛。
+\item \emph{封装的算法}——可以在实现 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy} 接口的类中修改这些可互换的算法，而不必修改其他类。这就是“封装变化之处”原则（2.3.2 节）。
+\item \emph{开闭原则}——超类 \texttt{Sport} 对修改关闭，但我们可以用子类来扩展它。我们可以添加和删除运动项目而不影响超类。
+\item \emph{优先用 has-a 而非 is-a}——类 \texttt{Sport} 聚合了诸如 \texttt{BaseballPlayers} 和 \texttt{Stadium} 这样的策略类，而不是依赖其子类来实现策略（7.3 节）。类 \texttt{Sport} 运用了面向接口编程原则（2.3.3 节），因为它的成员变量 \texttt{player\_strategy} 和 \texttt{venue\_strategy} 分别指向策略接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy}。
+\item \emph{运行时灵活性}——应用可以在运行时为各项运动提供策略，而不必硬编码。例如，某个 \texttt{Volleyball} 对象的场地策略可以从 \texttt{OpenField} 改为 \texttt{Stadium}。
+\end{itemize}
+
+\myGraphic{0.886}{images/CH08_F06_UN05_Mak.png}{}
+
+由于我们的示例应用一开始就很小，采用策略设计原则反而可能因为增加了类而让它更复杂。每个策略只是返回一个描述性字符串。更贴近实际的应用可能会有更多策略，而策略的行为也可能更多。那时，策略设计模式的优势才能真正显现出来。每个策略都可能包含多个成员函数。我们会在后面的代码清单中看到，\texttt{Sport} 对象的创建者决定超类的初始策略，之后还可以在运行时改变这些行为。
+
+\begin{codeboxt}{代码清单 8.16（程序 8.4 Sports-StrategyDP）：\texttt{Sport.h}}
+#include <iostream>
+#include <string>
+
+#include "PlayerStrategy.h"
+#include "VenueStrategy.h"
+using namespace std;
+
+enum class Type ...
+
+class Sport
+{
+public:
+    Sport(const Type t,
+          PlayerStrategy * const ps, VenueStrategy * const vs)
+        : type(t), player_strategy(ps), venue_strategy(vs) {} ①
+
+    ~Sport()
+    {
+        delete player_strategy;
+        delete venue_strategy;
+    }
+
+    Type get_type() const { return type; }
+
+    string recruit_players() const
+    {
+        return player_strategy->strategy();                   ②
+    }
+
+    string reserve_venue() const
+    {
+        return venue_strategy->strategy();                    ③
+    }
+
+    void set_player_strategy(PlayerStrategy * const ps)
+    {
+        player_strategy = ps;                                 ④
+    }
+
+    void set_venue_strategy(VenueStrategy * const vs)
+    {
+        venue_strategy = vs;                                  ⑤
+    }
+
+private:
+    Type type;
+    PlayerStrategy *player_strategy;                          ⑥
+    VenueStrategy  *venue_strategy;                           ⑥
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 设置初始的球员策略和场地策略。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 执行球员策略。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 执行场地策略。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 设置球员策略。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 设置场地策略。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 被聚合的策略}\par
+
+每个 \texttt{Sport} 类都恰当地设置初始策略。例如，当我们实例化一个 \texttt{Baseball} 对象时，它的构造函数会调用超类 \texttt{Sport} 的构造函数，把 \texttt{player\_strategy} 设为 \texttt{BaseballPlayers}，把 \texttt{venue\_strategy} 设为 \texttt{Stadium}。在这个示例应用中，每个球员策略和场地策略都只包含一个返回描述性字符串的成员函数。
+
+\begin{codeboxt}{代码清单 8.17（程序 8.4 Sports-StrategyDP）：\texttt{Sports.h}}
+#include "Sport.h"
+#include "PlayerStrategy.h"
+#include "VenueStrategy.h"
+
+using namespace std;
+
+class Baseball : public Sport
+{
+public:
+    Baseball() : Sport(Type::BASEBALL,
+                       new BaseballPlayers(),    ①
+                       new Stadium()) {}         ①
+};
+
+class Football : public Sport
+{
+public:
+    Football() : Sport(Type::FOOTBALL,
+                       new FootballPlayers(),     ②
+                       new Stadium()) {}          ②
+};
+
+class Volleyball : public Sport
+{
+public:
+    Volleyball() : Sport(Type::VOLLEYBALL,
+                         new VolleyballPlayers(), ③
+                         new OpenField()) {}      ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 初始的棒球策略}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 初始的橄榄球策略}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 初始的排球策略}\par
+
+如果我们新增 \texttt{Sport} 子类，类 \texttt{Sport} 无需改动。我们可以运用开闭原则（2.3.3 节），让超类 \texttt{Sport} 对修改关闭。
+
+如图 8.6 所示，每个招募球员的策略都实现接口 \texttt{PlayerStrategy}，并且每个都必须实现 \texttt{strategy()} 成员函数，以便超类 \texttt{Sport} 执行招募球员的算法。由于由子类设置其成员变量 \texttt{player\_strategy}，类 \texttt{Sport} 遵循委托原则（2.3.2 节），把“执行哪个球员招募算法”的选择委托给子类。
+
+\begin{codeboxt}{代码清单 8.18（程序 8.4 Sports-StrategyDP）：\texttt{PlayerStrategy.h}}
+#include <string>
+
+using namespace std;
+
+class PlayerStrategy
+{
+public:
+    virtual ~PlayerStrategy() {}
+
+    virtual string strategy() const = 0;
+};
+
+class BaseballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "baseball players";
+    }
+};
+
+class FootballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "football players";
+    }
+};
+
+class VolleyballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "volleyball players";
+    }
+};
+\end{codeboxt}
+
+与此类似，每个预订场地的策略都实现接口 \texttt{VenueStrategy}，并且每个都必须实现 \texttt{strategy()} 成员函数，以便超类 \texttt{Sport} 执行预订场地的策略。与球员策略一样，类 \texttt{Sport} 把“执行哪个算法”的选择委托给子类，由子类在设置成员变量 \texttt{venue\_strategy} 时决定。
+
+\begin{codeboxt}{代码清单 8.19（程序 8.4 Sports-StrategyDP）：\texttt{VenueStrategy.h}}
+#include <string>
+
+using namespace std;
+
+class VenueStrategy
+{
+public:
+    virtual ~VenueStrategy() {}
+
+    virtual string strategy() const = 0;
+};
+
+class Stadium : public VenueStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "sports stadium";
+    }
+};
+
+class OpenField : public VenueStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "open field";
+    }
+};
+\end{codeboxt}
+
+每个 \texttt{Sport} 子类都会初始化策略，但现在我们可以灵活地在运行时通过调用设值函数来更改策略。例如，如果测试程序中包含以下代码
+
+\begin{codebox}
+    Volleyball volleyball;
+    volleyball.set_venue_strategy(new Stadium());
+    generate_report(volleyball);
+\end{codebox}
+
+输出为
+
+\begin{codebox}
+baseball
+  players: baseball players
+    venue: sports stadium
+
+football
+  players: football players
+    venue: sports stadium
+
+volleyball
+  players: volleyball players
+    venue: open field
+
+volleyball
+  players: volleyball players
+    venue: sports stadium
+\end{codebox}
+
+\myGraphic{0.761}{images/CH08_F06_UN06_Mak.png}{}
+
+的确，设计模式有助于确保我们运用良好的设计原则。这些模式简化了软件设计过程，也便于开发人员之间开展设计讨论。
+
+\subsection{8.2.4 策略的通用模型}
+
+图 8.7 展示了策略设计模式的通用模型。回想一下，正是依据设计模式的通用模型，我们才能针对某个架构问题打造量身定制的解决方案（8.1.3 节）。
+
+\myGraphic{0.819}{images/CH08_F07_Mak.png}{图 8.7 策略设计模式的通用模型。可与图 8.6 对比。表 8.2 展示了示例应用如何采用该模式。}
+
+\begin{mySidebar}{设计模式通用模型}
+
+正是依据设计模式的通用模型，我们才能针对某个架构问题打造量身定制的解决方案。请记住，设计模式不是可以直接复制粘贴的代码，也不是从某个库中引入的代码。一旦确定了某个问题适合用某个设计模式来建模求解，我们就必须对解决方案加以裁剪，以解决应用中的具体问题。
+
+经验会教会我们判断一个架构问题能否用某个设计模式来解决，以及它的好处是否值得采用该模式。
+\end{mySidebar}
+
+\begin{center}
+{\bfseries 表 8.2 示例应用对策略设计模式的采用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的采用 \\
+\midrule
+类 \texttt{Client} & 超类 \texttt{Sport} \\
+超类 \texttt{Strategy} & 接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy} \\
+子类 \texttt{Strategy1}、\texttt{Strategy2} 等。 & 类 \texttt{BaseballPlayers}、\texttt{FootballPlayers}、\texttt{VolleyballPlayers}、\texttt{Stadium} 和 \texttt{OpenField} \\
+\texttt{algorithm()} & \texttt{strategy()} 成员函数 \\
+\texttt{strategy->algorithm()} & \texttt{player\_\allowbreak{}strategy->strategy(\allowbreak{})\allowbreak{}}\par \texttt{venue\_\allowbreak{}strategy->strategy(\allowbreak{})\allowbreak{}} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{在模板方法与策略之间做选择}
+
+模板方法设计模式与策略设计模式的目标相似——都是封装算法。它们的主要区别如下：
+
+\begin{itemize}
+\item 模板方法依赖继承。算法的框架在超类中，算法的封装部分在子类中。模板方法允许超类实现算法的公共步骤。
+\item 策略聚合完整的算法并使其可以互换。它使用组合——\texttt{Strategy} 子类（\texttt{PlayerStrategy} 和 \texttt{VenueStrategy}）由 \texttt{Client} 类（超类 \texttt{Sport}）组合而成。
+\item 在策略模型中，\texttt{Client} 类与 \texttt{Strategy} 子类是松耦合的。我们可以稍后添加、删除或更新这些子类。
+\end{itemize}
+
+我们必须根据应用的需求和架构来决定使用哪种设计模式。
+
+\myGraphic{0.893}{images/CH08_F07_UN07_Mak.png}{}
+
+\section*{小结}
+
+\begin{itemize}
+\item 模板方法设计模式定义了算法的骨架或框架，并把部分步骤的实现延迟到子类中。它使子类可以重新定义算法的某些步骤，而不改变算法的结构。
+\item 模板方法设计模式依赖继承。
+\item 策略设计模式把一族算法中的每个算法分别封装起来并使它们可以互换。在运行时，应用可以选择使用哪个算法。
+\item 策略设计模式使用组合。客户类与策略子类是松耦合的。
+\end{itemize}

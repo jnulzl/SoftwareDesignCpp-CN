@@ -1,0 +1,911 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 观察者（Observer）设计模式
+\end{itemize}
+\end{myChapterIntro}
+
+在本章中，我们继续围绕学院体育部生成的体育报道这一主题。观察者设计模式支持发布—订阅（publisher–subscriber）模型，其中一个组件创建数据对象，订阅者组件以各自的方式独立处理这些对象。发布者组件既不知道订阅者组件是如何实现的，也不关心订阅者如何处理这些数据。
+
+我们的示例应用监控一场棒球比赛的进程。它在比赛进行期间和比赛结束后都会打印比赛统计数据。
+
+\myGraphic{0.980}{images/CH12_00_UN01_Mak.png}{}
+
+\begin{myWarning}{注意}
+请务必阅读第 4 部分的引言，以了解关于设计模式的总体重要信息，并了解本章及后续各章如何讲解每种模式。
+\end{myWarning}
+
+\section{观察者设计模式表示发布—订阅模型}
+
+观察者设计模式表示发布—订阅模型。这种模型的一个很好的例子是在线新闻推送服务。对新闻故事感兴趣的人会订阅该服务。每当有新闻故事可用时，推送服务就通过提供故事的标题来通知每一位订阅者。接着，每位订阅者可以独立决定是否通过点击标题来请求该故事。因此，推送服务是这些故事的发布者。不同的人可以随时订阅和退订。每位订阅者可以对故事做任何事——阅读或忽略它们、只浏览标题、归档关于某支喜爱球队的故事、进行情感分析等等。推送服务并不关心每位订阅者如何处理这些故事。它只需要跟踪当前谁在订阅、在有故事可用时通知每位订阅者，并提供获取该故事的方式。
+
+发布—订阅模型也称为生产者—消费者模型，其中发布者是内容的生成者，消费者则是订阅者。消费者也被称为这些故事的观察者。
+
+举个具体的例子，假设一所学院的体育部想要三份关于某支球队在某场棒球比赛中表现的不同报告。这些报告基于球队的安打事件。球队中一名球员的安打事件要么是一次安打（一垒安打、二垒安打、三垒安打或本垒打），要么是一次出局。这三份报告如下：
+
+\begin{itemize}
+\item 日志报告是一份实时日志，记录比赛中球员每次安打或出局的情况。
+\item 图表报告在比赛结束后生成。它由一张柱状图组成，展示比赛中出现的各类安打和出局。
+\item 表格报告也在比赛结束后生成。它由一张表格组成，展示每位球员在比赛中打出了哪些安打和出局。
+\end{itemize}
+
+生成这些报告的组件应当随着比赛中每个安打事件的发生而接收该事件。这样，类 \texttt{LogReport} 就能在收到每个事件后立即更新其日志报告。类 \texttt{GraphReport} 和 \texttt{TableReport} 必须在事件到达时累积事件数据，并各自在比赛结束后打印报告。发布者组件产生安打事件，订阅者组件消费这些安打事件并打印报告（图 12.1）。
+
+\myGraphic{0.437}{images/CH12_F01_Mak.png}{图 12.1 发布—订阅模型的一个例子。发布者组件产生安打事件，订阅者组件在事件发生时消费它们，以生成各种报告。}
+
+下面是一个棒球比赛日志报告的示例，它随着每个安打事件的发生逐行生成：
+
+\begin{codebox}
+GAME HITS LOG
+ 1     Al hit a single
+ 2   Beth hit a double
+ 3   Carl hit an out
+ 4  Donna hit a double
+ 5     Ed hit a double
+ 6   Fran hit a single
+ 7 George hit an out
+ 8  Heidi hit an out
+ 9   Ivan hit a single
+10     Al hit an out
+...
+60   Fran hit a single
+61 George hit a double
+62  Heidi hit an out
+63   Ivan hit an out
+64     Al hit an out
+\end{codebox}
+
+下面是一个图表报告的示例，它用柱状图展示一场已完成的棒球比赛中出现的各类安打：
+
+\begin{codebox}
+GAME HITS GRAPH
+22 singles
+12 doubles
+ 2 triples
+ 1 homers
+ 
+         ....5...10...15...20...25...30
+Singles: SSSSSSSSSSSSSSSSSSSSSS
+Doubles: DDDDDDDDDDDD
+Triples: TT
+ Homers: H
+\end{codebox}
+
+下面是一个表格报告的示例，它展示每位球员在一场已完成的比赛中打出了哪些安打和出局：
+
+\begin{codebox}
+GAME HITS TABLE
+Player     Outs   Singles Doubles Triples Homers
+------------------------------------------------
+Al           2       5       1                
+Beth         2       2       3                
+Carl         3       3       1                
+Donna        2       2       2       1        
+Ed           6               1                
+Fran         2       4                       1
+George       2       2       2       1        
+Heidi        5               2                
+
+Ivan         3       4                        
+\end{codebox}
+
+\myGraphic{0.833}{images/CH12_F01_UN02_Mak.png}{}
+
+\subsection{12.1.1 期望的设计特性}
+
+根据发布—订阅模型的工作方式，下面是一个软件解决方案应当具备的一些期望设计特性：
+
+\begin{itemize}
+\item \emph{DF 1}——发布者可以在任意时间创建内容。
+\item \emph{DF 2}——发布者一旦有新内容，就立即通知其所有订阅者。
+\item \emph{DF 3}——订阅者收到通知后，可以选择是否索取新内容。
+\item \emph{DF 4}——发布者向索取新内容的订阅者提供该内容，除此之外，发布者不关心也无法控制订阅者如何使用该内容。
+\item \emph{DF 5}——订阅者可以随意处理该内容。
+\item \emph{DF 6}——消费者可以在任意时间订阅和退订。无需任何代码修改，发布者就能获得新的订阅者，或者已有订阅者可以退订。
+\item \emph{DF 7}——发布者不了解其任何订阅者是如何实现的，订阅者也不了解发布者是如何实现的。
+\end{itemize}
+
+\subsection{12.1.2 使用观察者设计模式之前}
+
+为了测试我们的棒球比赛报告应用的第一个版本（图 12.2），类 \texttt{EventMaker} 使用随机数生成器来产生安打事件。安打事件是由 \texttt{Event} 对象表示的内容，每次调用成员函数 \texttt{next\_event()} 都会创建并返回这样一个对象。每个 \texttt{Event} 对象由一名球员的名字，以及随机生成的一次出局或一次一垒安打、二垒安打、三垒安打或本垒打（分别对应整数值 0、1、2、3 或 4）组成。
+
+\myGraphic{0.980}{images/CH12_F02_Mak.png}{图 12.2 棒球比赛报告应用的初始架构。类 \texttt{BaseballReporter} 的成员函数 \texttt{distribute\_content()} 反复调用类 \texttt{EventMaker} 的 \texttt{next\_event()} 成员函数，一次一个地获取新的 \texttt{Event} 对象。该函数把每个 \texttt{Event} 对象传递给各报告类的 \texttt{log\_event()}、\texttt{handle\_event()} 和 \texttt{receive\_event()} 成员函数。每个报告类都可以用自己的方式处理这个 \texttt{Event} 对象。}
+
+\myGraphic{0.803}{images/CH12_F02_UN03_Mak.png}{}
+
+类 \texttt{BaseballReporter} 的成员函数 \texttt{distribute\_content()} 反复调用 \texttt{next\_event()}，一次一个地获取作为内容的 \texttt{Event} 对象，直到 27 次出局后比赛结束。该函数把每个 \texttt{Event} 对象传递给类 \texttt{LogReport} 的 \texttt{log\_event()} 成员函数、类 \texttt{GraphReport} 的 \texttt{handle\_event()} 成员函数，以及类 \texttt{TableReport} 的 \texttt{receive\_event()} 成员函数。（唉，这些报告类的开发者们无法就成员函数的命名达成一致。）每个报告类随后可以用自己的方式处理这个 \texttt{Event} 对象。
+
+类 \texttt{EventMaker} 用随机数生成器生成 \texttt{Event} 对象，以产生球员的一次安打（一垒安打、二垒安打、三垒安打或本垒打）或一次出局，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 12.1（程序 12.1 Stats）：\texttt{EventMaker.h}（设计模式之前）}
+#include <string>
+#include <vector>
+#include <random>
+#include <time.h>
+
+using namespace std;
+
+class Event
+{
+public:
+    Event(const string n, const int h) : name(n), hit(h) {}
+    string get_name() const { return name; }
+    int    get_hit()  const { return hit; }
+
+private:
+    string name;
+    int hit;
+};
+
+class EventMaker
+{
+public:
+    EventMaker()
+        : name_index(-1), outs(0),
+          normal(normal_distribution<double>(0.0, 1.75))
+    {
+        random_number_generator.seed(time(NULL));
+    }
+
+    int get_outs() const { return outs; }
+
+    Event *next_event();                            ①
+
+private:
+    vector<string> names = { "Al", "Beth", "Carl", "Donna", "Ed",
+                             "Fran", "George", "Heidi", "Ivan" };
+
+    int name_index;
+    int outs;
+
+    default_random_engine random_number_generator;  ②
+    normal_distribution<double> normal;             ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 获取下一个 Event 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 随机数生成器}\par
+
+每次调用类 \texttt{EventMaker} 的成员函数 \texttt{next\_event()}，都会返回一个新的 \texttt{Event} 对象，其中包含一名棒球球员的名字以及一次随机的安打或出局。
+
+\begin{codeboxt}{代码清单 12.2（程序 12.1 Stats）：\texttt{EventMaker.cpp}（设计模式之前）}
+#include <random>
+#include "EventMaker.h"
+
+using namespace std;
+
+Event *EventMaker::next_event()
+{
+    if (outs < 27)
+    {
+        double r   = normal(random_number_generator);  ①
+        int    hit = static_cast<int>(abs(r));         ①
+
+        if (hit > 4) hit = 4;
+        if (hit == 0) outs++;
+
+        name_index = (name_index + 1)%9;
+
+        return new Event(names[name_index], hit);
+    }
+    else return nullptr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 随机生成一次安打（一垒安打、二垒安打、三垒安打或本垒打）或一次出局。}\par
+
+类 \texttt{BaseballReporter} 聚合了类 \texttt{EventMaker}、\texttt{LogReport}、\texttt{GraphReport} 和 \texttt{TableReport}。
+
+\begin{codeboxt}{代码清单 12.3（程序 12.1 Stats）：\texttt{BaseballReporter.h}（设计模式之前）}
+#include "EventMaker.h"
+#include "LogReport.h"
+#include "GraphReport.h"
+#include "TableReport.h"
+
+class BaseballReports
+{
+public:
+    void distribute_content();
+
+private:
+    EventMaker event_maker;
+
+    LogReport   log_report;
+    GraphReport graph_report;
+    TableReport table_report;
+};
+\end{codeboxt}
+
+成员函数 \texttt{distribute\_content()} 通过调用类 \texttt{EventMaker} 的 \texttt{next\_event()} 成员函数，一次一个地反复获取新的 \texttt{Event} 对象，直到不再有对象为止（已发生 27 次出局）。对于每个 \texttt{Event} 对象，它把该对象传递给各个报告对象相应的成员函数。
+
+\begin{codeboxt}{代码清单 12.4（程序 12.1 Stats）：\texttt{BaseballReporter.cpp}（设计模式之前）}
+#include "BaseballReporter.h"
+#include "EventMaker.h"
+#include "LogReport.h"
+#include "GraphReport.h"
+#include "TableReport.h"
+
+void BaseballReports::distribute_content()
+{
+    Event *event = event_maker.next_event();        ①
+
+    while (event != nullptr)
+    {
+        int outs = event_maker.get_outs();
+
+        log_report.log_event(event, outs);          ②
+        graph_report.handle_event(event, outs);     ②
+        table_report.receive_event(event, outs);    ②
+
+        delete event;
+        event = event_maker.next_event();
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 获取下一个事件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 把事件传递给各报告成员函数。}\par
+
+\myGraphic{0.772}{images/CH12_F02_UN04_Mak.png}{}
+
+类 \texttt{LogReport} 的成员函数 \texttt{log\_event()} 获取每个 \texttt{Event} 对象。
+
+\begin{codeboxt}{代码清单 12.5（程序 12.1 Stats）：\texttt{LogReport.h}（设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "EventMaker.h"
+
+using namespace std;
+
+class LogReport
+{
+public:
+    LogReport() : count(0)
+    {
+        cout << "GAME HITS LOG" << endl;
+        cout << endl;
+    }
+
+    void log_event(const Event * const event, const int outs); ①
+
+private:
+    int count;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 获取一个安打 Event 对象。}\par
+
+成员函数 \texttt{log\_event()} 一收到每个 \texttt{Event} 对象，就通过打印其内容立即更新日志报告。
+
+\begin{codeboxt}{代码清单 12.6（程序 12.1 Stats）：\texttt{LogReport.cpp}（设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "LogReport.h"
+
+using namespace std;
+
+void LogReport::log_event(const Event * const event, const int outs)
+{
+    string  name = event->get_name();
+    int     hit  = event->get_hit();
+    string  what;
+
+    switch (hit)
+    {
+        case 0: what = "an out";   break;
+        case 1: what = "a single"; break;
+        case 2: what = "a double"; break;
+        case 3: what = "a triple"; break;
+        case 4: what = "a homer";  break;
+
+        default: what = ""; break;
+    }
+
+    count++;
+    cout << setw(2) << count << setw(7) << name  ①
+         << " hit " << what << endl;             ①
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印日志的一行。}\par
+
+类 \texttt{GraphReport} 的成员函数 \texttt{handle\_event()} 获取每个 \texttt{Event} 对象。它记录出局、一垒安打、二垒安打、三垒安打和本垒打的数量。
+
+\begin{codeboxt}{代码清单 12.7（程序 12.1 Stats）：\texttt{GraphReport.h}（设计模式之前）}
+#include "EventMaker.h"
+
+class GraphReport
+{
+public:
+    GraphReport()
+    {
+        singles = doubles = triples = homers = 0;
+    }
+
+    void handle_event(const Event * const event, const int outs);
+
+private:
+    int singles, doubles, triples, homers;
+
+    void print_report() const;
+    void print_bar(const char ch, const int count) const;
+};
+\end{codeboxt}
+
+成员函数 \texttt{handle\_event()} 通过累计出局、一垒安打、二垒安打、三垒安打和本垒打的数量来处理各个事件。比赛一结束（已发生 27 次出局），成员函数 \texttt{print\_report()} 就打印各项安打计数和一张柱状图。
+
+\begin{codeboxt}{代码清单 12.8（程序 12.1 Stats）：\texttt{GraphReport.cpp}（设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "GraphReport.h"
+
+using namespace std;
+
+void GraphReport::handle_event(const Event * const event, 
+                               const int outs)
+{
+    int hit = event->get_hit();
+
+    switch (hit)
+    {
+        case 1: singles++; break;
+        case 2: doubles++; break;
+        case 3: triples++; break;
+        case 4: homers++;  break;
+
+        default: break;
+    }
+
+    if (outs == 27) print_report();
+}
+
+void GraphReport::print_report() const
+{
+    cout << endl << endl;
+    cout << "GAME HITS GRAPH" << endl;
+    cout << endl;
+
+    cout << setw(2) << singles << " singles" << endl;
+    cout << setw(2) << doubles << " doubles" << endl;
+    cout << setw(2) << triples << " triples" << endl;
+    cout << setw(2) << homers  << " homers"  << endl;
+    cout << endl;
+
+    cout << "         ....5...10...15...20...25...30" << endl;
+    cout << "Singles: "; print_bar('S', singles);
+    cout << "Doubles: "; print_bar('D', doubles);
+    cout << "Triples: "; print_bar('T', triples);
+    cout << " Homers: "; print_bar('H', homers);
+}
+
+void GraphReport::print_bar(const char ch, const int count) const
+{
+    for (int i = count; i > 0; i--) cout << ch;
+    cout << endl;
+}
+\end{codeboxt}
+
+类 \texttt{TableReport} 的成员函数 \texttt{receive\_event()} 获取每个 \texttt{Event} 对象。它记录出局的数量。它用一个 map 记录每位球员在比赛中打出的安打和出局。该 map 以球员名字为键，每个值是一个数组，记录对应球员的出局、一垒安打、二垒安打、三垒安打和本垒打的数量。
+
+\begin{codeboxt}{代码清单 12.9（程序 12.1 Stats）：\texttt{TableReport.h}（设计模式之前）}
+#include <string>
+#include <map>
+#include "EventMaker.h"
+
+using namespace std;
+
+class TableReport
+{
+public:
+    void receive_event(const Event * const event, const int outs);
+
+private:
+    map<string, int *> hit_map;
+
+    void print_report();
+};
+\end{codeboxt}
+
+\texttt{hit\_map} 以球员名字为键，用一个包含五个整数值的数组记录每位球员在比赛中打出的安打类型和数量。这些值分别是该球员打出的出局、一垒安打、二垒安打、三垒安打和本垒打的总数。比赛一结束（已发生 27 次出局），成员函数 \texttt{print\_report()} 就根据该 map 打印一张表格。
+
+\begin{codeboxt}{代码清单 12.10（程序 12.1 Stats）：\texttt{TableReport.cpp}（设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "TableReport.h"
+
+using namespace std;
+
+void TableReport::receive_event(const Event * const event,
+                                const int outs)
+{
+    string  name = event->get_name();
+    int     hit  = event->get_hit();
+
+    if (hit_map.find(name) == hit_map.end())                     ①
+    {                                                            ①
+        hit_map[name] = new int[5] { 0, 0, 0, 0, 0 };            ①
+    }                                                            ①
+    hit_map[name][hit]++;                                        ②
+    if (outs == 27) print_report();
+}
+
+void TableReport::print_report()                                 ③
+{
+    cout << endl << endl;
+    cout << "GAME HITS TABLE" << endl;
+    cout << endl;
+    cout << "Player     Outs   Singles Doubles Triples Homers"
+         << endl;
+    cout << "------------------------------------------------"
+         << endl;
+
+    for (auto it = hit_map.begin(); it != hit_map.end(); it++)
+    {
+        cout << setw(6) << left << it->first;
+
+        int *hits = it->second;
+        for (int i = 0; i < 5; i++)
+        {
+            if (hits[i] > 0) cout << setw(8) << right << hits[i]; ④
+            else             cout << "        ";                  ④
+        }
+        cout << endl;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 为一名球员创建新条目。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 记录该球员安打或出局的数量和类型。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 遍历 hit map 的内容以打印表格行。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 打印一行表格。}\par
+
+\myGraphic{0.810}{images/CH12_F02_UN05_Mak.png}{}
+
+测试程序输出本节开头展示的那三份棒球比赛报告。
+
+\begin{codeboxt}{代码清单 12.11（程序 12.1 Stats）：\texttt{tester.cpp}（设计模式之前）}
+#include "BaseballReports.h"
+
+int main()
+{
+    BaseballReporterreports;
+    reports.distribute_content();
+
+    return 0;
+}
+\end{codeboxt}
+
+\myGraphic{0.848}{images/CH12_F02_UN06_Mak.png}{}
+
+尽管这个版本的应用生成了正确的棒球比赛报告，但它在架构上存在重大问题，包括
+
+\begin{itemize}
+\item \emph{硬编码的订阅者}——类 \texttt{BaseballReporter} 把它生成的三份报告硬编码了。在发布—订阅模型中，添加和移除订阅者应当很容易。
+\item \emph{类之间不是松耦合}——类 \texttt{BaseballReporter} 必须了解每个订阅者是如何实现的。它的成员函数 \texttt{distribute\_content()} 必须知道：日志报告要调用 \texttt{log\_event()}，图表报告要调用 \texttt{handle\_event()}，表格报告要调用 \texttt{receive\_event()}。因此，类 \texttt{BaseballReporter} 与各报告类之间不是松耦合的。
+\end{itemize}
+
+\subsection{12.1.3 使用观察者设计模式之后}
+
+我们来看看观察者设计模式如何克服这些缺点。该模型定义了超类 \texttt{Subject} 和接口 \texttt{Observer}。其核心思想是：主题（subject）发布或生成内容，而主题的内容可以有多个观察者。因此，在依据该模式建模的应用版本中，\texttt{Event} 内容的发布者、类 \texttt{BaseballReporter}，继承自超类 \texttt{Subject}。内容的每个订阅者——报告类 \texttt{LogReport}、\texttt{GraphReport} 和 \texttt{TableReport}——都实现接口 \texttt{Observer}（图 12.3）。
+
+\begin{mySidebar}{观察者设计模式}
+
+“定义对象间的一种一对多依赖关系，使得当一个对象改变状态时，其所有依赖者都会得到通知并被自动更新”（GoF 293）。
+\end{mySidebar}
+
+\myGraphic{0.980}{images/CH12_F03_Mak.png}{图 12.3 这个版本的应用是依据观察者设计模式建模的。内容发布者 \texttt{BaseballReporter} 是 \texttt{Subject} 的子类，每个报告类都实现接口 \texttt{Observer}。类 \texttt{Subject} 的成员变量 \texttt{observers} 是一个已订阅观察者的 vector。每当 \texttt{BaseballReporter} 使用 \texttt{EventManager} 创建一个新的 \texttt{Event} 对象时，它就把私有的成员变量 \texttt{current\_event} 指向该对象。接着它调用超类 \texttt{Subject} 的 \texttt{notify()} 成员函数，后者遍历 \texttt{observers} vector，并调用每个已订阅订阅者的 \texttt{update()} 成员函数。每个订阅者随后可以决定是否调用成员函数 \texttt{get\_current\_event()} 来获取当前的 \texttt{Event} 对象。图中以灰色显示的部分与图 12.2 相比在逻辑上没有变化。}
+
+超类 \texttt{Subject} 的成员变量 \texttt{observers} 是一个 \texttt{Observer} 对象的 vector，用于跟踪当前的订阅者。
+
+\begin{codeboxt}{代码清单 12.12（程序 12.2 Stats-ObserverDP）：\texttt{Subject.h}}
+#include <vector>
+#include <string>
+#include "Observer.h"
+
+using namespace std;
+
+class Subject
+{
+public:
+    void attach(Observer * const observer);
+    void detach(Observer * const observer);
+    void notify(const string name, const int outs) const;
+
+private:
+    vector<Observer *> observers;    ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 当前已订阅观察者的 vector}\par
+
+每个实现 \texttt{Observer} 接口的报告类都必须实现成员函数 \texttt{update()}。
+
+\begin{codeboxt}{代码清单 12.13（程序 12.2 Stats-ObserverDP）：\texttt{Observer.h}}
+#include <string>
+
+using namespace std;
+
+class Observer
+{
+public:
+    virtual ~Observer() {}
+
+    virtual void update(const string name, const int outs) = 0;
+};
+\end{codeboxt}
+
+一个 \texttt{Observer} 对象（在我们的示例应用中即一个订阅者对象）可以通过调用超类 \texttt{Subject}（发布者）的 \texttt{attach()} 成员函数，把自身加入后者的 \texttt{observers} vector，也可以通过调用 \texttt{detach()} 把自身从该 vector 中移除。每当出现新的 \texttt{Event} 对象时，成员函数 \texttt{notify()} 就会遍历 vector 中的 \texttt{Observer} 对象，并利用多态调用每一个对象的 \texttt{update()} 成员函数。因此，每当出现新的 \texttt{Event} 对象时，每个订阅者都会收到通知。这是对面向接口编程原则（2.3.3 节）的一次运用。
+
+\begin{codeboxt}{代码清单 12.14（程序 12.2 Stats-ObserverDP）：\texttt{Subject.cpp}}
+#include <string>
+#include <vector>
+#include "Observer.h"
+#include "Subject.h"
+
+using namespace std;
+
+void Subject::attach(Observer * const observer)
+{
+    observers.push_back(observer);
+}
+
+void Subject::detach(Observer * const observer)
+{
+    for (int i = 0; i < observers.size(); i++)
+    {
+        if (observers[i] == observer)
+        {
+            observers.erase(observers.begin() + i);
+            return;
+        }
+    }
+}
+
+void Subject::notify(const string name, const int outs) const
+{
+    for (Observer *obs : observers) obs->update(name, outs); ①
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 通过调用每个 Observer 对象（订阅者）的 update() 成员函数来通知它。}\par
+
+类 \texttt{Event} 和 \texttt{EventMaker} 与程序 12.1 相比没有变化。
+
+类 \texttt{BaseballReporter} 是发布者，因此它是 \texttt{Subject} 的子类。当一个已订阅的报告对象收到新事件的通知后，如果它对该内容感兴趣，就可以调用 \texttt{get\_current\_event()} 成员函数来获取指向该 \texttt{Event} 对象的指针，如下面的代码清单所示。和之前一样，每个订阅者都可以用自己的方式处理该事件。
+
+\begin{codeboxt}{代码清单 12.15（程序 12.2 Stats-ObserverDP）：\texttt{BaseballReporter.h}}
+#include "Subject.h"
+#include "EventMaker.h"
+
+class BaseballReporter : public Subject
+{
+public:
+    void distribute_content();
+
+    Event *get_current_event() const { return current_event; }
+
+private:
+    EventMaker event_maker;
+    Event *current_event;
+};
+\end{codeboxt}
+
+为了测试，与程序 12.1 一样，成员函数 \texttt{distribute\_content()} 通过调用类 \texttt{EventMaker} 的 \texttt{next\_event()} 成员函数，一次一个地反复获取新的 \texttt{Event} 对象，直到不再有对象为止（已发生 27 次出局）。在这个版本中，成员变量 \texttt{current\_event} 保存指向最新 \texttt{Event} 对象的指针。对超类成员函数 \texttt{notify()} 的一次调用，会把新内容通知给每个已订阅的报告对象。
+
+\begin{codeboxt}{代码清单 12.16（程序 12.2 Stats-ObserverDP）：\texttt{BaseballReporter.cpp}}
+#include "BaseballReporter.h"
+#include "EventMaker.h"
+
+void BaseballReporter::distribute_content()
+{
+    do
+    {
+        current_event = event_maker.next_event(); ①
+
+        if (current_event != nullptr)
+        {
+            notify(current_event->get_name(),
+                   event_maker.get_outs());       ②
+            delete current_event;
+        }
+    } while (current_event != nullptr);
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 创建一个新的随机安打事件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 通知所有已订阅的报告对象。}\par
+
+订阅者类 \texttt{LogReport} 实现接口 \texttt{Observer}，因此它实现了成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{BaseballReporter} 对象，并把该订阅者对象注册到发布者 \texttt{BaseballReporter}。
+
+\begin{codeboxt}{代码清单 12.17（程序 12.2 Stats-ObserverDP）：\texttt{LogReport.h}}
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include "Observer.h"
+#include "BaseballReporter.h"
+
+using namespace std;
+
+class LogReport : public Observer
+{
+public:
+    LogReport(BaseballReporter * const r) : reporter(r), count(0)
+    {
+        r->attach(this);                                       ①
+
+        cout << "GAME HITS LOG" << endl;
+        cout << endl;
+    }
+
+    void update(const string name, const int outs) override;
+
+private:
+    BaseballReporter *reporter;
+    int count;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 通过向发布者 BaseballReporter 注册来订阅。}\par
+
+每当订阅者 \texttt{LogReport} 对象收到新到达内容的通知时，成员函数 \texttt{update()} 就调用类 \texttt{BaseballReporter} 的成员函数 \texttt{get\_current\_event()}，获取指向该 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{log\_event()}（代码清单 12.6）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象打印一行实时日志，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 12.18（程序 12.2 Stats-ObserverDP）：\texttt{LogReport.cpp}}
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include "EventMaker.h"
+#include "BaseballReporter.h"
+#include "LogReport.h"
+
+using namespace std;
+
+void LogReport::update(const string name, const int outs)
+{
+    Event  *event = reporter->get_current_event();      ①
+    string  name  = event->get_name();
+    int     hit   = event->get_hit();
+    string  what;
+    ...
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 获取新到达的 Event 对象。}\par
+
+成员函数 \texttt{update()} 的参数 \texttt{name} 是产生新内容的球员名字。它充当标题，函数可以用它来决定是否获取该内容。参数 \texttt{outs} 是到目前为止的出局数——27 次出局，比赛就结束了。
+
+在这个示例程序中，\texttt{update()} 完全可以有一个指向当前 \texttt{Event} 对象的指针参数；这样就不必调用类 \texttt{BaseballReporter} 的成员函数 \texttt{get\_current\_event()}。但我们想演示“选择是否获取内容”这一做法。在实际应用中，如果内容是一大批数据，而我们在不需要它时不想获取它，那么能够选择就很重要。后来引入的一个新订阅者 \texttt{FanClubReport} 就利用了这种选择能力。
+
+订阅者类 \texttt{GraphReport} 也实现接口 \texttt{Observer}，并实现成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{BaseballReporter} 对象，并把该订阅者对象注册到发布者 \texttt{BaseballReporter}。
+
+\begin{codeboxt}{代码清单 12.19（程序 12.2 Stats-ObserverDP）：\texttt{GraphReport.h}}
+#include <string>
+#include "Observer.h"
+#include "BaseballReporter.h"
+
+using namespace std;
+
+class GraphReport : public Observer
+{
+public:
+    GraphReport(BaseballReporter * const r) : reporter(r)
+    {
+        r->attach(this);                             ①
+        singles = doubles = triples = homers = 0;
+    }
+
+    void update(const string name, const int outs) override;
+
+private:
+    BaseballReporter *reporter;
+    int singles, doubles, triples, homers;
+
+    void print_report();
+    void print_bar(const char ch, const int count);
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 通过向发布者 BaseballReporter 注册来订阅。}\par
+
+每当 \texttt{GraphReport} 对象收到新到达内容的通知时，成员函数 \texttt{update()} 就调用类 \texttt{BaseballReporter} 的成员函数 \texttt{get\_current\_event()}，获取指向该 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{handle\_event()}（代码清单 12.8）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象累计安打数，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 12.20（程序 12.2 Stats-ObserverDP）：\texttt{GraphReport.cpp}}
+#include <iostream>
+#include <iomanip>
+#include "EventMaker.h"
+#include "BaseballReporter.h"
+#include "GraphReport.h"
+
+using namespace std;
+
+void GraphReport::update(const string name, const int outs)
+{
+    Event  *event = reporter->get_current_event();        ①
+    int     hit   = event->get_hit();
+    ...
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 获取新到达的 Event 对象。}\par
+
+最后，订阅者类 \texttt{TableReport} 是接口 \texttt{Observer} 的另一个实现者，它实现成员函数 \texttt{update()}。构造函数把成员变量 \texttt{reporter} 初始化为指向 \texttt{BaseballReporter} 对象，并把该订阅者对象注册到发布者 \texttt{BaseballReporter}。
+
+\begin{codeboxt}{代码清单 12.21（程序 12.2 Stats-ObserverDP）：\texttt{TableReport.h}}
+#include <string>
+#include <map>
+#include "Observer.h"
+#include "BaseballReporter.h"
+
+using namespace std;
+
+class TableReport : public Observer
+{
+public:
+    TableReport(BaseballReporter * const r) : reporter(r, outs(0)
+    {
+        r->attach(this);                                  ①
+    }
+
+    void update(const string name, const int outs) override;
+
+private:
+    BaseballReporter *reporter;
+    map<string, int *> hit_map;
+    void print_report();
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 通过向发布者 BaseballReporter 注册来订阅。}\par
+
+成员函数 \texttt{update()} 调用类 \texttt{EventMaker} 的成员函数 \texttt{get\_current\_event()}，获取指向新到达的 \texttt{Event} 对象的指针。然后，就像该类先前版本的成员函数 \texttt{receive\_event()}（代码清单 12.10）中那样，函数 \texttt{update()} 使用该 \texttt{Event} 对象来构建 hit map，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 12.22（程序 12.2 Stats-ObserverDP）：\texttt{TableReport.cpp}}
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include "EventMaker.h"
+#include "BaseballReporter.h"
+#include "TableReport.h"
+
+using namespace std;
+
+void TableReport::update(const string name, const int outs)
+{
+    Event  *event = reporter->get_current_event();       ①
+    int     hit   = event->get_hit();
+    ...
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 获取新到达的 Event 对象。}\par
+
+为了演示添加新订阅者有多么容易，类 \texttt{FanClubReport} 打印一份关于其中一名球员——即该俱乐部的偶像——表现的简短报告。
+
+\begin{codeboxt}{代码清单 12.23（程序 12.2 Stats-ObserverDP）：\texttt{FanClubReport.h}}
+#include <string>
+#include "Observer.h"
+#include "BaseballReporter.h"
+
+using namespace std;
+
+class FanClubReport : public Observer
+{
+public:
+    FanClubReport(BaseballReporter * const r, const string name)
+        : reporter(r), idol(name), what("")
+    {
+        r->attach(this);
+    }
+
+    void update(const string name, const int outs) override;
+    void print_report() const;
+
+private:
+    BaseballReporter *reporter;
+    string idol;
+    string what;
+};
+\end{codeboxt}
+
+该类的 \texttt{update()} 成员函数只获取并处理名字与俱乐部偶像名字相匹配的那名球员的内容。它只打印该偶像的第一次尝试。在获取那次尝试的内容后，\texttt{FanClubReport} 对象就通过把自己从 \texttt{BaseballReporter} 对象上解绑来退订。此后它就不再接收更新通知了。
+
+\begin{codeboxt}{代码清单 12.24（程序 12.2 Stats-ObserverDP）：\texttt{FanClubReport.cpp}}
+#include <iostream>
+#include <iomanip>
+#include <string>
+#include "EventMaker.h"
+#include "BaseballReporter.h"
+#include "FanClubReport.h"
+
+using namespace std;
+
+void FanClubReport::update(const string name, const int outs)
+{
+    if (name != idol) return;                       ①
+
+    Event  *event = reporter->get_current_event();  ②
+    int     hit   = event->get_hit();
+
+    switch (hit)
+    {
+        case 0: what = "an out";   break;
+        case 1: what = "a single"; break;
+        case 2: what = "a double"; break;
+        case 3: what = "a triple"; break;
+        case 4: what = "a homer";  break;
+
+        default: what = ""; break;
+    }
+
+    reporter->detach(this);                         ③
+}
+
+void FanClubReport::print_report() const
+{
+    cout << endl << endl;
+    cout << "FANCLUB BULLETIN" << endl;
+    cout << "The first attempt by " << idol
+         << " resulted in " << what << "." << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 只获取并处理偶像的内容。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 获取偶像的内容。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 退订。}\par
+
+下面是一份粉丝俱乐部报告的示例（针对偶像 George）：
+
+\begin{codebox}
+FANCLUB BULLETIN
+The first attempt by George resulted in an out.
+\end{codebox}
+
+测试程序创建一个发布者 \texttt{BaseballReporter} 对象，并把它传给每个订阅者报告类的构造函数。每个构造函数都把该订阅者挂接到发布者上。然后，程序调用类 \texttt{BaseballReporter} 的成员函数 \texttt{distribute\_content()}，开始产生随机 \texttt{Event} 对象流。这将生成三份与本节开头所示类似的棒球比赛报告。
+
+\begin{codeboxt}{代码清单 12.25（程序 12.2 Stats-ObserverDP）：\texttt{tester.cpp}}
+#include "BaseballReporter.h"
+#include "LogReport.h"
+#include "GraphReport.h"
+#include "TableReport.h"
+#include "FanClubReport.h"
+
+using namespace std;
+
+int main()
+{
+    BaseballReporter *reporter = new BaseballReporter();
+
+    new LogReport(reporter);
+    new GraphReport(reporter);
+    new TableReport(reporter);
+
+    FanClubReport *fan_club = new FanClubReport(reporter, "George");
+
+    reporter->distribute_content();
+
+    fan_club->print_report();
+}
+\end{codeboxt}
+
+使用观察者设计模式为棒球比赛报告应用的架构建模，给我们带来了几项重要的好处：
+
+\begin{itemize}
+\item \emph{更少硬编码}——发布者类 \texttt{BaseballReporter} 不再硬编码棒球比赛报告。我们可以在运行时向类 \texttt{Subject} 的 \texttt{observers} vector 中添加新的订阅者报告对象，或从中移除已有的报告对象。
+\item \emph{代码更灵活}——创建新的 \texttt{Observer} 子类或删除我们不再需要的子类都会很容易。这支持封装变化原则（2.3.2 节）。
+\item \emph{松耦合的类}——发布者类 \texttt{BaseballReporter} 只知道它的每个订阅者都实现接口 \texttt{Observer}，因而都有一个 \texttt{update()} 成员函数。除此之外，它并不了解每个订阅者是如何实现的。这支持最少知识原则（2.3.2 节），因此发布者类 \texttt{BaseballReporter} 与各个报告类之间是松耦合的。
+\item \emph{单一职责}——每当新的 \texttt{Event} 对象到达时，每个订阅者报告对象都可以选择处理该对象，或完全忽略该事件。每个订阅者都只负责以自己方式生成报告。发布者类 \texttt{BaseballReporter} 只负责生成 \texttt{Event} 对象，它不知道也不关心订阅者如何处理这些事件。类 \texttt{BaseballReporter} 和各订阅者报告类都支持单一职责原则（2.3 节）。
+\end{itemize}
+
+\myGraphic{0.810}{images/CH12_F03_UN07_Mak.png}{}
+
+\subsection{12.1.4 观察者的通用模型}
+
+图 12.4 展示了观察者设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
+
+\myGraphic{0.742}{images/CH12_F04_Mak.png}{图 12.4 观察者设计模式的通用模型。可与图 12.3 对照。在运行时，我们可以向发布者 \texttt{Subject} 类的 \texttt{Observer} 对象集合中添加订阅者 \texttt{Observer} 对象，或从中移除它们。每当一个 \texttt{ExemplarSubject} 改变状态时，\texttt{Subject} 类的 \texttt{notify()} 成员函数就遍历 \texttt{observers} 集合，并调用每个 \texttt{ConcreteObserver} 对象的成员函数 \texttt{update()}。每个 \texttt{ConcreteObject} 随后可以选择调用 \texttt{ExemplarSubject} 类的 \texttt{get\_state()} 成员函数来获取新状态。}
+
+表 12.1 展示了示例应用如何应用该模式。
+
+\begin{center}
+{\bfseries 表 12.1 示例应用对观察者方法设计模式的应用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的对应项 \\
+\midrule
+子类 \texttt{ExemplarSubject} & 子类 \texttt{BaseballReporter} \\
+\texttt{observers} 集合 & \texttt{vector<Observer *> observers} 在类 \texttt{Subject} 中 \\
+类 \texttt{State} & 类 \texttt{Event} \\
+子类 \texttt{ConcreteObserver} & 类 \texttt{LogReport}、\texttt{GraphReport}\texttt{,} 和 \texttt{TableReport} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section*{小结}
+
+\begin{itemize}
+\item 观察者设计模式通过在主题对象（发布者）与一组观察者对象（订阅者）之间定义一对多依赖关系来实现发布—订阅模型，使得当主题对象改变状态时，所有观察者对象都会自动收到通知。
+\item 发布者与订阅者之间是松耦合的，发布者不知道也不关心订阅者如何处理这些状态变化。
+\item 我们可以添加或移除订阅者，而无需修改发布者的代码。
+\end{itemize}

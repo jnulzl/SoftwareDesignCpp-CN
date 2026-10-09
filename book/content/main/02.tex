@@ -1,0 +1,1584 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 用于获得设计良好的应用的迭代式开发策略
+\item 通过回溯从糟糕的设计决策中恢复
+\item 用于改进代码的设计原则
+\end{itemize}
+\end{myChapterIntro}
+
+通向设计良好的应用的开发之路几乎从来都不是笔直而狭窄的。正如第 1 章所述，我们不应该进行马拉松式的长时间编码，然后指望一个神奇的大爆炸式收尾。
+
+一种回报高得多的开发策略采用迭代的方式。每次迭代都建立在前一次迭代的成果之上。这样的策略更有可能带来一个成功的、设计良好的应用。
+
+\myGraphic{0.893}{images/CH02_00_UN01_Mak.png}{}
+
+本章的示例应用演示了这种迭代式开发策略，其中还包含对一次糟糕设计决策的回溯。此外，本章还讨论了变化与复杂度——良好设计面临的两大挑战。本章介绍了几条关键的设计原则，这些原则将在后续章节中反复出现，而后续章节还将介绍更多的设计原则。
+
+\section{良好的应用设计需要迭代过程}
+
+据说沃尔夫冈·阿玛多伊斯·莫扎特（Wolfgang Amadeus Mozart）是一位音乐天才，他能在脑海中谱写出整部交响曲，然后几乎不加修改地将其写下来。我们几乎没有人是编程界的莫扎特，能在脑海中设计出良好的应用，然后一次性把代码写得完美无缺。
+
+\begin{myWarning}{注意}
+我不是编程界的莫扎特。尽管本书中的程序示例都相对较短，但每一个都是我经过若干次隐藏的迭代、直到自己满意为止才得到的最终版本。
+\end{myWarning}
+
+事实上，如图 2.1 中那棵非正式的设计决策树所示，通向设计良好的应用之路往往崎岖不平，充满错误的转向和死胡同，需要回溯和重写。树的每个分支都是一条开发路径，它要么通向成功的应用（那罐金子），要么通向死胡同（一堆煤块）。如果我们走进了一条死胡同分支，就必须退回上一个决策节点，另选一条分支。当某个节点上所有可能的分支都试尽之后，我们又必须再退回到上一级节点。我们希望最终能找到一条通往成功完成的应用的路径。
+
+\myGraphic{0.625}{images/CH02_F01_Mak.png}{图 2.1 一棵设计决策树，以及以虚线表示的开发路径。树的每个节点都表示开发过程中的一个岔口，此时我们必须决定选择哪条路径（即分支）继续前进。在设计与编码的过程中，如果我们沿着某条分支走向了死胡同（那堆煤块），就必须回溯到上一个决策节点，尝试另一条分支。当某个节点上所有分支都试过之后，我们必须回溯到上一级节点，并从那里尝试下一条分支。我们希望找到通往成功完成的应用的那条路径（那罐金子）。}
+
+图中这棵设计决策树多少有些误导性，因为它展示了整棵树及其代表开发路径的所有分支。我们很少能事先知道编码过程中需要做出的全部决策。相反，我们是在程序开发过程中一个节点一个节点地构建这棵决策树的。在每个节点上，我们决定接下来走哪条路径，并创建一个分支。当然，我们应该选择看起来正确、能带来良好设计的路径。然而，如果那条分支最终被证明是一条通向死胡同的决策与编码路径——无论是因为某些应用需求发生了变化，还是因为我们仅仅做了一次糟糕的设计决策——我们就必须回到该节点并创建一个新分支。一旦某个节点的分支用尽，我们就必须回到它的父节点并在那里创建新分支。我们希望最终能找到通往成功完成的应用的路径。在最坏的情况下，我们可能不得不回溯到最顶端的节点，从那里重新开始。
+
+这在实践中是如何运作的呢？现代敏捷软件开发实践主张开发应当以一系列迭代来推进。一次迭代可以代表沿着决策树的某条分支走一趟。如图 2.2 所示，每次迭代都由三个阶段组成：设计、编码和测试，以逐步改进应用或为其添加更多功能。只有一次迭代的所有测试都通过之后，我们才应该开始下一次迭代。一次迭代可以短至几个小时，长则约两周。如果一次迭代持续的时间超过这个范围，那很可能是我们在这次迭代中试图做的事情太多了。
+
+\myGraphic{0.802}{images/CH02_F02_Mak.png}{图 2.2 应用开发过程中的迭代。每次迭代都代表沿着决策树中的一条分支向下走，其中也包括回退并尝试另一条分支。每次迭代都包括设计、编码和测试，以逐步改进应用或为其添加更多功能。各次迭代所耗的时间可以各不相同，短则几个小时，长则约两周。}
+
+\begin{mySidebar}{测试驱动开发}
+
+在每次迭代中，凭直觉的活动顺序是设计—编码—测试。然而，测试驱动开发（test-driven development, TDD）是一种采用测试—设计—编码顺序的开发过程。
+
+使用 TDD 时，在每次迭代开始时，我们先为本次迭代想要实现的功能编写测试程序。当然，由于还没有编写实现这些功能的代码，所有测试一开始都会失败。每次迭代的目标就是设计并编写代码，使该次迭代的所有测试通过。
+\end{mySidebar}
+
+正如我们在决策树中看到的，这一系列迭代并不意味着持续向前推进。有些迭代是回溯并选择另一条路径的结果。但不要气馁！随着你成为更有经验的程序员，决策树会变小，完成应用所需的迭代次数也会减少。然而，获得良好的设计仍然是一个持续改进的过程。
+
+\myGraphic{0.772}{images/CH02_F02_UN02_Mak.png}{}
+
+\section{不要让变化泄漏出去}
+
+程序员若发现应用中某一部分的改动会要求改动其他部分，那可就倒霉了！在最糟糕的情况下，应用的大部分（即使不是整个应用）都需要重写。
+
+第 1 章提到，主要的设计挑战之一是适应变化。如果我们编写一个规模可观的应用，就应该预见到哪些部分会发生变化。导致代码变化的原因有很多，其中一些常见的原因如下：
+
+\begin{itemize}
+\item 需求发生变化。需求规定了我们的应用必须做什么，或者允许其用户做什么，而在开发过程中以及应用完成之后，需求都可能发生变化。
+\item 我们在开发过程中改变了对设计的主意。
+\item 我们为已完成的应用添加新功能（或移除不需要的功能）。
+\end{itemize}
+
+\section{迭代以获得良好设计}
+
+对于本节中的示例应用，我们最终会得到一个能够封装变化并具有其他优点的良好设计，但这要经过若干次设计、编码和测试的迭代之后才能实现。这个示例还将展示，有时有必要从一次当时看似正确、实则有误的设计决策中回溯。
+
+在这个示例中，我们要开发一个图书目录应用，它存储一份图书列表，并允许用户搜索与用户目标属性相匹配的图书。以下是应用的初始需求。
+
+\begin{itemize}
+\item 用户必须能够把小说类图书及其属性添加到目录中。
+\item 每本书的属性应为书名以及作者的姓和名。
+\item 用户必须能够搜索与用户目标属性值相匹配的图书。
+\item 图书搜索将取决于对任意数量目标属性的匹配。
+\item 书名以及作者的名和姓的字符串匹配必须不区分大小写。
+\item 用户必须能够指定任意数量的无关（通配符）目标属性。
+\item 默认情况下，每个无关属性必须与目录中所有图书的对应属性相匹配。其余的目标属性必须精确匹配。
+\end{itemize}
+
+\myGraphic{0.713}{images/CH02_F02_UN03_Mak.png}{}
+
+\subsection{2.3.1 迭代 1：初始的内聚类}
+
+审视这些需求，我们可以很快设计出两个类：\texttt{Book} 和 \texttt{Catalogue}。在运行时，目录将存储 \texttt{Book} 对象（代码清单 2.1）。\texttt{Book} 的成员变量是书的属性：书的书名以及作者的名和姓。构造函数接收属性值，并初始化这些成员变量。
+
+\begin{mySidebar}{关于示例编码风格的一点说明}
+
+为了使示例程序简短明了，我们将省略应用在源代码中通常应当具有的描述性和解释性注释。作为替代，打印出来的示例将使用代码标注。
+
+在 C++ 文件开头使用 \texttt{using namespace std} 常常被认为是一种有风险的做法，因为它会把许多额外的名字引入作用域，可能引发名字冲突。但为了保持示例简短，本书中我们会这样做。
+\end{mySidebar}
+
+\begin{codeboxt}{代码清单 2.1（程序 2.1 Books-1）：\texttt{Book.h}}
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Book
+{
+public:
+    Book(const string ttl, const string lst, const string fst) ①
+        : title(ttl), last(lst), first(fst) {}                 ①
+ 
+    string get_title() const { return title; }
+    string get_last()  const { return last; }
+    string get_first() const { return first; }
+
+private:
+    string title;                                              ②
+    string last;                                               ②
+    string first;                                              ②
+};
+
+inline ostream& operator <<(ostream& ostr, const Book& book)
+{
+    ostr << "{TITLE: '"   << book.get_title()
+         << "', LAST: '"  << book.get_last()
+         << "', FIRST: '" << book.get_first() << "'}";
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 构造函数初始化书的属性。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 书的属性}\par
+
+用于 \texttt{Book} 对象的重载输出运算符 \texttt{<<} 会把书的属性写入输出流（通常是 \texttt{cout}），并用花括号括起来，每个属性值都带有一个标签。示例输出如下
+
+\begin{codebox}
+  {TITLE: 'To Kill a Mockingbird', LAST: 'Lee', FIRST: 'Harper'}
+\end{codebox}
+
+\begin{mySidebar}{编译、链接并运行示例程序}
+
+本书中所有示例程序都使用 2017 版的 C++。以下两条命令指定了 2017 标准，将在 Linux 终端窗口中使用 GNU C++ 编译器、或在 MacOS 终端窗口中使用 Apple Clang C++ 编译器，编译、链接并运行程序 2.1：
+
+\begin{codebox}
+    g++ -std=c++17 *.cpp -o books
+    ./books
+\end{codebox}
+
+在 Microsoft Windows 的“Developer Command Prompt for VS”窗口中，使用 Visual Studio C++ 编译器时的等价命令为：
+
+\begin{codebox}
+    cl /EHs /std:c++17 *.cpp /link /out:books.exe
+    books
+\end{codebox}
+
+类似的命令可以编译、链接并运行其他示例程序。
+\end{mySidebar}
+
+在类 \texttt{Catalogue} 中（代码清单 2.2），私有成员变量 \texttt{booklist} 是一个 vector，存放指向目录中所存 \texttt{Book} 对象的指针。公有成员函数 \texttt{add()} 根据书名以及作者的姓和名创建一个新的 \texttt{Book} 对象，并把该对象添加到 vector 中。公有成员函数 \texttt{find()} 在 vector 中搜索匹配的图书。
+
+私有静态成员函数 \texttt{equal\_ignore\_case()} 对两个字符串 \texttt{str\_1} 和 \texttt{str\_2} 进行不区分大小写的比较，逐个字符比较每个字母的小写形式。空的目标字符串表示一个无关属性，此时比较总是返回 \texttt{true}。
+
+\begin{codeboxt}{代码清单 2.2（程序 2.1 Books-1）：\texttt{Catalogue.h}}
+#include <string>
+#include <vector>
+#include "Book.h"
+
+using namespace std;
+
+class Catalogue
+{
+public:
+    void add(const string title,
+             const string last,
+             const string first)
+    {
+        booklist.push_back(new Book(title, last, first));
+    }
+
+    vector<Book *> find(const Book& target) const;
+
+private:
+    vector<Book *> booklist;                                ①
+
+    static bool equal_ignore_case(const string string1,
+                                  const string string2)
+    {
+        for (int i = 0; i < string1.length(); i++)
+        {
+            if (tolower(string1[i]) != tolower(string2[i])) ②
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 指向 Book 对象的指针的 vector}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 比较每个字母的小写形式。}\par
+
+公有成员函数 \texttt{find()} 接收一个 \texttt{Book} 对象的引用，该对象包含目标属性（代码清单 2.3）。它遍历 \texttt{booklist} vector 中的图书，并调用 \texttt{equal\_ignore\_case()} 将目标书名、姓和名与 booklist 中每本书的对应属性进行比较。在比较时把所有属性字符串中的字符都转换为小写，使我们能够进行不区分大小写的字符串匹配。该函数返回一个由匹配目标属性的图书组成的 vector；如果没有图书匹配，则返回一个空 vector。
+
+\begin{codeboxt}{代码清单 2.3（程序 2.1 Books-1）：\texttt{Catalogue.cpp}}
+#include "Book.h"
+#include "Catalogue.h"
+
+vector<Book *>Catalogue::find(const Book& target) const
+{
+    vector<Book *> matches;
+
+    string target_title = target.get_title();
+    string target_last  = target.get_last();
+    string target_first = target.get_first();
+
+    for (Book *book : booklist)
+    {
+        if (    equal_ignore_case(target_title, book->get_title())      ①
+             && equal_ignore_case(target_last,  book->get_last())       ①
+             && equal_ignore_case(target_first, book->get_first()))     ①
+        {
+            matches.push_back(book);
+        }
+    }
+
+    return matches;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 所有属性都必须匹配。}\par
+
+我们希望定义\emph{内聚}的类，每个类只有一个主要职责。\texttt{Book} 类负责存储书的属性。\texttt{Catalogue} 类负责维护 \texttt{Book} 对象的列表，其中包括向列表中添加新书以及在列表中查找匹配的图书。
+
+\begin{mySidebar}{单一职责原则}
+
+设计良好的类是\emph{内聚}的，这意味着它只有一个主要职责。设计糟糕的类则承担了过多职责。一个职责明确、内聚的类易于使用——它的用途应当毫无疑义。内聚的类也易于维护——它的所有成员函数和成员变量都服务于同一个主要目的。
+\end{mySidebar}
+
+在测试程序中（代码清单 2.4），函数 \texttt{fill()} 向目录中加载一些小说类图书。函数 \texttt{test()} 用一些目标图书执行测试搜索，并调用函数 \texttt{search()} 来完成每次搜索。有些目标属性是空字符串，表示无关属性。
+
+\begin{codeboxt}{代码清单 2.4（程序 2.1 Books-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include <vector>
+#include <string>
+
+#include "Book.h"
+#include «Catalogue.h»
+
+void fill(Catalogue& catalogue);
+void test(const Catalogue& catalogue);
+
+int main()
+{
+    Catalogue catalogue;
+    fill(catalogue);
+    test(catalogue);
+
+    return 0;
+}
+
+void fill(Catalogue& catalogue)                              ①
+{
+    catalogue.add("Life of Pi", "Martel", "Yann");
+    catalogue.add("The Call of the Wild", "London", "Jack");
+    catalogue.add("To Kill a Mockingbird", "Lee", "Harper");
+    catalogue.add("Little Women", "Alcott", "Louisa");
+    catalogue.add("The Adventures of Sherlock Holmes", 
+                  "Doyle", "Conan");
+    catalogue.add("And Then There Were None", "Christie", "Agatha");
+    catalogue.add("Carrie", "King", "Stephen");
+    catalogue.add("It: A Novel", "King", "Stephen");
+    catalogue.add("Frankenstein", "Shelley", "Mary");
+    catalogue.add("2001: A Space Odyssey", "Clarke", "Arthur");
+    catalogue.add("Ender's Game", "Card", "Orson");
+}
+
+void search(const Catalogue& catalogue, const Book& target)   ②
+{
+    cout << endl << "Find " << target << endl;
+
+    vector<Book *> matches = catalogue.find(target);
+
+    if (matches.size() == 0) cout << "No matches." << endl;
+    else
+    {
+        cout << "Matches:" << endl;
+        for (Book *book : matches)
+        {
+            cout << "  " << *book << endl;
+        }
+    }
+}
+
+void test(Catalogue& catalogue)                               ③
+{
+    Book target1("Life of Pi", "Martel", "Yann");
+    search(catalogue, target1);
+
+    Book target2("", "King", "");                             ④
+    search(catalogue, target2);
+
+    Book target3("1984", "Orwell", "George");
+    search(catalogue, target3);
+
+    Book target4("", "", "");                                 ④
+    search(catalogue, target4);
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 用测试用 Book 对象填充目录}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 在目录中搜索目标图书}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 测试函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 无关（通配符）属性}\par
+
+测试运行的输出如下
+
+\begin{codebox}
+Find {TITLE: 'Life of Pi', LAST: 'Martel', FIRST: 'Yann'}
+Matches:
+  {TITLE: 'Life of Pi', LAST: 'Martel', FIRST: 'Yann'}
+
+Find {TITLE: '', LAST: 'King', FIRST: ''}
+Matches:
+  {TITLE: 'Carrie', LAST: 'King', FIRST: 'Stephen'}
+  {TITLE: 'It: A Novel', LAST: 'King', FIRST: 'Stephen'}
+
+Find {TITLE: '1984', LAST: 'Orwell', FIRST: 'George'}
+No matches.
+Find {TITLE: '', LAST: '', FIRST: ''}
+Matches:
+  {TITLE: 'Life of Pi', LAST: 'Martel', FIRST: 'Yann'}
+  {TITLE: 'The Call of the Wild', LAST: 'London', FIRST: 'Jack'}
+  {TITLE: 'To Kill a Mockingbird', LAST: 'Lee', FIRST: 'Harper'}
+  {TITLE: 'Little Women', LAST: 'Alcott', FIRST: 'Louisa'}
+  {TITLE: 'The Adventures of Sherlock Holmes', LAST: 'Doyle', FIRST: 'Conan'}
+  {TITLE: 'And Then There Were None', LAST: 'Christie', FIRST: 'Agatha'}
+  {TITLE: 'Carrie', LAST: 'King', FIRST: 'Stephen'}
+  {TITLE: 'It: A Novel', LAST: 'King', FIRST: 'Stephen'}
+  {TITLE: 'Frankenstein', LAST: 'Shelley', FIRST: 'Mary'}
+  {TITLE: '2001: A Space Odyssey', LAST: 'Clarke', FIRST: 'Arthur'}
+  {TITLE: 'Ender's Game', LAST: 'Card', FIRST: 'Orson'}
+\end{codebox}
+
+显然，我们的应用满足了它的需求。图 2.3 描绘了经过一次开发迭代后我们目前取得的进展。我们可以奖励自己几枚金币。
+
+\myGraphic{0.254}{images/CH02_F03_Mak.png}{图 2.3 在第一次开发迭代中，我们创建了两个类：Book 和 Catalogue。虚线表示我们的开发路径。该应用满足了它当前的需求。}
+
+\subsection{2.3.2 迭代 2：封装、委托与松耦合}
+
+现在，假设我们被赋予了一项附加需求，要再添加两个图书属性——出版年份和体裁：
+
+\begin{itemize}
+\item 每本小说类图书的属性应包括其出版年份和体裁。
+\item 书的体裁应为 \texttt{ADVENTURE}、\texttt{CLASSICS}、\texttt{DETECTIVE}、\texttt{FANTASY}、\texttt{HISTORIC}、\texttt{HORROR}、\texttt{ROMANCE} 和 \texttt{SCIFI}。
+\end{itemize}
+
+我们需要对代码做一些改动以适应这些新需求。表面上看，类 \texttt{Book} 需要两个新的成员变量来表示年份和体裁。由于需求给出了体裁的具体列表，我们可以为它们定义枚举常量。
+
+\begin{mySidebar}{字符串与枚举类型}
+
+只要存在一组有限的值，比如体裁，那么使用枚举类型就优于使用字符串类型。使用字符串时，我们必须操心区分大小写与不区分大小写的比较。如果字符串中有拼写错误或笔误，由此产生的运行时逻辑错误可能难以察觉。在运行时比较枚举常量值非常高效，而且编译器会在应用运行之前就捕获枚举常量的拼写错误。
+\end{mySidebar}
+
+此时我们可以看到，我们对类 \texttt{Book} 所做的任何属性改动都会要求对类 \texttt{Catalogue} 做相应的改动：
+
+\begin{itemize}
+\item 成员函数 \texttt{add()} 以图书属性作为参数（代码清单 2.2）。
+\item 成员函数 \texttt{find()} 中的 \texttt{if} 语句引用了图书属性（代码清单 2.3）。
+\end{itemize}
+
+\myGraphic{0.814}{images/CH02_F03_UN04_Mak.png}{}
+
+我们可以通过封装那些会发生变化的代码来堵住这个漏洞，即把这些属性放入一个单独的类 \texttt{Attributes} 中（见代码清单 2.5）。
+
+\begin{mySidebar}{封装变化原则}
+
+良好的软件设计会把可能变化的代码与不会变化的代码分离开来。封装可能变化的代码可将其与程序的其余部分隔离开来。这样一来，当被封装代码发生变化时，这些变化就不会泄漏出去并导致其他代码发生改变。封装可能变化的代码的一种常见方法是把它单独放进一个类中。
+\end{mySidebar}
+
+由于改动图书属性必然要求改动属性的搜索方式，我们也需要把这种行为封装到类 \texttt{Attributes} 中。私有成员函数 \texttt{is\_match()} 显式地比较属性，并分别在其匹配或不匹配时返回 \texttt{true} 或 \texttt{false}。特殊的 \texttt{Genre} 值 \texttt{UNSPECIFIED} 和 \texttt{year} 值 0 将作为无关的搜索目标值。为了执行不区分大小写的字符串比较，我们必须把静态成员函数 \texttt{equal\_ignore\_case()} 从类 \texttt{Catalogue} 移到类 \texttt{Attributes} 中。
+
+\begin{codeboxt}{代码清单 2.5（程序 2.2 Books-2）：\texttt{Attributes.h}}
+#include <iostream>
+
+using namespace std;
+
+enum class Genre                                                    ①
+{                                                                   ①
+    ADVENTURE, CLASSICS, DETECTIVE, FANTASY, HISTORIC,              ①
+    HORROR, ROMANCE, SCIFI, UNSPECIFIED                             ①
+};                                                                  ①
+
+inline ostream& operator <<(ostream& ostr, const Genre& genre)
+{
+    switch (genre)
+    {
+        case Genre::ADVENTURE: ostr << "adventure"; break;
+        case Genre::CLASSICS:  ostr << "classics";  break;
+        case Genre::DETECTIVE: ostr << "detective"; break;
+        case Genre::FANTASY:   ostr << "fantasy";   break;
+        case Genre::HISTORIC:  ostr << "historic";  break;
+        case Genre::HORROR:    ostr << "horror";    break;
+        case Genre::ROMANCE:   ostr << "romance";   break;
+        case Genre::SCIFI:     ostr << "scifi";     break;
+        default: ostr << "unspecified"; break;
+    }
+
+    return ostr;
+}
+
+class Attributes
+{
+public:
+    Attributes(const string ttl,
+               const string lst, const string fst,
+               const int yr, const Genre gen)
+        : title(ttl), last(lst), first(fst),
+          year(yr), genre(gen) {}
+
+    string get_title() const { return title; }
+    string get_last()  const { return last; }
+    string get_first() const { return first; }
+    int    get_year()  const { return year; }
+    Genre  get_genre() const { return genre; }
+
+    bool is_match(const Attributes& target_attrs) const               ②
+    {                                                                 ②
+        return equal_ignore_case(target_attrs.get_title(), title)     ②
+            && equal_ignore_case(target_attrs.get_last(),  last)      ②
+            && equal_ignore_case(target_attrs.get_first(), first)     ②
+            && (    (target_attrs.get_year()  == 0)                   ②
+                ||  (target_attrs.get_year()  == year))               ②
+            && (    (target_attrs.get_genre() == Genre::UNSPECIFIED)  ②  
+                ||  (target_attrs.get_genre() == genre));             ②
+    }                                                                 ②
+
+private:
+    string title;
+    string last;
+    string first;
+    int    year;                                                      ③
+    Genre  genre;                                                     ③
+
+    static bool equal_ignore_case(const string string1,               ④
+                                  const string string2) ...
+};
+
+inline ostream& operator <<(ostream& ostr, const Attributes& attrs)
+{
+    ostr << "{TITLE: '"   << attrs.get_title()
+         << "', LAST: '"  << attrs.get_last()
+         << "', FIRST: '" << attrs.get_first()
+         << "', YEAR: "   << attrs.get_year()                         ⑤
+         << ", GENRE: "   << attrs.get_genre() << "}";                ⑤
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 体裁属性}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 显式地匹配属性，包括年份和体裁。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 新增的年份和体裁属性}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 从类 Catalogue 移来的静态成员函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 同时输出年份和体裁属性。}\par
+
+我们把用于 \texttt{Book} 对象的重载 \texttt{<<} 运算符替换为用于 \texttt{Attributes} 对象的运算符，后者输出所有属性，包括年份和体裁。
+
+现在，\texttt{Book} 对象由 \texttt{Attributes} 对象构造而成，如下所示。每个 \texttt{Book} 对象都将指向它自己的 \texttt{Attributes} 对象。
+
+\begin{codeboxt}{代码清单 2.6（程序 2.2 Books-2）：\texttt{Book.h}}
+#include "Attributes.h"
+
+using namespace std;
+
+class Book
+{
+public:
+    Book(Attributes * const attrs) : attributes(attrs) {}
+    virtual ~Book() { delete attributes; }
+
+    Attributes *get_attributes() const { return attributes; }
+
+private:
+    Attributes *attributes;      ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 每个 Book 对象都将指向它自己的 Attributes 对象。}\par
+
+类 \texttt{Catalogue} 的 \texttt{add()} 和 \texttt{find()} 成员函数需要改动，以处理新的 \texttt{Attributes} 类（代码清单 2.7）。我们向函数 \texttt{add()} 传入一个 \texttt{Attributes} 对象的引用，它用该对象构造一个 \texttt{Book} 对象并添加到 \texttt{booklist} vector 中。我们向函数 \texttt{find()} 传入目标 \texttt{Attributes} 对象的引用。
+
+\begin{codeboxt}{代码清单 2.7（程序 2.2 Books-2）：\texttt{Catalogue.h}}
+#include <vector>
+#include "Book.h"
+
+using namespace std;
+
+class Catalogue
+{
+public:
+    void add(Attributes * const attrs)
+    {
+        booklist.push_back(new Book(attrs));     ①
+    }
+
+    vector<Book *> find(const Attributes& target_attrs) const;
+
+private:
+    vector<Book *> booklist;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由 Attributes 对象构造一个 Book 对象。}\par
+
+成员函数 \texttt{find()} 变得简单多了（代码清单 2.8）。该函数把属性匹配\emph{委托}给类 \texttt{Attributes}，做法是调用后者的 \texttt{is\_match()} 成员函数，因此 \texttt{find()} 不再受图书属性任何改动的影响。
+
+\myGraphic{0.734}{images/CH02_F03_UN05_Mak.png}{}
+
+属性匹配确实更适合放在一个内聚的 \texttt{Attributes} 类中。
+
+\begin{codeboxt}{代码清单 2.8（程序 2.2 Books-2）：\texttt{Catalogue.cpp}}
+#include "Book.h"
+#include "Catalogue.h"
+
+vector<Book *>Catalogue::find(const Attributes& target_attrs) const
+{
+    vector<Book *> matches;
+
+    for (Book *book : booklist)
+    {
+        Attributes *book_attrs = book->get_attributes();
+        if (book_attrs->is_match(target_attrs))            ①
+        {
+            matches.push_back(book);
+        }
+    }
+
+    return matches;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 把属性匹配委托给类 Attributes。}\par
+
+\begin{mySidebar}{委托原则}
+
+把功能从一个类（请求方）移出，放进另一个更合适的类（被委托方），以使这两个类更加内聚。请求方类通常有一个成员变量指向被委托方类。被委托方类中某个特定的成员函数代表请求方类实现应完成的工作。请求方类通常不应依赖被委托方类如何完成该工作。在运行时，请求方类的对象可以通过调用被委托方类的对象上的那个成员函数来请求这项工作。
+\end{mySidebar}
+
+在我们的示例中，请求方是类 \texttt{Catalogue}，被委托方是类 \texttt{Attributes}。
+
+类 \texttt{Catalogue} 现在是\emph{松耦合}于类 \texttt{Attributes} 的，因为我们已经把 \texttt{Catalogue} 对 \texttt{Attributes} 的依赖降到了最低。类 \texttt{Catalogue} 并不知道类 \texttt{Attributes} 维护的具体属性。类 \texttt{Book} 和 \texttt{Attributes} 之间也是松耦合的：类 \texttt{Attributes} 并不知道自己的对象被 \texttt{Book} 对象所存储，而类 \texttt{Book} 也无需知道类 \texttt{Attributes} 是如何实现的。
+
+\begin{mySidebar}{最少知识原则}
+
+设计良好的类是\emph{松耦合}的，这意味着它们彼此之间应当几乎没有（即使有也很少）依赖关系。一个类对另一个类如何实现了解得越少，它对该类的依赖就越少。一个类可以通过把它的成员变量和成员函数设为私有来隐藏其实现。
+
+最少知识原则支持封装变化原则。如果一个类需要改变其实现，这种改变不会影响到任何不依赖于该实现的其他代码。
+\end{mySidebar}
+
+每当图书属性发生变化，测试程序 \texttt{tester.cpp} 都必须改动。现在向目录中添加一本书的示例代码是
+
+\begin{codebox}
+    catalogue.add(new Attributes("The Call of the Wild", 
+                                 "London", "Jack",
+                                 1903, Genre::ADVENTURE));
+
+    catalogue.add(new Attributes("To Kill a Mockingbird", 
+                                 "Lee", "Harper",
+                                 1960, Genre::CLASSICS));
+\end{codebox}
+
+而搜索图书的示例代码现在是
+
+\begin{codebox}
+    Attributes target_attrs1("Life of Pi", "Martel", "Yann",
+                             2003, Genre::ADVENTURE);
+    search(catalogue, target_attrs1);
+
+    Attributes target_attrs2("", "King", "", 0, Genre::HORROR);
+    search(catalogue, target_attrs2);
+\end{codebox}
+
+不过，我们不会把这视为一次封装失败，因为测试代码本质上并不是应用的一部分。我们必须假定，任何从应用外部（例如从文件）加载目录的手段都必然要了解当前的图书属性。
+
+示例输出如下
+
+\begin{codebox}
+Find {TITLE: '', LAST: 'King', FIRST: '', YEAR: 0, GENRE: horror}
+Matches:
+  {TITLE: 'Carrie', LAST: 'King', FIRST: 'Stephen', YEAR: 1974, GENRE: horror}
+  {TITLE: 'It: A Novel', LAST: 'King', FIRST: 'Stephen', YEAR: 1986, GENRE: horror}
+\end{codebox}
+
+图 2.4 展示了经过两次迭代后我们取得的进展。我们能够处理更多一些需求了，所以让我们再奖励自己一些金币。
+
+\myGraphic{0.272}{images/CH02_F04_Mak.png}{图 2.4 第二次开发迭代添加了类 \texttt{Attributes}，类 \texttt{Catalogue} 把属性匹配委托给类 \texttt{Attributes}。}
+
+\subsection{2.3.3 迭代 3：更多种类的书及其属性}
+
+此前我们关注的一直是 \texttt{Book} 属性的变化。但我们在目录中存储的图书种类也可能发生变化。以下是一些追加需求：
+
+\begin{itemize}
+\item 必须能够把菜谱书及其属性添加到目录中。
+\item 菜谱书的属性必须包括其地区。
+\item 地区应为 \texttt{CHINA}、\texttt{FRANCE}、\texttt{INDIA}、\texttt{ITALY}、\texttt{MEXICO}、\texttt{US} 和 \texttt{UNSPECIFIED}。
+\end{itemize}
+
+这也可能是一个展示我们面向对象编程技能的机会！我们的应用现在必须在目录中同时存储小说类图书和菜谱书。把 \texttt{Book} 设为超类，并为它设计两个新的子类 \texttt{Fiction} 和 \texttt{Cookbook}，是合理的做法。在下一个代码清单中，子类 \texttt{Fiction} 的构造函数调用了其超类 \texttt{Book} 的构造函数。
+
+\begin{codeboxt}{代码清单 2.9（程序 2.3 Books-3）：\texttt{Fiction.h}}
+#include "Book.h"
+#include "FictionAttrs.h"
+
+using namespace std;
+
+class Fiction : public Book                              ①
+{
+public:
+    Fiction(FictionAttrs * const attrs) : Book(attrs) {} ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 类 Fiction 是类 Book 的子类。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 调用超类 Book 的构造函数。}\par
+
+在下一个代码清单中，子类 \texttt{Cookbook} 的构造函数也调用了超类构造函数。
+
+\begin{codeboxt}{代码清单 2.10（程序 2.3 Books-3）：\texttt{Cookbook.h}}
+#include "Book.h"
+#include "CookbookAttrs.h"
+
+using namespace std;
+
+class Cookbook : public Book                               ①
+{
+public:
+    Cookbook(CookbookAttrs * const attrs) : Book(attrs) {} ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 类 Cookbook 是类 Book 的子类。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 调用超类 Book 的构造函数。}\par
+
+我们还可以把 \texttt{Attributes} 设为超类（代码清单 2.11），并为它设计两个新的子类 \texttt{FictionAttrs} 和 \texttt{CookbookAttrs}。超类 \texttt{Attributes} 维护公共成员变量 \texttt{title}、\texttt{last} 和 \texttt{first}。因此，它的成员函数 \texttt{is\_match()} 只比较这些公共属性。
+
+\begin{codeboxt}{代码清单 2.11（程序 2.3 Books-3）：\texttt{Attributes.h}}
+#include <string>
+
+using namespace std;
+
+class Attributes
+{
+public:
+    Attributes(const string ttl,
+               const string lst, const string fst)
+        : title(ttl), last(lst), first(fst) {}
+
+    virtual ~Attributes() {}
+
+    string get_title() const { return title; }
+    string get_last()  const { return last; }
+    string get_first() const { return first; }
+
+protected:
+    bool is_match(const Attributes& target_attrs) const
+    {
+        return equal_ignore_case(target_attrs.get_title(),  title) ①  
+            && equal_ignore_case(target_attrs.get_last(),   last)  ①
+            && equal_ignore_case(target_attrs.get_first(), first); ①
+    }
+
+private:
+    string title;                                                  ②
+    string last;                                                   ②
+    string first;                                                  ②
+
+    static bool equal_ignore_case(const string string1,
+                                  const string string2) ...
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 只比较公共属性。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 公共属性}\par
+
+子类 \texttt{FictionAttrs} 包含小说类图书特有的属性：体裁和年份（代码清单 2.12）。它的构造函数首先调用其超类 \texttt{Attributes} 的构造函数，以初始化继承来的公共成员变量 \texttt{title}、\texttt{last} 和 \texttt{first}。然后，它初始化子类的 \texttt{year} 和 \texttt{genre} 成员变量。我们还把 \texttt{Genre} 枚举常量的定义及其重载的 \texttt{<<} 运算符在物理位置上移得更靠近类 \texttt{FictionAttrs}。
+
+成员函数 \texttt{is\_match()} 首先调用超类成员函数 \texttt{Attributes::is\_match()} 来检查公共的 \texttt{title}、\texttt{last} 和 \texttt{first} 属性。如果这一检查通过，那么子类接着可以检查小说类图书的 \texttt{year} 和 \texttt{genre} 属性。
+
+\begin{codeboxt}{代码清单 2.12（程序 2.3 Books-3）：\texttt{FictionAttrs.h}}
+#include <iostream>
+#include <string>
+#include "Attributes.h"
+
+using namespace std;
+
+enum class Genre ...
+
+inline ostream& operator <<(ostream& ostr, const Genre& genre) ...
+
+class FictionAttrs : public Attributes
+{
+public:
+    FictionAttrs(const string title,
+                 const string last, const string first,
+                 const int yr, const Genre gen)
+        : Attributes(title, last, first),                             ①
+          Year(yr), genre(gen) {}                                     ②
+
+    int   get_year()  const { return year; }
+    Genre get_genre() const { return genre; }
+
+    bool is_match(const FictionAttrs& target_attrs) const
+    {
+        if (!Attributes::is_match(target_attrs)) return false;        ③
+
+        return (   (target_attrs.get_year()  == 0)                    ④
+                || (target_attrs.get_year()  == year))                ④
+            && (   (target_attrs.get_genre() == Genre::UNSPECIFIED)   ④
+                || (target_attrs.get_genre() == genre));              ④
+    }
+
+private:
+    int   year;                                                       ⑤
+    Genre genre;                                                      ⑤
+};
+
+inline ostream& operator <<(ostream& ostr, const FictionAttrs& attrs)
+{
+    ostr << "{TITLE: '"   << attrs.get_title()
+         << "', LAST: '"  << attrs.get_last()
+         << "', FIRST: '" << attrs.get_first()
+         << "', YEAR: "   << attrs.get_year()
+         << ", GENRE: "   << attrs.get_genre() << "}";
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 首先初始化公共属性。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 然后初始化小说类图书的年份和体裁。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 首先匹配公共属性。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 然后匹配小说类图书的年份和体裁。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 小说类图书的年份和体裁属性}\par
+
+子类 \texttt{CookbookAttrs} 包含菜谱书特有的地区属性，如下一个代码清单所示。它的构造函数和 \texttt{is\_match()} 成员函数的行为与子类 \texttt{FictionAttrs} 中的类似。
+
+\begin{codeboxt}{代码清单 2.13（程序 2.3 Books-3）：\texttt{CookbookAttrs.h}}
+#include <iostream>
+#include <string>
+#include "Attributes.h"
+
+using namespace std;
+
+enum class Region
+{
+    CHINA, FRANCE, INDIA, ITALY, MEXICO, US, UNSPECIFIED
+};
+
+inline ostream& operator <<(ostream& ostr, const Region& region)
+{
+    switch (region)
+    {
+        case Region::CHINA:  ostr << "China";  break;
+        case Region::FRANCE: ostr << "France"; break;
+        case Region::INDIA:  ostr << "India";  break;
+        case Region::ITALY:  ostr << "Italy";  break;
+        case Region::MEXICO: ostr << "Mexico"; break;
+        case Region::US:     ostr << "US";     break;
+
+        default: ostr << "unspecified"; break;
+    }
+
+    return ostr;
+}
+
+class CookbookAttrs : public Attributes
+{
+public:
+    CookbookAttrs(const string title,
+                  const string last, const string first,
+                  const Region reg)
+        : Attributes(title, last, first),                          ①
+          region(reg) {}                                           ②
+
+    Region get_region() const { return region; }
+
+    bool is_match(const CookbookAttrs& target_attrs) const
+    {
+        if (!Attributes::is_match(target_attrs)) return false;     ③
+
+        return (target_attrs.get_region() == Region::UNSPECIFIED)  ④
+            || (target_attrs.get_region() == region);              ④
+    }
+
+private:
+    Region region;                                                 ⑤
+};
+
+inline ostream& operator <<(ostream& ostr, const CookbookAttrs& attrs)
+{
+    ostr << "{TITLE: '"   << attrs.get_title()
+         << "', LAST: '"  << attrs.get_last()
+         << "', FIRST: '" << attrs.get_first()
+         << "', REGION: "  << attrs.get_region() << "}";
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 首先初始化公共属性。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 然后初始化菜谱书的地区。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 首先匹配公共属性。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 然后匹配菜谱书的地区。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 菜谱书的地区属性}\par
+
+这些都是\emph{开闭}\emph{原则}的例子。一旦我们确定类 \texttt{Attributes} 已经捕获了所有属性的公共成员变量和函数，我们就\emph{关闭}它，不再对其进行修改，以提供代码稳定性。我们不期望再对该类做更多改动。但我们把该类\emph{开放}给以子类形式进行的扩展，例如 \texttt{FictionAttrs} 和 \texttt{CookbookAttrs}，从而提供了添加更多种图书属性的灵活性。类 \texttt{Book} 及其子类是该设计原则的另一个例子。
+
+\begin{mySidebar}{开闭原则}
+
+将类关闭以禁止修改提供了稳定性——程序员始终能知道那段代码做什么以及如何使用它。但让它以子类的形式保持开放以进行扩展，则允许添加超出这个已封闭的超类所提供的功能。
+
+开闭原则支持松耦合与封装。例如，\texttt{Shape} 超类可以隐藏它存储坐标的方式。但它可以有诸如 \texttt{Rectangle} 和 \texttt{Circle} 这样的子类，通过显示各种形状来扩展功能，而这些子类并不依赖于坐标是如何存储的。如果某天有必要更改超类中的坐标代码，子类将继承这些更改，但无需对任何代码做修改。
+\end{mySidebar}
+
+类 \texttt{Book} 没有变化（代码清单 2.14）。由于每个 \texttt{Book} 对象，无论是 \texttt{Fiction} 还是 \texttt{Cookbook}，都必须指向其相应的 \texttt{Attributes} 对象（分别是 \texttt{FictionAttrs} 或 \texttt{CookbookAttrs}），我们将把这个公共指针放在超类 \texttt{Book} 中。因此，\texttt{Book} 包含的是指向超类 \texttt{Attributes} 的指针，而不是专门指向 \texttt{FictionAttrs} 或 \texttt{CookbookAttrs} 的指针。这是\emph{面向接口编程}的一个例子，因为超类 \texttt{Attributes} 充当其子类的接口。
+
+\begin{mySidebar}{面向接口编程原则}
+
+如果一个类有几个子类，我们的代码应当具备在运行时与其中任何一个子类协同工作的灵活性。例如，如果 \texttt{Shape} 超类有子类 \texttt{Rectangle} 和 \texttt{Circle}，那么面向具体实现编程就是糟糕的设计：
+
+\begin{codebox}
+    Rectangle *rect = new Rectangle();  //糟糕的设计！
+    rect->display();
+\end{codebox}
+
+变量 \texttt{rect} 只能处理 \texttt{Rectangle} 形状。但我们也可以改为\emph{面向接口}编程（在此例中是超类 \texttt{Shape}）：
+
+\begin{codebox}
+    Shape *shape = new Rectangle();
+    shape->display();
+\end{codebox}
+
+变量 \texttt{shape} 可以处理 \texttt{Rectangle} 形状，但它也可以处理 \texttt{Circle} 形状：
+
+\begin{codebox}
+    shape = new Circle();
+    shape->display();
+\end{codebox}
+
+面向接口编程依赖多态。在这个例子中，运行时调用的是哪个 \texttt{display()} 成员函数，取决于变量 \texttt{shape} 所指向的对象的类型（\texttt{Rectangle} 或 \texttt{Circle}）。
+\end{mySidebar}
+
+\begin{codeboxt}{代码清单 2.14（程序 2.3 Books-3）：\texttt{Book.h}}
+#include "Attributes.h"
+
+using namespace std;
+
+class Book
+{
+public:
+    Book(Attributes * const attrs) : attributes(attrs) {}
+    virtual ~Book() { delete attributes; }
+
+    Attributes *get_attributes() const { return attributes; }
+
+private:
+    Attributes *attributes;      ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 指向 Attributes 对象的指针，而不是专门指向 FictionAttrs 或 CookbookAttrs}\par
+
+类 \texttt{Catalogue} 现在需要重载的 \texttt{add()} 成员函数：一个用于 \texttt{FictionAttrs}，一个用于 \texttt{CookbookAttrs}。类似地，它还需要重载的 \texttt{find()} 成员函数，如下一个代码清单所示。成员变量 \texttt{booklist} 仍然是一个指向 \texttt{Book} 对象的指针的 vector，而不是专门指向 \texttt{Fiction} 或 \texttt{Cookbook} 对象的指针，这是面向接口编程原则的又一个例子。
+
+\begin{codeboxt}{代码清单 2.15（程序 2.3 Books-3）：\texttt{Catalogue.h}}
+#include <vector>
+#include "Book.h"
+#include "FictionAttrs.h"
+#include "CookbookAttrs.h"
+#include "Catalogue.h"
+
+using namespace std;
+
+class Catalogue
+{
+public:
+    Catalogue() {}
+
+    ~Catalogue() ...
+
+    void add(FictionAttrs * const attrs)
+    {
+        booklist.push_back(new Fiction(attrs));            ①
+    }
+
+    void add(CookbookAttrs * const attrs)
+    {
+        booklist.push_back(new Cookbook(attrs));           ②
+    }
+
+    vector<Fiction  *> find(const FictionAttrs&  
+                                  target_attrs) const;     ③
+    vector<Cookbook *> find(const CookbookAttrs& 
+                                  target_attrs) const;     ④
+
+private:
+    vector<Book *> booklist;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 向目录中添加一本小说类图书。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 向目录中添加一本菜谱书。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 查找匹配的小说类图书。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 查找匹配的菜谱书。}\par
+
+这两个 \texttt{add()} 成员函数彼此相似，这两个 \texttt{find()} 成员函数也彼此相似。
+
+\begin{codeboxt}{代码清单 2.16（程序 2.3 Books-3）：\texttt{Catalogue.cpp}}
+#include "Book.h"
+#include "Fiction.h"
+#include "FictionAttrs.h"
+#include "Cookbook.h"
+#include "CookbookAttrs.h"
+#include "Catalogue.h"
+
+vector<Fiction *>Catalogue::find(const FictionAttrs& target_attrs)   ①
+    const
+{
+    vector<Fiction *> matches;
+    for (Book *book : booklist)
+    {
+        Fiction *fiction = dynamic_cast<Fiction *>(book);            ②
+
+        if (fiction != nullptr)                                      ②
+        {
+            FictionAttrs *fiction_attrs =                            ③
+                    dynamic_cast<FictionAttrs *>(book->get_attrs()); ③
+            if (fiction_attrs->is_match(target_attrs))               ④
+            {
+                matches.push_back(fiction);
+            }
+        }
+    }
+
+    return matches;
+}
+
+vector<Cookbook *>Catalogue::find(const CookbookAttrs& target_attrs)  ⑤
+    const
+{
+    vector<Cookbook *> matches;
+    for (Book *book : booklist)
+    {
+        Cookbook *cookbook = dynamic_cast<Cookbook *>(book);          ⑥
+
+        if (cookbook != nullptr)                                      ⑥
+        {
+            CookbookAttrs *cookbook_attrs =                           ⑦
+                    dynamic_cast<CookbookAttrs *>(book->get_attrs()); ⑦
+            if (cookbook_attrs->is_match(target_attrs))               ⑧
+            {
+                matches.push_back(cookbook);
+            }
+        }
+    }
+
+    return matches;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 查找与目标属性匹配的小说类图书。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 这本书是小说类图书吗？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 将指针转换为指向 FictionAttrs 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 把属性匹配委托给 FictionAttrs 类。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 查找与目标属性匹配的菜谱书。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 这本书是菜谱书吗？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 将指针转换为指向 CookbookAttrs 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 把属性匹配委托给 CookbookAttrs 类。}\par
+
+带 \texttt{FictionAttrs} 参数的重载 \texttt{add()} 成员函数会把一个新的 \texttt{Fiction} 图书对象追加到 booklist 中。带 \texttt{CookbookAttrs} 参数的重载 \texttt{add()} 成员函数则追加一个新的 \texttt{Cookbook} 图书对象。
+
+带 \texttt{FictionAttrs} 参数的重载 \texttt{find()} 成员函数只能检查 \texttt{Fiction} 图书对象。在遍历 booklist 中的每个图书对象时，下面这些语句
+
+\begin{codebox}
+Fiction *fiction = dynamic_cast<Fiction *>(book);
+if (fiction != nullptr) ...
+\end{codebox}
+
+检查变量 \texttt{book} 当前是否指向一个 \texttt{Fiction} 图书对象。如果它不是 \texttt{Fiction} 图书对象，指针变量 \texttt{fiction} 就被设为 \texttt{nullptr}，函数会跳过该对象。但当它是 \texttt{Fiction} 图书对象时，下面这些语句
+
+\begin{codebox}
+FictionAttrs *fiction_attrs =
+                  dynamic_cast<FictionAttrs *>(book->get_attrs());
+if (fiction_attrs->is_match(target_attrs))
+\end{codebox}
+
+首先把从 \texttt{book->get\_attrs()} 返回的 \texttt{Attributes} 指针转换为指向 \texttt{FictionAttrs} 对象的指针。然后，它们通过调用 \texttt{FictionAttrs} 对象的 \texttt{is\_match()} 成员函数，把属性匹配委托给该对象。\texttt{find()} 函数返回一个指针的 vector，这些指针指向任何匹配的 \texttt{Fiction} 图书对象。
+
+\begin{mySidebar}{在 C++ 中检查并转换指针类型}
+
+考虑接收 \texttt{FictionAttrs} 参数的重载 \texttt{Catalogue::find()} 成员函数。我们在遍历 vector \texttt{booklist} 中 \texttt{Book} 对象的 \texttt{for} 循环里声明了指针变量 \texttt{Book *book}。由于 \texttt{booklist} 存放的是指向 \texttt{Book} 对象的指针，在循环的每次迭代中，变量 \texttt{book} 都将指向某个从 \texttt{Book} 子类实例化而来的对象。如果该变量指向一个 \texttt{Fiction} 图书对象，那么下面这些语句中对 \texttt{dynamic\_cast<>()} 的调用
+
+\begin{codebox}
+    Fiction *fiction = dynamic_cast<Fiction *>(book);
+    if (fiction != nullptr) ...
+\end{codebox}
+
+会把 \texttt{Book} 指针转换为 \texttt{Fiction} 指针，因此指针变量 \texttt{fiction} 将指向一个 \texttt{Fiction} 对象。但如果变量 \texttt{book} 转而指向一个 \texttt{Cookbook} 对象，则动态转换将返回 \texttt{nullptr}。因此，这次对 \texttt{dynamic\_cast<>()} 的调用同时完成了指针类型检查和指针类型转换。我们用另一次对 \texttt{dynamic\_cast<>()} 的调用来检查并把 \texttt{Attributes} 指针转换为 \texttt{FictionAttrs} 指针。
+\end{mySidebar}
+
+我们可以类似地定义接收 \texttt{CookbookAttrs} 参数的重载 \texttt{find()} 成员函数。当该函数遍历 booklist 时，它必须检查 \texttt{Cookbook} 对象，并对这些对象把属性匹配委托给 \texttt{CookbookAttrs} 对象。它返回一个指针的 vector，这些指针指向匹配的 \texttt{Cookbook} 对象。
+
+当测试程序把书加载到目录中时，它调用重载的 \texttt{Catalogue::add()} 函数，要么传入一个 \texttt{FictionAttrs} 对象，
+
+\begin{codebox}
+    catalogue.add(new FictionAttrs("Little Women",
+                                   "Alcott", "Louisa",
+                                   1868, Genre::CLASSICS));
+\end{codebox}
+
+要么传入一个 \texttt{CookbookAttrs} 对象：
+
+\begin{codebox}
+    catalogue.add(new CookbookAttrs("The Woks of Life",
+                                    "Leung", "Bill", Region::CHINA));
+\end{codebox}
+
+\myGraphic{0.765}{images/CH02_F04_UN06_Mak.png}{}
+
+确实，如果需求进一步变化，目录必须存储并搜索其他种类的书，而且每种书都有独特的属性，那该怎么办呢？我们为了应对需求变化——即新种类的书和额外的图书属性——而让应用变得更复杂了。这种复杂度的例子包括：
+
+\begin{itemize}
+\item 每种书都需要一对 \texttt{Book} 和 \texttt{Attributes} 子类。
+\item 每种书都需要在类 \texttt{Catalogue} 中有一个重载的 \texttt{add()} 成员函数和一个重载的 \texttt{find()} 成员函数。这些函数的代码相似。
+\item 每个 \texttt{find()} 成员函数都需要一次 \texttt{dynamic\_cast<>()} 调用，以确保它检查的是正确种类的书，还需要另一次 \texttt{dynamic\_cast<>()} 调用，把指针转换为正确种类的属性。除此之外，这些成员函数的代码都很相似。
+\end{itemize}
+
+如果我们的应用需要管理更多种类的书，就会出现子类数量增加、代码重复以及运行时类型检查和转换的情况。
+
+\begin{mySidebar}{不要重复自己原则}
+
+重复的代码往往是糟糕设计的迹象。重复的代码不仅会增大程序的规模，还会使程序更难维护。如果你需要对重复的代码做一处改动，就必须对代码的多个副本做同样的改动。你会面临漏掉某个副本或无意中把各个副本改得互不一致的风险。
+
+消除重复代码的一种方法是只保留一份副本，将其作为单独的函数或单独的内聚类来共享。
+\end{mySidebar}
+
+表 2.1 展示了小说类图书和菜谱书目前的情况，以及当我们把实用指南书也纳入进来时会发生什么。
+
+\begin{center}
+{\bfseries 表 2.1 我们当前的设计需要许多类来处理不同种类的书及其属性。}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XXX}
+\toprule
+书的种类 & 类 & 属性 \\
+\midrule
+所有书 & \texttt{Book, Attributes} & title, last, first \\
+小说 & \texttt{Fiction, FictionAttrs} & year, genre \\
+菜谱书 & \texttt{Cookbook, CookbookAttrs} & region \\
+实用指南 & \texttt{Howto, HowtoAttrs} & subject \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+图 2.5 展示了我们迄今所设计的应用架构图。
+
+\myGraphic{0.980}{images/CH02_F05_Mak.png}{图 2.5 我们迄今所设计的应用架构图，展示了我们的类与子类及其关系。}
+
+\myGraphic{0.676}{images/CH02_F05_UN07_Mak.png}{}
+
+在第三次迭代之后，我们必须承认，用子类来处理图书和属性需求的变化是一次糟糕的设计决策，如果书的种类更多，这种方式将无法很好地扩展。图 2.6 展示了这次迭代后我们的进展。我们活该得到那些煤块！
+
+\myGraphic{0.391}{images/CH02_F06_Mak.png}{图 2.6 第三次开发迭代添加了子类 \texttt{Fiction}、\texttt{Cookbook}、\texttt{FictionAttrs} 和 \texttt{CookbookAttrs}。子类数量的增加，再加上新增的运行时类型检查和类型转换，告诉我们走错了一条决策路径。}
+
+\subsection{2.3.4 迭代 4：回溯之后更好的设计}
+
+让我们深吸一口气，回溯，并选择另一条决策分支。回想一下第 1 章所述的面向对象编程中类的用途。类有成员变量来维护对象在运行时的状态，每当对象的成员变量值发生变化时，对象就经历一次状态转换。类有成员函数来实现对象的行为。
+
+在我们的图书目录应用中，就我们迄今所设计的方案而言，子类 \texttt{Fiction} 和 \texttt{Cookbook} 与状态或行为几乎没什么关系。我们不需要这些子类。仅有类 \texttt{Book} 就应当足够了。
+
+子类 \texttt{FictionAttrs} 和 \texttt{CookbookAttrs} 表现出非常相似的行为，主要是在图书搜索期间执行属性匹配。然而，它们为各自不同的属性设置了不同的成员变量。有没有办法让 \texttt{Attributes} 类独自处理所有不同的属性，并消除它的子类呢？与任意种类的 \texttt{Book} 对象关联的一个 \texttt{Attributes} 对象，将不得不存储每个属性的名字和值。
+
+只要 C++ 程序中出现名—值对，我们就应该考虑标准模板库（standard template library, STL）中的 \texttt{map} 数据结构。STL 的 \texttt{map} 包含\emph{名—值}对，其中名字充当检索配对值的键。因此，\texttt{map} 中的对通常被称为\emph{键—值}对。当我们声明一个 \texttt{map} 时，必须同时指定键的数据类型和值的数据类型。所有键具有相同的数据类型，所有值也具有相同的数据类型。键和值的数据类型可以彼此不同。
+
+对于键的数据类型，我们可以定义枚举类 \texttt{Key}（代码清单 2.17）。我们需要为所有种类图书中的每个属性提供一个枚举常量。与键 \texttt{KIND} 配对的 map 值将指示书的种类：小说、菜谱书等。为了便于将来更改枚举常量列表，我们将把枚举类 \texttt{Key} 定义在它自己的 \texttt{Key.h} 源文件中。对于其他枚举类，我们也将照此办理。
+
+\begin{codeboxt}{代码清单 2.17（程序 2.4 Books-4）：\texttt{Key.h}}
+#include <iostream>
+
+using namespace std;
+
+enum class Key
+{
+    KIND, TITLE, LAST, FIRST, YEAR, GENRE, REGION, SUBJECT
+};
+
+inline ostream& operator <<(ostream& ostr, const Key& key)
+{
+    switch (key)
+    {
+        case Key::KIND:    ostr << "KIND";    break;
+        case Key::TITLE:   ostr << "TITLE";   break;
+        case Key::LAST:    ostr << "LAST";    break;
+        case Key::FIRST:   ostr << "FIRST";   break;
+        case Key::YEAR:    ostr << "YEAR";    break;
+        case Key::GENRE:   ostr << "GENRE";   break;
+        case Key::REGION:  ostr << "REGION";  break;
+        case Key::SUBJECT: ostr << "SUBJECT"; break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+我们的挑战将是键—值对中值的数据类型。值可以是字符串，例如与键 \texttt{TITLE} 配对的值；可以是整数，与键 \texttt{YEAR} 配对；也可以是任何一种枚举属性值，例如与键 \texttt{GENRE} 配对的 \texttt{Genre} 值。如果我们添加更多种类的书和属性键，它们的属性值可能引入更多数据类型。表 2.2 展示了我们目前拥有的键以及每个键所配对值的数据类型。
+
+\begin{center}
+{\bfseries 表 2.2 表示图书属性的键—值对。}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+键 & 配对值的数据类型 \\
+\midrule
+\texttt{KIND} & \texttt{enum class Kind} \\
+\texttt{TITLE} & \texttt{string} \\
+\texttt{LAST} & \texttt{string} \\
+\texttt{FIRST} & \texttt{string} \\
+\texttt{YEAR} & \texttt{int} \\
+\texttt{GENRE} & \texttt{enum class Genre} \\
+\texttt{REGION} & \texttt{enum class Region} \\
+\texttt{SUBJECT} & \texttt{enum class Subject} \\
+键的数据类型是 \texttt{enum class Key}。每个配对值的数据类型取决于键。 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+向 \texttt{Kind} 枚举常量中添加新种类的书（例如实用指南书）将很容易。
+
+\begin{codeboxt}{代码清单 2.18（程序 2.4 Books-4）：\texttt{Kind.h}}
+#include <iostream>
+
+using namespace std;
+
+enum class Kind
+{
+    FICTION, COOKBOOK, HOWTO
+};
+
+inline ostream& operator <<(ostream& ostr, const Kind& kind)
+{
+    switch (kind)
+    {
+        case Kind::FICTION:  ostr << "fiction";  break;
+        case Kind::COOKBOOK: ostr << "cookbook"; break;
+        case Kind::HOWTO:    ostr << "howto";    break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+在下一个代码清单中，我们以类似方式定义 \texttt{Genre} 枚举常量。
+
+\begin{codeboxt}{代码清单 2.19（程序 2.4 Books-4）：\texttt{Genre.h}}
+#include <iostream>
+
+using namespace std;
+
+enum class Genre
+{
+    ADVENTURE, CLASSICS, DETECTIVE, FANTASY, HISTORIC,
+    HORROR, ROMANCE, SCIFI
+};
+
+inline ostream& operator <<(ostream& ostr, const Genre& genre)
+{
+    switch (genre)
+    {
+        case Genre::ADVENTURE: ostr << "adventure"; break;
+        case Genre::CLASSICS:  ostr << "classics";  break;
+        case Genre::DETECTIVE: ostr << "detective"; break;
+        case Genre::FANTASY:   ostr << "fantasy";   break;
+        case Genre::HISTORIC:  ostr << "historic";  break;
+        case Genre::HORROR:    ostr << "horror";    break;
+        case Genre::ROMANCE:   ostr << "romance";   break;
+        case Genre::SCIFI:     ostr << "scifi";     break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+同样，在下面的代码清单中，我们定义 \texttt{Region} 枚举常量。
+
+\begin{codeboxt}{代码清单 2.20（程序 2.4 Books-4）：\texttt{Region.h}}
+#include <iostream>
+
+using namespace std;
+
+enum class Region
+{
+    CHINA, FRANCE, INDIA, ITALY, MEXICO, PERSIA, US
+};
+
+inline ostream& operator <<(ostream& ostr, const Region& region)
+{
+    switch (region)
+    {
+        case Region::CHINA:  ostr << "China";  break;
+        case Region::FRANCE: ostr << "France"; break;
+        case Region::INDIA:  ostr << "India";  break;
+        case Region::ITALY:  ostr << "Italy";  break;
+        case Region::MEXICO: ostr << "Mexico"; break;
+        case Region::PERSIA: ostr << "Persia"; break;
+        case Region::US:     ostr << "US";     break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+最后，我们定义 \texttt{Subject} 枚举常量。
+
+\begin{codeboxt}{代码清单 2.21（程序 2.4 Books-4）：\texttt{Subject.h}}
+#include <iostream>
+
+using namespace std;
+
+enum class Subject
+{
+    DRAWING, PAINTING, WRITING
+};
+
+inline ostream& operator <<(ostream& ostr, const Subject& subject)
+{
+    switch (subject)
+    {
+        case Subject::DRAWING:  ostr << "drawing";  break;
+        case Subject::PAINTING: ostr << "painting"; break;
+        case Subject::WRITING:  ostr << "writing";  break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+我们不再需要 \texttt{UNSPECIFIED} 值了。在我们的新设计中，如果搜索目标中缺少某个属性，那么该属性就是一个无关属性。
+
+我们需要为 \texttt{AttributeMap} 中的配对值定义一个公共数据类型，尽管存在好几种不同的底层数据类型（表 2.2）。因此，我们可以把每个对的 \texttt{AttributeValue} 定义为一个 \texttt{variant} 类型，其值可以是 \texttt{int}、\texttt{string}、\texttt{Kind}、\texttt{Genre}、\texttt{Region} 或 \texttt{Subject}，如下一个代码清单所示。
+
+\begin{codeboxt}{代码清单 2.22（程序 2.4 Books-4）：\texttt{Attributes.h}}
+#include <string>
+#include <map>
+#include <variant>
+
+#include "Key.h"
+#include "Kind.h"
+#include "Genre.h"
+#include "Region.h"
+#include "Subject.h"
+
+using namespace std;
+
+typedef variant<int, string,                                   ①
+               Kind, Genre, Region, Subject> AttributeValue;   ①
+
+typedef map<Key, AttributeValue> AttributeMap;                 ②
+
+enum type_indexes                                              ③
+{                                                              ③
+    INT_INDEX, STRING_INDEX,                                   ③
+    KIND_INDEX, GENRE_INDEX, REGION_INDEX, SUBJECT_INDEX       ③
+};                                                             ③
+
+class Attributes
+{
+public:
+    Attributes(AttributeMap *const pairs);
+    ~Attributes() { delete attribute_map; }
+
+    bool is_match(const Attributes& target_attrs) const;
+
+    friend ostream& operator <<(ostream& ostr,
+                                const Attributes& attrs);
+
+private:
+    AttributeMap *attribute_map;                               ④
+
+    bool is_matching_pair(const Key& target_key,
+                          const AttributeValue& target_value) const;
+
+    static bool equal_ignore_case(const string string1,
+                                  const string string2) ...
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 该 variant}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 属性 map}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 与 variant 数据类型对应的索引}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 属性 map}\par
+
+枚举类型 \texttt{type\_indexes} 的值与 variant 的数据类型相对应：\texttt{INT\_INDEX} 对应 \texttt{int}，\texttt{STRING\_INDEX} 对应 \texttt{string}，\texttt{KIND\_INDEX} 对应 \texttt{Kind}，等等。这些索引使我们能够在 \texttt{Attributes} 构造函数中（代码清单 2.23）核实 map 中每个键—值对的值具有正确的数据类型。这是防御式编程的一个例子——我们绝不希望创建一个无效的 \texttt{Attributes} 对象。
+
+\begin{codeboxt}{代码清单 2.23（程序 2.4 Books-4）：\texttt{Attributes.cpp}（第 1 部分，共 3 部分）}
+#include <iostream>
+#include <string>
+#include <cassert>
+
+#include "Key.h"
+#include "Kind.h"
+#include "Genre.h"
+#include "Region.h"
+#include "Subject.h"
+#include "Attributes.h"
+
+using namespace std;
+
+Attributes::Attributes(AttributeMap *pairs) : attribute_map(pairs)  ①
+{
+    for (AttributeMap::iterator it = pairs->begin();                ②
+         it != pairs->end(); it++)                                  ②
+    {
+        Key key   = it->first;
+        int index = it->second.index();
+
+        switch (key)
+        {
+            case Key::YEAR:
+                assert(index == INT_INDEX); break;
+
+            case Key::TITLE:
+            case Key::LAST:
+            case Key::FIRST:
+                assert(index == STRING_INDEX); break;
+
+            case Key::KIND:
+                assert(index == KIND_INDEX); break;
+
+            case Key::GENRE:
+                assert(index == GENRE_INDEX); break;
+
+            case Key::REGION:
+                assert(index == REGION_INDEX); break;
+
+            case Key::SUBJECT:
+                assert(index == SUBJECT_INDEX); break;
+        }
+    }
+}
+...
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① Attributes 构造函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 遍历 map 的元素，核实每个对的值具有正确的数据类型。}\par
+
+\begin{mySidebar}{防御式编程}
+
+设计良好的应用会实践防御式编程，以防范编程错误。函数应当只根据其参数值创建出正确的对象。
+
+对函数参数值执行运行时检查，以确保没有传入任何无效的值。不过，为了保持本书中示例程序简短，它们的函数通常不做参数检查。
+\end{mySidebar}
+
+成员函数 \texttt{is\_match()} 把这个 \texttt{Attributes} 对象与 \texttt{target\_attrs} 对象进行比较。只有当两个 \texttt{Attributes} 对象的 map 中所有对应的键—值元素都相等时，它们才匹配。迭代器 \texttt{target\_it} 遍历 \texttt{target\_attrs} 对象的 map 中的键—值元素。对于每个元素
+
+\begin{itemize}
+\item 第一项检查判断该属性的 map 是否包含目标元素的键。
+\item 如果第一项检查通过，那么第二项检查判断它们配对的值是否相等。
+\end{itemize}
+
+如果在遍历 \texttt{target\_attrs} 对象 map 的元素时任何一项检查失败，那么这两个属性对象就不匹配。如果某个特定属性（例如年份）不在目标 map 中，那么该属性在匹配时就是无关属性。
+
+\begin{codeboxt}{代码清单 2.24（程序 2.4 Books-4）：\texttt{Attributes.cpp}（第 2 部分，共 3 部分）}
+...
+bool Attributes::is_match(const Attributes& target_attrs) const
+{
+    AttributeMap *target_pairs = target_attrs.attribute_map;
+    AttributeMap::iterator it;
+    for (it = target_pairs->begin(); it != target_pairs->end(); it++)
+    {
+        Key            target_key   = it->first;
+        AttributeValue target_value = it->second;
+        if (!is_matching_pair(target_key, target_value))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool Attributes::is_matching_pair(
+                            const Key& target_key,
+                            const AttributeValue& target_value) const
+{
+    if (attribute_map->find(target_key) == attribute_map->end())
+    {
+        return false;
+    }
+
+    if ((*attribute_map)[target_key] == target_value)
+    {
+        return true;
+    }
+
+    if (target_value.index() == STRING_INDEX)
+    {
+        return equal_ignore_case(
+                        get<string>((*attribute_map)[target_key]),
+                        get<string>(target_value));
+    }
+
+    return false;
+}
+...
+\end{codeboxt}
+
+重载运算符 \texttt{<<}（代码清单 2.25）可能打印出的一个示例如下
+
+\begin{codebox}
+{KIND: fiction, TITLE: 'Carrie', LAST: 'King', FIRST: 'Stephen', 
+↪ YEAR: 1974, GENRE: horror}
+\end{codebox}
+
+\begin{codeboxt}{代码清单 2.25（程序 2.4 Books-4）：\texttt{Attributes.cpp}（第 3 部分，共 3 部分）}
+ostream& operator <<(ostream& ostr, const Attributes& attrs)
+{
+    AttributeMap *pairs = attrs.attribute_map;
+    AttributeMap::iterator it;
+
+    ostr << "{";
+
+    for (it = pairs->begin(); it != pairs->end(); it++)      ①
+    {
+        Key            key   = it->first;
+        AttributeValue value = it->second;
+
+        if (it != pairs->begin()) ostr << ", ";
+        ostr << key << ": ";
+
+        switch (key)
+        {
+            case Key::KIND:   ostr << get<Kind>(value); break;
+
+            case Key::TITLE:
+            case Key::LAST:
+            case Key::FIRST:  ostr << "'" << get<string>(value)
+                                   << "'"; break;
+
+            case Key::GENRE:  ostr << get<Genre>(value);  break;
+            case Key::YEAR:   ostr << get<int>(value);    break;
+
+            case Key::REGION: ostr << get<Region>(value); break;
+
+            default: break;
+        }
+    }
+
+    ostr << "}";
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 遍历 map 的键—值对。}\par
+
+类 \texttt{Book} 现在有了一个重载的 \texttt{operator <<} 来打印图书属性，但类本身并没有改变（代码清单 2.26）。
+
+\begin{codeboxt}{代码清单 2.26（程序 2.4 Books-4）：\texttt{Book.h}}
+#include <iostream>
+#include <string>
+#include "Attributes.h"
+
+using namespace std;
+
+class Book
+{
+    ...
+};
+
+inline ostream& operator <<(ostream& ostr, const Book& book)
+{
+    cout << *book.get_attributes();
+    return ostr;
+}
+\end{codeboxt}
+
+类 \texttt{Catalogue} 现在简单多了，如下一个代码清单所示。
+
+\begin{codeboxt}{代码清单 2.27（程序 2.4 Books-4）：\texttt{Catalogue.h}}
+#include <vector>
+#include "Book.h"
+
+using namespace std;
+
+class Catalogue
+{
+public:
+    void add(Attributes * const attrs);
+
+    vector<Book *> find(const Attributes& target_attrs) const;
+
+private:
+    vector<Book *> booklist;
+};
+\end{codeboxt}
+
+我们消除了重复的代码，现在遵循不要重复自己（Don't Repeat Yourself, DRY）原则。只有一个 \texttt{add()} 成员函数，也只有一个 \texttt{find()} 成员函数。我们不再需要对 \texttt{dynamic\_cast<>()} 的调用来进行运行时类型检查和转换。这种设计的一个额外好处是，一本书可以具有任意属性，不再局限于基于图书种类的某些特定属性，如下一个代码清单所示。
+
+\begin{codeboxt}{代码清单 2.28（程序 2.4 Books-4）：\texttt{Catalogue.cpp}}
+#include "Book.h"
+#include "Catalogue.h"
+
+void Catalogue::add(Attributes * const attrs)                     ①
+{
+    booklist.push_back(new Book(attrs));
+}
+
+vector<Book *>Catalogue::find(const Attributes& target_attrs)     ②
+    const
+{
+    vector<Book *> matches;
+    for (Book *book : booklist)
+    {
+        Attributes *book_attributes = book->get_attributes();
+        if (book_attributes->is_match(target_attrs))
+        {
+            matches.push_back(book);
+        }
+    }
+
+    return matches;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 只有一个 add() 成员函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 只有一个 find() 成员函数}\par
+
+在测试程序 \texttt{tester.cpp} 中，函数 \texttt{fill()} 现在用如下语句把一本书录入目录：
+
+\begin{codebox}
+    AttributeMap pairs3 =
+    {
+        {Key::KIND,  Kind::FICTION},
+        {Key::TITLE, string("To Kill a Mockingbird")},
+        {Key::LAST,  string("Lee")},
+        {Key::FIRST, string("Harper")},
+        {Key::YEAR,  1960},
+        {Key::GENRE, Genre::CLASSICS}
+    };
+    catalogue.add(new Attributes(new AttributeMap(pairs3)));
+\end{codebox}
+
+一个示例搜索是
+
+\begin{codebox}
+    AttributeMap target_pairs2 =
+    {
+        {Key::KIND,  Kind::FICTION},
+        {Key::LAST,  string("KING")},
+        {Key::GENRE, Genre::HORROR}
+    };
+    search(catalogue, Attributes(new AttributeMap(target_pairs2)));
+\end{codebox}
+
+字符串 \texttt{"KING"} 将匹配目录中的 \texttt{"King"}。输出为
+
+\begin{codebox}
+Find {KIND: fiction, LAST: 'KING', GENRE: horror}
+Matches:
+  {KIND: fiction, TITLE: 'Carrie', LAST: 'King', FIRST: 'Stephen', 
+  ↪YEAR: 1974, GENRE: horror}
+  {KIND: fiction, TITLE: 'It: A Novel', LAST: 'King', FIRST: 
+  ↪'Stephen', YEAR: 1986, GENRE: horror}
+\end{codebox}
+
+缺失的属性是无关属性，因此这次搜索将返回所有中国菜谱书：
+
+\begin{codebox}
+    AttributeMap target_pairsB =
+    {
+        {Key::REGION, Region::CHINA}
+    };
+    search(catalogue, Attributes(new AttributeMap(target_pairsB)));
+\end{codebox}
+
+输出为
+
+\begin{codebox}
+Find {REGION: China}
+Matches:
+  {KIND: cookbook, TITLE: 'The Wok of Life', LAST: 'Leung', FIRST: 
+  ↪'Bill', REGION: China}
+  {KIND: cookbook, TITLE: 'Chinese Cooking for Dummies', LAST: 'Yan', 
+  ↪FIRST: 'Martin', REGION: China}
+\end{codebox}
+
+图 2.7 表明，经过四次迭代后，我们得到了一个成功封装了书的种类及其属性变化的应用设计。只有类 \texttt{Attributes} 需要修改。类 \texttt{Book} 和 \texttt{Catalogue} 将无需修改。我们可以奖励自己一罐金子。
+
+\myGraphic{0.803}{images/CH02_F07_Mak.png}{图 2.7 花了四次迭代（其中包括一些回溯）才找到通往这样一个应用设计的开发路径：它能成功地封装书的种类及其属性的变化。}
+
+\myGraphic{0.793}{images/CH02_F07_UN08_Mak.png}{}
+
+本章演示了如何用四次迭代来开发这个图书应用。几乎所有的重大应用都将需要多次迭代，往往远不止四次。后续章节的示例程序会更短，我们将限制迭代的次数。
+
+\section*{小结}
+
+\begin{itemize}
+\item 获得一个设计良好的程序通常需要若干次开发迭代。要愿意从糟糕的设计决策中回溯。
+\item 单一职责原则（Single Responsibility Principle, SRP）指出，一个类应当是内聚的，并且只有一个主要职责。
+\item 封装变化原则指出，可能变化的代码应当被隔离起来，以免它的变化导致其他代码发生变化。
+\item 委托原则指出，一个类可以代表另一个类完成工作，而这项工作属于一个更合适的内聚类。
+\item 最少知识原则指出，类之间不应了解彼此的实现，因此这些类是松耦合的，彼此之间几乎没有（即使有也很少）依赖。
+\item 开闭原则指出，一个类应当对修改关闭，对扩展开放，从而同时提供稳定性和灵活性。
+\item 面向接口编程原则指出，为了获得运行时灵活性，我们不应编写只能与某个特定子类协同工作的代码，而应使用多态，编写能够与多个子类协同工作的代码。
+\item 不要重复自己原则指出，设计良好的代码不包含重复的代码副本。
+\item OOP 对于良好的应用设计很重要，但它并不是解决所有设计问题的万灵药。要明智地运用它的概念。例如，不要不必要地创建过多子类，从而使应用过于复杂。
+\item 使用更好的数据结构可以简化复杂的代码。
+\end{itemize}

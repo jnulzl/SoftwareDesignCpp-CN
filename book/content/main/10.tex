@@ -1,0 +1,844 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 适配器（Adapter）设计模式
+\item 外观（Façade）设计模式
+\end{itemize}
+\end{myChapterIntro}
+
+在本章中，我们要处理一个极其常见的问题：与遗留软件协同工作。这些代码可能来自我们无法修改的库，也可能是我们无法访问或以其他方式无法修改的其他外部代码。
+
+适配器设计模式提供了一种软件架构模型，用于把外部代码（例如来自某个库的代码）与现有应用中的代码集成起来。然而，这些外部代码与应用代码最初并非为协同工作而设计，而且两者我们都无法修改。该模式还能帮助应用与外部代码中可能发生、且不受我们控制的接口变化隔离开来。我们的示例应用必须生成一份关于各项校体育赛事上座率和场地的报告，但各个体育项目报告这些数据的方式各不相同。
+
+\myGraphic{0.893}{images/CH10_00_UN01_Mak.png}{}
+
+外观设计模式提供了一种更简单、更高层的接口，使那些我们无法修改的复杂代码更易于使用。我们的示例应用必须与多个组织交互，为校体育赛事筹集资金。
+
+\begin{myWarning}{注意}
+请务必阅读第 4 部分的引言，以了解关于设计模式的总体重要信息，并了解本章及后续各章如何讲解每种模式。
+\end{myWarning}
+
+\section{适配器设计模式集成代码}
+
+在开发应用时，我们可能需要引入一些外部代码，例如来自某个库的代码，或是先前为其他应用编写的代码。我们可能无法获得这些代码的源文件，也不了解它的实现方式，而且可能无法修改或不被允许修改这些代码。遗憾的是，由于接口不同，这些外部代码与我们的应用并不兼容。我们也可能无法修改自己的应用代码，因为有很多地方依赖它。适配器设计模式为解决这一经典的架构问题——集成那些最初并非为协同工作而设计的代码——提供了一种模型。
+
+\myGraphic{0.899}{images/CH10_00_UN02_Mak.png}{}
+
+举一个代码集成难题的例子：设想我们在开发一个绘图应用，其中包含各种形状对象，例如直线、矩形和圆。形状接口支持诸如设置形状颜色、大小和方向等绘制操作。现在要求我们向应用中加入一个文本对象。我们找到了一些现有的代码，可以编辑和显示文本，其接口支持设置文本颜色、字号和字体等操作。但文本接口与形状接口不兼容，而且文本代码最初并非为与形状代码协同工作而设计。适配器设计模式提供了一种集成形状接口与文本接口的模型。
+
+作为具体的例子，我们将开发另一个与体育报道相关的示例应用。为了演示，第一个版本不使用适配器设计模式，我们会指出它的缺陷。然后，我们设计使用适配器设计模式的第二个版本，并看看该模式带来的好处。
+
+在我们的示例应用中，一所学院的体育部需要了解每场校队棒球赛、校队橄榄球赛和校内排球赛的场地以及平均观众人数。它从棒球、橄榄球和排球组织那里获取这些信息。
+
+\subsection{10.1.1 期望的设计特性}
+
+一个需要与现有外部代码协同工作的应用应具备以下特性：
+
+\begin{itemize}
+\item \emph{DF 1}——我们无需修改应用代码或外部代码，就能让它们协同工作。
+\item \emph{DF 2}——我们的应用代码应与外部代码所做的任何接口变化隔离开来。
+\item \emph{DF 3}——向报告中再加入一项体育赛事应当很简单。
+\end{itemize}
+
+\subsection{10.1.2 使用适配器设计模式之前}
+
+假设由于缺乏协调，每个体育组织报告信息的方式各不相同，而且它们都不愿改变自己的报告方式。因此，类 \texttt{AttendanceReport} 需要三个重载的公有 \texttt{print()} 成员函数（图 10.1），每个体育项目对应一个。这些 \texttt{print()} 函数各自调用私有的 \texttt{legacy\_print()} 函数来完成实际的打印，但它只能接受一个 \texttt{AttendanceData} 参数。由于它是遗留代码，而且应用的其他部分可能依赖它，我们不希望修改这个函数。
+
+以下是这个上座率报告应用的示例输出：
+
+\begin{codebox}
+Baseball
+  stadium: 500
+Football
+  stadium: 2000
+Volleyball
+  open field: 150
+\end{codebox}
+
+该报告需要一些枚举常量和重载的运算符 \texttt{<<} 函数（代码清单 10.1）。
+
+\myGraphic{0.980}{images/CH10_F01_Mak.png}{图 10.1 在应用的第一个版本中，类 \texttt{BaseballData}、\texttt{FootballInfo} 和 \texttt{VolleyballStats} 以不同的方式呈现各自的场地和上座率数据。因此，类 \texttt{AttendanceReport} 需要一个嵌套的私有类 \texttt{ConvertedData} 和三个重载的公有 \texttt{print()} 成员函数。每个函数都调用私有的 \texttt{legacy\_print()} 成员函数。橄榄球和排球项目的 \texttt{print()} 函数使用类 \texttt{ConvertedData}，把 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 的数据分别转换成 \texttt{AttendanceData} 格式。\texttt{BaseballData} 已经就是这种格式。}
+
+\begin{codeboxt}{代码清单 10.1（程序 10.1 Fans）：\texttt{Enums.h}（设计模式之前）}
+#include <iostream>
+
+using namespace std;
+
+enum class Venue { STADIUM, FIELD };
+
+inline ostream& operator <<(ostream& ostr, const Venue& venue)
+{
+    switch (venue)
+    {
+        case Venue::STADIUM: ostr << "stadium";    break;
+        case Venue::FIELD:   ostr << "open field"; break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+类 \texttt{AttendanceReport} 的遗留 \texttt{legacy\_print()} 成员函数要求以 \texttt{AttendanceData} 对象的形式提供场地和上座率数据（代码清单 10.2）。我们不希望修改 \texttt{legacy\_print()}。
+
+\begin{codeboxt}{代码清单 10.2（程序 10.1 Fans）：\texttt{AttendanceData.h}（设计模式之前）}
+#include "Enums.h"
+
+class AttendanceData
+{
+public:
+    virtual ~AttendanceData() {}
+
+    virtual Venue get_venue()      const = 0;
+    virtual int   get_attendance() const = 0;
+};
+\end{codeboxt}
+
+只有类 \texttt{BaseballData} 符合这个接口（代码清单 10.3）。
+
+\begin{codeboxt}{代码清单 10.3（程序 10.1 Fans）：\texttt{BaseballData.h}（设计模式之前）}
+#include "Enums.h"
+#include "AttendanceData.h"
+
+class BaseballData : public AttendanceData
+{
+public:
+    Venue get_venue()      const override { return Venue::STADIUM; }
+    int   get_attendance() const override { return 500; }
+};
+\end{codeboxt}
+
+类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 不符合 \texttt{AttendanceData} 接口。也许橄榄球和排球项目的代码是从某个库中获取的，我们无法访问它们的源文件。类 \texttt{FootballInfo} 以标准模板库中的 \texttt{pair} 对象来呈现其场地和上座率数据。
+
+\begin{codeboxt}{代码清单 10.4（程序 10.1 Fans）：\texttt{FootballInfo.h}（设计模式之前）}
+#include <utility>
+#include "Enums.h"
+
+using namespace std;
+
+class FootballInfo  //无法修改！
+{
+public:
+    FootballInfo()
+    {
+        info.first  = Venue::STADIUM;
+        info.second = 2000;
+    }
+
+    pair<Venue, int> get_info() const { return info; }
+
+private:
+    pair<Venue, int> info;
+};
+\end{codeboxt}
+
+类 \texttt{VolleyballStats} 以 \texttt{struct} 来呈现其场地和上座率数据（代码清单 10.5）。
+
+\begin{codeboxt}{代码清单 10.5（程序 10.1 Fans）：\texttt{VolleyballStats.h}（设计模式之前）}
+#include "Enums.h"
+
+typedef struct
+{
+    Venue venue;
+    int   attendance;
+} VolleyballStruct;
+
+class VolleyballStats  //无法修改！
+{
+public:
+    VolleyballStats()
+    {
+        stats.venue      = Venue::FIELD;
+        stats.attendance = 150;
+    }
+
+    VolleyballStruct get_stats() const { return stats; }
+
+private:
+    VolleyballStruct stats;
+};
+\end{codeboxt}
+
+在类 \texttt{AttendanceReport} 中，我们需要三个重载的公有 \texttt{print()} 成员函数，分别接受 \texttt{AttendanceReport}、\texttt{FootballInfo} 和 \texttt{VolleyballStats} 参数。每个 \texttt{print()} 函数都调用私有的遗留函数 \texttt{legacy\_print()}，而后者只能接受一个 \texttt{AttendanceData} 对象。我们不希望修改这些遗留代码。因此，其中两个 \texttt{print()} 函数必须使用类 \texttt{ConvertedData}，把其参数数据转换成 \texttt{AttendanceData} 对象。
+
+\begin{codeboxt}{代码清单 10.6（程序 10.1 Fans）：\texttt{AttendanceReport.h}（设计模式之前）}
+#include <string>
+#include "AttendanceData.h"
+#include "FootballInfo.h"
+#include "VolleyballStats.h"
+
+using namespace std;
+
+class AttendanceReport
+{
+public:
+    void print(const AttendanceData& data,
+               const string title) const;
+
+    void print(const FootballInfo& info,
+               const string title) const;
+
+    void print(const VolleyballStats& stats,
+               const string title) const;
+
+private:
+    class ConvertedData : public AttendanceData                      ①
+    {                                                                ①
+    public:                                                          ①
+        ConvertedData(const Venue v, const int a)                    ①
+            : venue(v), attendance(a) {}                             ①
+                                                                     ①
+
+        Venue get_venue()      const override { return venue; }      ①
+        int   get_attendance() const override { return attendance; } ①
+                                                                     ①
+
+    private:                                                         ①
+        Venue venue;                                                 ①
+        int   attendance;                                            ①
+    };
+
+    //遗留代码：无法修改！
+    void legacy_print(const AttendanceData& data) const;             ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 内部的私有 ConvertedData 类，用于转换成 AttendanceData 对象}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 无法修改的遗留打印函数}\par
+
+\myGraphic{0.800}{images/CH10_F01_UN03_Mak.png}{}
+
+一个 \texttt{print()} 成员函数从该类的 \texttt{pair} 对象中获取 \texttt{FootballInfo} 的场地和观众人数，另一个 \texttt{print()} 成员函数从该类的 \texttt{struct} 中获取 \texttt{VolleyballStats} 的场地和观众人数。两者都必须使用内部的 \texttt{ConvertedData} 类来转换各自的数据。由于类 \texttt{BaseballData} 实现了 \texttt{AttendanceData} 接口，它的数据不需要转换。
+
+\begin{codeboxt}{代码清单 10.7（程序 10.1 Fans）：\texttt{AttendanceReport.cpp}（设计模式之前）}
+#include <iostream>
+#include <string>
+#include "AttendanceData.h"
+#include "BaseballData.h"
+#include "FootballInfo.h"
+#include "VolleyballStats.h"
+#include "AttendanceReport.h"
+
+using namespace std;
+
+void AttendanceReport::print(const AttendanceData& data,
+                             const string title) const
+{
+    cout << title << endl;
+    legacy_print(data);
+}
+
+void AttendanceReport::print(const FootballInfo& info,
+                             const string title) const
+{
+    Venue venue      = info.get_info().first;          ①
+    int   attendance = info.get_info().second;         ①
+
+    cout << title << endl;
+    legacy_print(ConvertedData(venue, attendance));    ②
+}
+
+void AttendanceReport::print(const VolleyballStats& stats,
+                             const string title) const
+{
+    Venue venue      = stats.get_stats().venue;        ③
+    int   attendance = stats.get_stats().attendance;   ③
+
+    cout << title << endl;
+    legacy_print(ConvertedData(venue, attendance));    ④
+}
+
+//遗留代码：无法修改！
+void AttendanceReport::legacy_print(const AttendanceData& data) const
+{
+    cout << "  " << data.get_venue()
+         << ": " << data.get_attendance() << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 从 FootballInfo 的 pair 对象中获取数据。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 使用 ConvertedData 把 FootballInfo 的数据转换成 AttendanceData。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 从 VolleyballStats 的 struct 中获取数据。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 使用 ConvertedData 把 VolleyballStats 的数据转换成 AttendanceData。}\par
+
+\myGraphic{0.876}{images/CH10_F01_UN04_Mak.png}{}
+
+测试程序生成了想要的报告，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 10.8（程序 10.1 Fans）：\texttt{tester.cpp}（设计模式之前）}
+#include "BaseballData.h"
+#include "FootballInfo.h"
+#include "VolleyballStats.h"
+#include "AttendanceReport.h"
+
+int main()
+{
+    BaseballData    baseball_data;
+    FootballInfo    football_info;
+    VolleyballStats volleyball_stats;
+
+    AttendanceReport report;
+    report.print(baseball_data,    "Baseball");
+    report.print(football_info,    "Football");
+    report.print(volleyball_stats, "Volleyball");
+
+    return 0;
+}
+\end{codeboxt}
+
+这个版本的上座率报告应用有几个重大缺陷，包括
+
+\begin{itemize}
+\item \emph{类承担多项职责}——类 \texttt{AttendanceReport} 既负责转换数据，又负责打印报告。
+\item \emph{类之间不是松耦合}——类 \texttt{AttendanceReport} 必须了解类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 的内部实现，才能获取它们的场地和观众人数。
+\item \emph{架构设计不灵活}——如果出现另一个场地和上座率数据来源，例如篮球赛的数据，就需要修改类 \texttt{AttendanceReport}。
+\end{itemize}
+
+\subsection{10.1.3 使用适配器设计模式之后}
+
+我们来看看适配器设计模式如何消除这些缺陷。它把数据转换代码封装起来，从而将这项职责从类 \texttt{AttendanceReport} 中移除。该模式引入了两个类 \texttt{FootballData} 和 \texttt{VolleyballData}，它们都实现 \texttt{AttendanceData} 接口（图 10.2）。类 \texttt{FootballData} 是包装（聚合）类 \texttt{FootballInfo} 的适配器。类似地，类 \texttt{VolleyballData} 是包装类 \texttt{VolleyballStats} 的适配器。这样一来，类 \texttt{AttendanceReport} 只需要一个公有 \texttt{print()} 成员函数，并且总是向它传入一个 \texttt{AttendanceData} 对象。
+
+\begin{mySidebar}{适配器设计模式}
+
+“把一个类的接口转换成客户期望的另一种接口。适配器让原本因为接口不兼容而无法协同工作的类能够一起工作”（GoF 139）。
+\end{mySidebar}
+
+适配器 \texttt{FootballData} 实现 \texttt{AttendanceData} 接口。它包装类 \texttt{FootballInfo} 并执行数据转换。成员变量 \texttt{football\_info} 指向被包装的 \texttt{FootballInfo} 对象。成员函数 \texttt{get\_venue()} 和 \texttt{get\_attendance()} 从 \texttt{FootballInfo} 类的 \texttt{info} 成员变量（一个 \texttt{pair} 对象）中提取场地和上座率数据（代码清单 10.9）。
+
+\myGraphic{0.980}{images/CH10_F02_Mak.png}{图 10.2 这个版本的应用使用适配器设计模式。适配器 \texttt{FootballData} 和 \texttt{VolleyballData} 各自实现 \texttt{AttendanceData} 接口。它们分别包装类 \texttt{FootballInfo} 和 \texttt{VolleyballStats}，并封装数据转换代码。图中以灰色显示的部分与图 10.1 相比在逻辑上没有变化。}
+
+\begin{codeboxt}{代码清单 10.9（程序 10.2 Fans-AdapterDP）：\texttt{FootballData.cpp}}
+#include "AttendanceData.h"
+#include "FootballInfo.h"
+
+class FootballData : public AttendanceData
+{
+public:
+    FootballData(FootballInfo info) : football_info(info) {}
+    Venue get_venue() const override       ①
+    {
+        return football_info.get_info().first;
+    }
+    int get_attendance() const override    ②
+    {
+        return football_info.get_info().second;
+    }
+
+private:
+    FootballInfo football_info;            ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 转换并返回场地数据。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 转换并返回上座率数据。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 包装一个 FootballInfo 对象。}\par
+
+类似地，适配器 \texttt{VolleyballData} 实现 \texttt{AttendanceData} 接口，包装类 \texttt{VolleyballStats} 并执行数据转换。成员变量 \texttt{volleyball\_stats} 指向被包装的 \texttt{VolleyballStats} 对象。成员函数 \texttt{get\_venue()} 和 \texttt{get\_attendance()} 从 \texttt{VolleyballStats} 类的 \texttt{stats} 成员变量（一个 \texttt{struct}）中提取场地和上座率数据（代码清单 10.10）。
+
+\begin{codeboxt}{代码清单 10.10（程序 10.2 Fans-AdapterDP）：\texttt{VolleyballData.cpp}}
+#include "AttendanceData.h"
+#include "VolleyballStats.h"
+class VolleyballData : public AttendanceData
+{
+
+public:
+    VolleyballData(VolleyballStats stats)
+        : volleyball_stats(stats) {}
+    Venue get_venue() const override          ①
+    {
+        return volleyball_stats.get_stats().venue;
+    }
+    int get_attendance() const override       ②
+    {
+        return volleyball_stats.get_stats().attendance;
+    }
+
+private:
+    VolleyballStats volleyball_stats;         ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 转换并返回场地数据。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 转换并返回上座率数据。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 包装一个 VolleyballStats 对象。}\par
+
+类 \texttt{AttendanceReport} 现在只需要一个公有 \texttt{print()} 成员函数，它接受一个 \texttt{AttendanceData} 参数。它不再进行任何数据转换。
+
+\begin{codeboxt}{代码清单 10.11（程序 10.2 Fans-AdapterDP）：\texttt{AttendanceReport.h}}
+#include <iostream>
+#include <string>
+#include "AttendanceData.h"
+
+using namespace std;
+
+class AttendanceReport
+{
+public:
+    void print(const AttendanceData& data, ①
+               const string title) const;
+
+private:
+    //遗留代码：无法修改！
+    void legacy_print(const AttendanceData& data) const;          ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 只有一个公有 print 函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 无法修改的遗留打印函数}\par
+
+测试程序创建这两个适配器类，并安排每个适配器去适配其对应的对象。输出与之前相同。
+
+\begin{codeboxt}{代码清单 10.12（程序 10.2 Fans-AdapterDP）：\texttt{tester.cpp}}
+#include "BaseballData.h"
+#include "FootballData.h"
+#include "VolleyballData.h"
+#include "FootballInfo.h"
+#include "VolleyballStats.h"
+#include "AttendanceReport.h"
+
+int main()
+{
+    BaseballData    baseball_data;
+    FootballInfo    football_info;
+    VolleyballStats volleyball_stats;
+
+    FootballData   football_data(football_info);        ①
+    VolleyballData volleyball_data(volleyball_stats);   ②
+
+    AttendanceReport report;
+    report.print(baseball_data,   "Baseball");
+    report.print(football_data,   "Football");
+    report.print(volleyball_data, "Volleyball");
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 适配一个 FootballInfo 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 适配一个 VolleyballStats 对象。}\par
+
+\myGraphic{0.829}{images/CH10_F02_UN05_Mak.png}{}
+
+使用适配器设计模式为上座率报告应用建模，带来了几项重要的好处：
+
+\begin{itemize}
+\item \emph{封装了数据转换}——适配器类 \texttt{FootballData} 和 \texttt{VolleyballData} 分别封装了来自类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 的数据转换。这就是封装变化原则（2.3.2 节）。
+\item \emph{单一类职责}——类 \texttt{AttendanceReport} 现在只承担打印报告的职责，不再承担数据转换职责。这就是单一职责原则（2.3 节）。适配器类 \texttt{FootballData} 和 \texttt{VolleyballData} 各自只承担转换数据这一职责。
+\item \emph{松耦合的类}——通过运用最少知识原则（2.3.2 节），类 \texttt{AttendanceReport} 与数据类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} 之间是松耦合的。我们无需修改类 \texttt{AttendanceReport}，就能添加新的数据类及其适配器。
+\end{itemize}
+
+\subsection{10.1.4 适配器的通用模型}
+
+图 10.3 展示了适配器设计模式的通用模型。回想 8.1.3 节，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案。
+
+\myGraphic{0.618}{images/CH10_F03_Mak.png}{图 10.3 适配器设计模式的通用模型。可与图 10.2 对照。类 \texttt{Adapter} 实现 \texttt{Target} 接口。它通过包装 \texttt{Adaptee} 类来适配后者，使其能够与 \texttt{Target} 接口协同工作。}
+
+表 10.1 展示了示例应用如何应用该模式。
+
+\begin{center}
+{\bfseries 表 10.1 示例应用对适配器方法设计模式的应用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的对应项 \\
+\midrule
+接口 \texttt{Target} & 接口 \texttt{AttendanceData} \\
+类 \texttt{Adapter} & 类 \texttt{FootballData} 和 \texttt{VolleyballData} \\
+类 \texttt{Adaptee} & 类 \texttt{FootballInfo} 和 \texttt{VolleyballStats} \\
+函数 \texttt{request}\texttt{()} & 函数 \texttt{get\_venue()} 和 \texttt{get\_attendance()} \\
+函数 \texttt{specific\_request()} & \texttt{FootballInfo::\allowbreak{}get\_\allowbreak{}info(\allowbreak{})\allowbreak{}.\allowbreak{}first}\newline{} \texttt{FootballInfo::\allowbreak{}get\_\allowbreak{}info(\allowbreak{})\allowbreak{}.\allowbreak{}second}\newline{} \texttt{VolleyballStats::\allowbreak{}get\_\allowbreak{}stats(\allowbreak{})\allowbreak{}.\allowbreak{}venue}\newline{} \texttt{VolleyballStats::\allowbreak{}get\_\allowbreak{}state(\allowbreak{})\allowbreak{}.\allowbreak{}attendance} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{10.1.5 适配器设计模式的另一种模型}
+
+适配器设计模式还有一种替代模型，它依靠多重继承而非包装来简化适配器类（图 10.4）。
+
+\myGraphic{0.980}{images/CH10_F04_Mak.png}{图 10.4 在适配器设计模式的替代版本中，适配器类 \texttt{FootballData} 实现 \texttt{AttendanceData} 接口，并继承（而非聚合）类 \texttt{FootballInfo}。适配器类 \texttt{VolleyballData} 实现 \texttt{AttendanceData} 接口，并继承类 \texttt{VolleyballStats}。两个适配器类都不做包装。图中以灰色显示的部分与图 10.2 相比在逻辑上没有变化。}
+
+适配器类 \texttt{FootballData} 实现 \texttt{AttendanceData} 接口，并继承类 \texttt{FootballInfo}。
+
+\begin{codeboxt}{代码清单 10.13（程序 10.3 Fans-AdapterDPx）：\texttt{FootballData.h}}
+#include "AttendanceData.h"
+#include "FootballInfo.h"
+
+class FootballData : public AttendanceData, ①
+                     public FootballInfo    ①
+{
+public:
+    Venue get_venue() const override        ②
+    {
+        return get_info().first;            ③
+    }
+
+    int get_attendance() const override     ④
+    {
+        return get_info().second;           ⑤
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 多重继承}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 继承自 AttendanceData}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 继承自 FootballInfo}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 继承自 AttendanceData}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 继承自 FootballInfo}\par
+
+类似地，适配器类 \texttt{VolleyballData} 实现 \texttt{AttendanceData} 接口，并继承类 \texttt{VolleyballStats}。
+
+\begin{codeboxt}{代码清单 10.14（程序 10.3 Fans-AdapterDPx）：\texttt{VolleyballData.h}}
+#include "AttendanceData.h"
+#include "VolleyballStats.h"
+
+class VolleyballData : public AttendanceData, ①
+                       public VolleyballStats ①
+{
+public:
+    Venue get_venue() const override          ②
+    {
+        return get_stats().venue;             ③
+    }
+
+    int get_attendance() const override       ④
+    {
+        return get_stats().attendance;        ⑤
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 多重继承}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 继承自 AttendanceData}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 继承自 VolleyballStats}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 继承自 AttendanceData}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 继承自 VolleyballStats}\par
+
+测试程序更简单，因为它不必了解类 \texttt{FootballInfo} 和 \texttt{VolleyballStats}，只需了解它们的适配器。
+
+\begin{codeboxt}{代码清单 10.15（程序 10.3 Fans-AdapterDPx）：\texttt{tester.cpp}}
+#include "BaseballData.h"
+#include "FootballData.h"
+#include "VolleyballData.h"
+#include "AttendanceReport.h"
+
+int main()
+{
+    BaseballData   baseball_data;
+    FootballData   football_data;
+    VolleyballData volleyball_data;
+
+    AttendanceReport report;
+
+    report.print(baseball_data,   "Baseball");
+    report.print(football_data,   "Football");
+    report.print(volleyball_data, "Volleyball");
+
+    return 0;
+}
+\end{codeboxt}
+
+图 10.5 展示了适配器设计模式替代版本的模型。
+
+\myGraphic{0.678}{images/CH10_F05_Mak.png}{图 10.5 适配器设计模式替代版本的模型。可与图 10.4 对照。类 \texttt{Adapter} 依靠多重继承。}
+
+图 10.5 中的 \texttt{Adapter} 类依靠多重继承，称为\emph{类适配器}。图 10.3 中的 \texttt{Adapter} 类依靠对象组合（包装），称为\emph{对象适配器}。
+
+\myGraphic{0.892}{images/CH10_F05_UN06_Mak.png}{}
+
+我们应根据应用的需要来决定使用哪种类型的适配器。对象适配器可以共享。如果多个被适配类具有相同的接口，同一个对象适配器的多个实例可以各自包装一个被适配对象。由于对象适配器聚合了被适配类，它也能包装被适配类的所有子类。相比之下，使用类适配器时，客户端不必了解被适配类。由于类适配器使用继承，它可以重写被适配类的成员函数。如果这两种类型适配器的这些特性对某个应用来说无关紧要，那么用哪种适配器都行。
+
+\section{外观设计模式隐藏接口子系统}
+
+我们在面对一大片现有代码时可能遇到的另一个常见问题是：它复杂且难以使用。外观设计模式提供了一种应用架构模型，用来隐藏由多个接口组成的子系统。应用通过用一个更简单的接口来充当子系统接口的前端，从而做到这一点。这是我们在日常生活中经常使用的一种模式。
+
+设想我们开车出发去旅行。我们必须与汽车的若干个部件交互：
+
+\begin{enumerate}
+\item 打开车门。
+\item 坐到驾驶座上。
+\item 关上车门。
+\item 踩下刹车。
+\item 点火启动。
+\item 换挡。
+\item 松开驻车制动。
+\item 踩下油门。
+\end{enumerate}
+
+但每次出发时，我们通常并不会逐一去想每个步骤。相反，我们有一个“发动汽车”的习惯，让我们能不加思索地按顺序完成所有步骤。这个习惯就是我们的外观，它隐藏了所有步骤。我们只需发动汽车即可。
+
+关于使用外观设计模式的具体编程示例，设想一所学院的体育部每年必须为其体育赛事开展几次筹款活动。它必须向校友募捐、安排与后援俱乐部的筹款会议，并收取学生费用。我们再假设大学行政部门也会协助筹款。我们将设计两个版本的筹款应用。第一个版本不使用外观设计模式，它会有若干缺陷。第二个版本使用该模式，我们将看到它带来的好处。
+
+\subsection{10.2.1 期望的设计特性}
+
+此类应用的设计特性应包括
+
+\begin{itemize}
+\item \emph{DF 1}——应用不应依赖其多个组件中任何一个的接口或实现。
+\item \emph{DF 2}——应用不应关心其各组件执行任务的顺序。
+\item \emph{DF 3}——应用只需与单个接口交互，就能管理其各组件。
+\end{itemize}
+
+\subsection{10.2.2 使用外观设计模式之前}
+
+类 \texttt{AthleticsDept} 和 \texttt{Administration} 各自都要开展筹款，因此每个类都必须与类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 交互（图 10.6）。类 \texttt{AthleticsDept} 和 \texttt{Administration} 各自都调用类 \texttt{Alumni} 的 \texttt{send\_solicitations()} 成员函数、类 \texttt{BoosterClubs} 的 \texttt{schedule\_meetings()} 成员函数，以及类 \texttt{Students} 的 \texttt{collect\_fees()} 成员函数。
+
+\myGraphic{0.980}{images/CH10_F06_Mak.png}{图 10.6 为了开展筹款，类 \texttt{AthleticsDept} 和 \texttt{Administration} 各自都必须调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 中相应的成员函数。}
+
+类 \texttt{Alumni} 的成员函数 \texttt{send\_solicitations()} 是筹款的一部分。
+
+\begin{codeboxt}{代码清单 10.16（程序 10.4 Funds）：\texttt{Alumni.h}（设计模式之前）}
+#include <iostream>
+
+using namespace std;
+
+class Alumni
+{
+public:
+    void send_solicitations()
+    {
+        cout << "Send solicitations to alumni." << endl;
+    }
+};
+\end{codeboxt}
+
+类 \texttt{BoosterClubs} 的成员函数 \texttt{schedule\_meetings()} 也是筹款的一部分。
+
+\begin{codeboxt}{代码清单 10.17（程序 10.4 Funds）：\texttt{BoosterClubs.h}（设计模式之前）}
+#include <iostream>
+
+using namespace std;
+
+class BoosterClubs
+{
+public:
+    void schedule_meetings()
+    {
+        cout << " Schedule meetings with booster clubs." << endl;
+    }
+};
+\end{codeboxt}
+
+最后，类 \texttt{Students} 的成员函数 \texttt{collect\_fees()} 是筹款的又一部分。
+
+\begin{codeboxt}{代码清单 10.18（程序 10.4 Funds）：\texttt{Students.h}（设计模式之前）}
+#include <iostream>
+
+using namespace std;
+
+class Students
+{
+public:
+    void collect_fees()
+    {
+        cout << " Collect student fees." << endl;
+    }
+};
+\end{codeboxt}
+
+为了开展筹款，类 \texttt{AthleticsDept} 的成员函数 \texttt{raise\_funds()} 调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 的成员函数。
+
+\begin{codeboxt}{代码清单 10.19（程序 10.4 Funds）：\texttt{AthleticsDept.h}（设计模式之前）}
+#include <iostream>
+#include "Alumni.h"
+#include "BoosterClubs.h"
+#include "Students.h"
+
+using namespace std;
+
+class AthleticsDept
+{
+public:
+    void raise_funds()
+    {
+        Alumni alumni;
+        BoosterClubs clubs;
+        Students students;
+
+        cout << endl << "ATHLETICS DEPARTMENT" << endl;
+
+        alumni.send_solicitations();
+        clubs.schedule_meetings();
+        students.collect_fees();
+    }
+};
+\end{codeboxt}
+
+为了协助筹款，类 \texttt{Administration} 的成员函数 \texttt{aid\_fundraising()} 调用同样的成员函数。
+
+\begin{codeboxt}{代码清单 10.20（程序 10.4 Funds）：\texttt{Administration.h}（设计模式之前）}
+#include <iostream>
+#include "Alumni.h"
+#include "BoosterClubs.h"
+#include "Students.h"
+
+using namespace std;
+
+class Administration
+{
+public:
+    void aid_fundraising()
+    {
+        Alumni alumni;
+        BoosterClubs clubs;
+        Students students;
+
+        cout << endl << "SCHOOL ADMINISTRATION" << endl;
+
+        alumni.send_solicitations();
+        clubs.schedule_meetings();
+        students.collect_fees();
+    }
+};
+\end{codeboxt}
+
+\myGraphic{0.918}{images/CH10_F06_UN07_Mak.png}{}
+
+测试程序调用类 \texttt{AthleticsDept} 和 \texttt{Administration} 来开展筹款。
+
+\begin{codeboxt}{代码清单 10.21（程序 10.4 Funds）：\texttt{tester.cpp}（设计模式之前）}
+#include "AthleticsDept.h"
+#include "Administration.h"
+
+int main()
+{
+    AthleticsDept athletics;
+    athletics.raise_funds();
+    Administration administration;
+    administration.aid_fundraising();
+
+    return 0;
+}
+\end{codeboxt}
+
+应用的输出为
+
+\begin{codebox}
+ATHLETICS DEPARTMENT
+Send solicitations to alumni.
+Schedule meetings with booster clubs.
+Collect student fees.
+
+SCHOOL ADMINISTRATION
+Send solicitations to alumni.
+Schedule meetings with booster clubs.
+Collect student fees.
+\end{codebox}
+
+这个版本的筹款应用的缺陷包括
+
+\begin{itemize}
+\item \emph{重复的代码}——类 \texttt{AthleticsDept} 和 \texttt{Administration} 都调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 的筹款成员函数。
+\item \emph{代码不灵活}——如果我们为筹款添加更多类，类 \texttt{AthleticsDept} 和 \texttt{Administration} 都需要修改。
+\end{itemize}
+
+\subsection{10.2.3 使用外观设计模式之后}
+
+外观设计模式减少了重复的代码，并把筹款接口隐藏在类 \texttt{FundRaiser} 这个外观类之后。该外观类提供的接口比类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 提供的接口更简单、层次更高。
+
+\begin{mySidebar}{外观设计模式}
+
+“为子系统中的一组接口提供一个统一的接口。外观定义了一个更高层的接口，使这个接口更易于使用”（GoF 183）。
+\end{mySidebar}
+
+类 \texttt{AthleticsDept} 的 \texttt{raise\_funds()} 成员函数和类 \texttt{Administration} 的 \texttt{the aid\_fundraising()} 成员函数都只需调用类 \texttt{FundRaiser} 的成员函数 \texttt{do\_fund\_raising()}（图 10.7）。
+
+\myGraphic{0.980}{images/CH10_F07_Mak.png}{图 10.7 依据外观设计模式建模的架构把筹款的细节隐藏在类 \texttt{FundRaiser} 这个外观类之后，该外观类提供一个更高层的接口，简化了对由类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 组成的子系统的使用。}
+
+外观类 \texttt{FundRaiser} 的成员函数 \texttt{do\_fund\_raising()} 通过调用类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 的成员函数与它们交互。
+
+\begin{codeboxt}{代码清单 10.22（程序 10.5 Funds-FaçadeDP）：\texttt{FundRaiser.h}}
+#include "Alumni.h"
+#include "BoosterClubs.h"
+#include "Students.h"
+
+class FundRaiser
+{
+public:
+    void do_fund_raising()
+    {
+        Alumni alumni;
+        BoosterClubs clubs;
+        Students students;
+
+        alumni.send_solicitations();
+        clubs.schedule_meetings();
+        students.collect_fees();
+    }
+};
+\end{codeboxt}
+
+类 \texttt{AthleticsDept} 只需与外观类交互，调用它的 \texttt{do\_fund\_raising()} 成员函数。
+
+\begin{codeboxt}{代码清单 10.23（程序 10.5 Funds-FaçadeDP）：\texttt{AthleticsDept.h}}
+#include <iostream>
+#include "FundRaiser.h"
+
+using namespace std;
+
+class AthleticsDept
+{
+public:
+    void raise_funds()
+    {
+        FundRaiser fund_raiser;    ①
+
+        cout << endl << "ATHLETICS DEPARTMENT" << endl;
+        fund_raiser.do_fund_raising();
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 外观类}\par
+
+类似地，类 \texttt{Administration} 也只需与外观类交互。
+
+\begin{codeboxt}{代码清单 10.24（程序 10.5 Funds-FaçadeDP）：\texttt{Administration.h}}
+#include <iostream>
+#include "FundRaiser.h"
+
+using namespace std;
+
+class Administration
+{
+public:
+    void raise_funds()
+    {
+        FundRaiser fund_raiser;        ①
+
+        cout << endl << "SCHOOL ADMINISTRATION" << endl;
+        fund_raiser.do_fund_raising();
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 外观类}\par
+
+\myGraphic{0.836}{images/CH10_F07_UN08_Mak.png}{}
+
+依据外观设计模式来建模该架构有几项关键好处：
+
+\begin{itemize}
+\item \emph{减少了代码重复}——外观类封装了所有筹款操作，这些代码只需出现一次。这就是不要重复自己原则（2.3.3 节）。
+\item \emph{松耦合的类}——类 AthleticsDept 和 Administration 对类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 没有任何依赖。这就是最少知识原则（2.3.2 节）。
+\item \emph{代码更灵活}——如果我们为筹款再添加一个类，例如 \texttt{CorporateSponsors,} 只有外观类需要修改。这就是封装变化原则（2.3.2 节）。
+\item \emph{子系统更易于使用}——外观类用一个隐藏子系统接口的简单接口，使 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 子系统更易于使用。
+\end{itemize}
+
+\subsection{10.2.4 外观的通用模型}
+
+图 10.8 展示了外观设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
+
+\myGraphic{0.645}{images/CH10_F08_Mak.png}{图 10.8 外观设计模式的通用模型。可与图 10.7 对照。类 \texttt{Façade} 隐藏了子系统类的接口，并使由类 \texttt{Alumni}、\texttt{BoosterClubs} 和 \texttt{Students} 组成的子系统更易于使用。}
+
+表 10.2 展示了示例应用如何应用该模式。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
+
+\begin{center}
+{\bfseries 表 10.2 示例应用对外观方法设计模式的应用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的对应项 \\
+\midrule
+类 \texttt{ClientA}\texttt{,} \texttt{ClientB}\texttt{,} 等 & 类 \texttt{AthleticsDept} 和 \texttt{Administration} \\
+类 \texttt{Façade} & 类 \texttt{FundRaiser} \\
+类 \texttt{SubsystemClass1}\texttt{,} \texttt{SubsystemClass} \texttt{2} 等 & 类 \texttt{Alumni}\texttt{,} \texttt{BoosterClubs}\texttt{,} 和 \texttt{Students} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\myGraphic{0.914}{images/CH10_F08_UN09_Mak.png}{}
+
+\section*{小结}
+
+\begin{itemize}
+\item 适配器设计模式为一种软件架构建模，它把被适配类的接口转换成目标接口。这样就能集成那些最初并非为协同工作而设计的代码。
+\item 适配器设计模式的一个版本使用对象组合，把被适配类的对象包装在一个实现目标接口的适配器类中。
+\item 该模式的另一个版本依靠多重继承，其中适配器类实现目标接口，并且是被适配类的子类。
+\item 外观设计模式用一个更简单、更高层的接口隐藏由若干类组成的子系统的多个接口，从而使该子系统更易于使用。
+\end{itemize}

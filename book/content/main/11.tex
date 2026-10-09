@@ -1,0 +1,1537 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 迭代器设计模式
+\item 访问者设计模式
+\end{itemize}
+\end{myChapterIntro}
+
+本章的两个设计模式为那些必须灵活访问存储在各种数据结构（如 vector、链表和树）中的数据的应用提供了模型。示例应用延续了生成体育报告这一主题。
+
+\myGraphic{0.893}{images/CH11_00_UN01_Mak.png}{}
+
+迭代器设计模式使单个算法无需知道集合是如何实现的，就能遍历多个顺序集合中的对象。我们的第一个示例应用就是依据这一设计模式建模的。该应用的算法可以生成一份关于多支棒球队球员的报告，即便每支球队都以不同形式的顺序集合来存储球员数据。
+
+访问者设计模式处理的是包含不同类型数据的单个数据集合。该集合通常组织为树结构。该模式封装了不同的算法，每个算法都用于处理树节点。我们的第二个示例程序就依据这一设计模式建模。该应用的各个算法可以从同一份校内比赛数据集合生成不同的报告。
+
+\myGraphic{0.899}{images/CH11_00_UN02_Mak.png}{}
+
+\begin{myWarning}{注意}
+请务必阅读第 4 部分的引言，其中包含关于设计模式总体的重要信息，并说明了本章及后续各章如何讲解每个模式。
+\end{myWarning}
+
+\section{迭代器设计模式封装了针对不同顺序集合的遍历}
+
+我们常常需要编写代码来遍历顺序集合中的对象，并对每个对象执行操作。这些对象的类型相同，但集合的形式各不相同。例如，一个应用可能需要处理一个由员工对象构成的数组、一个 vector 和一个链表。无论对象存储在何种形式的顺序集合中，应用都必须能够依次访问每个对象，并执行算法来计算相应员工的薪酬。
+
+本节演示如何使用迭代器设计模式，它使应用无需知道集合是如何实现的，就能遍历对象的顺序集合。对象的顺序集合要么为空，要么具有以下性质：
+
+\begin{itemize}
+\item 其中一个对象是第一个对象，其中一个对象是最后一个对象。如果集合中只有一个对象，那么该对象既是序列的第一个，也是最后一个。
+\item 除最后一个对象外，每个对象都有一个唯一的后继对象。
+\item 我们可以按从第一个到最后一个的顺序，一次访问集合中的一个对象。
+\item 我们能够判断何时已访问完序列中的所有对象，也就是何时已到达集合的末尾。
+\end{itemize}
+
+数组、vector 和链表都是顺序集合的例子。我们甚至可以把 C++ 的 map 也视为顺序集合，因为它在内部按键对其对象进行排序存储。
+
+举一个具体的例子，假设体育部门想要打印每支校内棒球队的球员名单。该部门并不关心名单中球员的具体顺序，只要名单包含每位球员的学号和姓名即可。team 1、team 2 和 team 3 的一组示例打印名单如下
+
+\begin{codebox}
+TEAM 1
+12436 Alwin, Jim
+26410 Bond, Bob
+14306 Charles, Ronda
+61835 Dunn, Fred
+30437 Edwards, Gina
+76517 Fanning, Pat
+98734 Galway, Leslie
+14998 Hiroshi, Scott
+47303 Ingles, Mary
+
+TEAM 2
+12436 Jackson, Tammy
+44551 Killebrew, Wally
+14306 Lamprey, Roberta
+61835 Mays, Serena
+30437 Norton, Donna
+76517 OBrien, George
+98734 Paulson, Marsha
+14998 Quark, John
+47303 Rogers, Jena
+
+TEAM 3
+10547 Ulster, Doug
+38331 Vicks, Ron
+40067 Aaron, Patricia
+46841 Smith, Ken
+47781 Wong, Henrietta
+56712 Yonnick, Billy
+61472 Xavier, Nancy
+72288 Zachs, Robby
+98765 Terrance, Laura
+\end{codebox}
+
+另外，假设由于缺乏协调，每支球队存储其 \texttt{Player} 对象列表所用的顺序集合形式都与其他球队不同。Team 1 使用数组，team 2 使用 vector，team 3 使用 map。
+
+\subsection{11.1.1 期望的设计特性}
+
+一个其算法必须处理不同形式的对象顺序集合的应用，应具有以下设计特性：
+
+\begin{itemize}
+\item \emph{DF 1}——应用应能够在不知道顺序集合如何实现的情况下，执行处理这些对象的算法。
+\item \emph{DF 2}——各个集合之间应相互独立。
+\item \emph{DF 3}——应当能够在不修改应用算法代码的情况下添加新的顺序集合。
+\end{itemize}
+
+\subsection{11.1.2 使用迭代器设计模式之前}
+
+对于我们的示例球队报告应用的第一个版本而言，采用三个 \texttt{Team} 子类来生成球员名单（每种集合形式对应一个子类，见图 11.1），并且为每种集合形式提供一个重载的 \texttt{print()} 成员函数，这样的架构并非不合理。
+
+\myGraphic{0.980}{images/CH11_F01_Mak.png}{图 11.1 每个 \texttt{Team} 子类都将其 \texttt{Player} 对象存储在不同类型的顺序集合中，即数组、vector 或 map。因此，类 \texttt{TeamReport} 有三个重载的 \texttt{print()} 成员函数，每种集合类型各一个。}
+
+类 \texttt{Player} 包含每位球员的学号、姓和名。一支棒球队由九名球员组成，因此为简单起见，我们将集合大小硬编码为九。
+
+\begin{codeboxt}{代码清单 11.1（程序 11.1 Players）：\texttt{Player.h}（使用设计模式之前）}
+#include <string>
+using namespace std;
+class Player
+{
+
+public:
+    Player(const long id, const string last, const string first)
+        : student_id(id), last_name(last), first_name(first) {}
+
+    long   get_student_id() const { return student_id; }
+    string get_last_name()  const { return last_name; }
+    string get_first_name() const { return first_name; }
+
+private:
+    long   student_id;
+    string last_name;
+    string first_name;
+};
+\end{codeboxt}
+
+每个 \texttt{Team} 子类都以不同形式的顺序集合来存储其 \texttt{Player} 对象的顺序集合。
+
+\begin{codeboxt}{代码清单 11.2（程序 11.1 Players）：\texttt{Team.h}（使用设计模式之前）}
+#include <string>
+#include <vector>
+#include <map>
+#include "Player.h"
+
+using namespace std;
+
+class Team
+{
+public:
+    Team(const string id) : id(id) {}
+
+    string get_id() const { return id; }
+
+private:
+    string id;
+};
+
+class Team_1 : public Team
+{
+public:
+    Team_1();
+
+    ~Team_1() { for (int i = 0; i < 9; i++) delete players[i]; }
+
+    Player **get_players() { return players; }
+
+private:
+    Player *players[9];           ①
+};
+
+class Team_2 : public Team
+{
+public:
+    Team_2();
+
+    ~Team_2 () { for (int i = 0; i < 9; i++) delete players[i]; }
+
+    vector<Player *> get_players() const { return players; }
+
+private:
+    vector<Player *> players;     ②
+};
+
+class Team_3 : public Team
+{
+public:
+    Team_3();
+
+    ~Team_3 ()
+    {
+        for (auto it = players.begin(); it != players.end(); it++)
+        {
+            delete it->second;
+        }
+    }
+
+    map<long, Player *> get_players() const { return players; }
+
+private:
+    map<long, Player *> players;  ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 存储在数组中的 Player 对象}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 存储在 vector 中的 Player 对象}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 存储在 map 中的 Player 对象}\par
+
+C++ \texttt{map} 的每个元素都是一个 \texttt{pair} 对象，其成员变量 \texttt{first} 是键，成员变量 \texttt{second} 是对应的值。\texttt{map} 在内部按键对其元素进行排序存储。
+
+\myGraphic{0.779}{images/CH11_F01_UN03_Mak.png}{}
+
+每个 \texttt{Team} 子类的构造函数会依据集合类型，以某种方式将球员录入该球队的顺序集合。
+
+\begin{codeboxt}{代码清单 11.3（程序 11.1 Players）：\texttt{Team.cpp}（使用设计模式之前）}
+#include "Team.h"
+
+Team_1::Team_1() : Team("TEAM 1")   ①
+{
+    players[0] = new Player(12436, "Alwin", "Jim");
+    players[1] = new Player(26410, "Bond", "Bob");
+    players[2] = new Player(14306, "Charles", "Ronda");
+    players[3] = new Player(61835, "Dunn", "Fred");
+    players[4] = new Player(30437, "Edwards", "Gina");
+    players[5] = new Player(76517, "Fanning", "Pat");
+    players[6] = new Player(98734, "Galway", "Leslie");
+    players[7] = new Player(14998, "Hiroshi", "Scott");
+    players[8] = new Player(47303, "Ingles", "Mary");
+}
+
+Team_2::Team_2() : Team("TEAM 2")   ②
+{
+    players.push_back(new Player(12436, "Jackson", "Tammy"));
+    players.push_back(new Player(44551, "Killebrew", "Wally"));
+    players.push_back(new Player(14306, "Lamprey", "Roberta"));
+    players.push_back(new Player(61835, "Mays", "Serena"));
+    players.push_back(new Player(30437, "Norton", "Donna"));
+    players.push_back(new Player(76517, "OBrien", "George"));
+    players.push_back(new Player(98734, "Paulson", "Marsha"));
+    players.push_back(new Player(14998, "Quark", "John"));
+    players.push_back(new Player(47303, "Rogers", "Jena"));
+}
+
+Team_3::Team_3() : Team("TEAM 3")   ③
+{
+    players[46841] = new Player(46841, "Smith", "Ken");
+    players[98765] = new Player(98765, "Terrance", "Laura");
+    players[10547] = new Player(10547, "Ulster", "Doug");
+    players[38331] = new Player(38331, "Vicks", "Ron");
+    players[47781] = new Player(47781, "Wong", "Henrietta");
+    players[57974] = new Player(61472, "Xavier", "Nancy");
+    players[56712] = new Player(56712, "Yonnick", "Billy");
+    players[72288] = new Player(72288, "Zachs", "Robby");
+    players[40067] = new Player(40067, "Aaron", "Patricia");
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 录入到数组中。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 录入到 vector 中。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 录入到 map 中。}\par
+
+由于球队球员有三种不同类型的顺序集合，类 \texttt{TeamReport} 有三个重载的 \texttt{print()} 成员函数来打印这些名单。
+
+\begin{codeboxt}{代码清单 11.4（程序 11.1 Players）：\texttt{TeamReport.h}（使用设计模式之前）}
+#include "Team.h"
+
+using namespace std;
+
+class TeamReport
+{
+public:
+    void print(Team_1& team) const;
+    void print(Team_2& team) const;
+    void print(Team_3& team) const;
+};
+\end{codeboxt}
+
+每个 \texttt{print()} 成员函数都必须以适合数组、vector 或 map 的方式，遍历其 \texttt{Player} 对象的顺序集合。
+
+\begin{codeboxt}{代码清单 11.5（程序 11.1 Players）：\texttt{TeamReport.cpp}（使用设计模式之前）}
+#include <iostream>
+#include "Player.h"
+#include "TeamReport.h"
+#include "Team.h"
+
+using namespace std;
+
+void TeamReport::print(Team_1& team) const
+{
+    cout << endl;
+    cout << team.get_id() << endl;
+
+    Player **players = team.get_players();
+
+    for (int i = 0; i < 9; i++)                           ①
+    {
+        cout << players[i]->get_student_id() << " ";
+        cout << players[i]->get_last_name()  << ", ";
+        cout << players[i]->get_first_name() << endl;
+    }
+}
+
+void TeamReport::print(Team_2& team) const
+{
+    cout << endl;
+    cout << team.get_id() << endl;
+
+    for (Player *player : team.get_players())             ②
+    {
+        cout << player->get_student_id() << " ";
+        cout << player->get_last_name()  << ", ";
+        cout << player->get_first_name() << endl;
+    }
+
+}
+
+void TeamReport::print(Team_3& team) const
+{
+    cout << endl;
+    cout << team.get_id() << endl;
+
+    map<long, Player *> players = team.get_players();
+    map<long, Player *>::iterator it;
+
+    for (it = players.begin(); it != players.end(); it++) ③
+    {
+        cout << it->second->get_student_id() << " ";
+        cout << it->second->get_last_name()  << ", ";
+        cout << it->second->get_first_name() << endl;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 遍历数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 遍历 vector。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 遍历 map。}\par
+
+一个测试程序会打印本节开头给出的那组示例名单。
+
+\begin{codeboxt}{代码清单 11.6（程序 11.1 Players）：\texttt{tester.cpp}（使用设计模式之前）}
+#include "TeamReport.h"
+#include "Team.h"
+
+int main()
+{
+    TeamReport reporter;
+
+    Team_1 team_1;
+    reporter.print(team_1);
+
+    Team_2 team_2;
+    reporter.print(team_2);
+
+    Team_3 team_3;
+    reporter.print(team_3);
+
+    return 0;
+}
+\end{codeboxt}
+
+\myGraphic{0.886}{images/CH11_F01_UN04_Mak.png}{}
+
+这个版本的名单应用存在若干设计问题，尤其是在类 \texttt{TeamReport} 中：
+
+\begin{itemize}
+\item \emph{重复的代码}——每个重载的 \texttt{print()} 成员函数都必须依据集合的形式，以不同方式遍历其 \texttt{Player} 对象的顺序集合。如果有更多的球队和用于存储球员的顺序集合（比如链表或树），这个问题会变得更加严重。
+\item \emph{类之间未松耦合}——每个重载的 \texttt{print()} 函数都必须知道 \texttt{Player} 对象是如何存储的，才能正确遍历其顺序集合。因此，类 \texttt{TeamReport} 与其 \texttt{Team} 子类之间并未松耦合。
+\end{itemize}
+
+\subsection{11.1.3 使用迭代器设计模式之后}
+
+这是一个迭代器设计模式能够帮助解决的架构问题。核心思路是让客户端代码（我们应用中的类 \texttt{TeamReport}）把遍历不同形式的 \texttt{Player} 对象顺序集合这一任务，委托给各个迭代器类。每个迭代器类都知道如何遍历某种特定形式的序列，并且能够提供对 \texttt{Player} 对象的访问，而无需向客户端代码暴露这些对象是如何存储的。
+
+\begin{mySidebar}{迭代器设计模式}
+
+“提供一种顺序访问聚合对象各元素的方法，而无需暴露其底层表示”（GoF 257）。
+\end{mySidebar}
+
+迭代器设计模式使类 \texttt{TeamReport} 能与 \texttt{Team} 子类松耦合。每个子类不再拥有一个 \texttt{ge}\texttt{t}\texttt{\_}\texttt{players()} 成员函数来直接访问其 \texttt{Player} 对象的顺序集合。因此，每个子类都可以隐藏它实现集合的方式。取而代之的是，每个子类拥有一个 \texttt{create\_iterator()} 成员函数，用来创建一个 \texttt{Iterator} 对象，该对象知道如何遍历该子类中的 \texttt{Player} 对象集合。
+
+类 \texttt{TeamReport} 让各个 \texttt{Iterator} 子类来完成遍历 \texttt{Player} 对象序列的工作。每种形式的顺序集合都有一个 \texttt{Iterator} 子类。因此，类 \texttt{TeamReport} 无需知道每个 \texttt{Team} 子类是如何实现其顺序集合的（图 11.2）。
+
+\myGraphic{0.847}{images/CH11_F01_UN05_Mak.png}{}
+
+\texttt{Iterator} 超类声明了两个纯虚成员函数：\texttt{next()} 和 \texttt{has\_next()}。它的每个子类都有一个私有的 \texttt{cursor} 成员变量，用于跟踪其序列中当前的 \texttt{Player} 对象。依据顺序集合的类型，游标可以是数组下标、vector 迭代器或 map 迭代器。每个子类构造函数都会将其游标初始化为序列的开头。\texttt{next()} 成员函数返回游标处的 \texttt{Player} 对象（即当前元素），并将游标推进到下一个元素。\texttt{has\_next()} 成员函数在还有更多元素时返回 true，在游标已越过序列末尾时返回 false（代码清单 11.7）。
+
+\myGraphic{0.980}{images/CH11_F02_Mak.png}{图 11.2 每个 \texttt{Team} 子类都创建一个适合其 \texttt{Player} 对象顺序集合的迭代器。类 \texttt{TeamReport} 将遍历各种形式的顺序集合的工作委托给各个 \texttt{Iterator} 子类。每个 \texttt{Iterator} 子类都知道如何遍历其形式的顺序集合，并拥有一个私有的 \texttt{cursor} 成员变量来跟踪当前的 \texttt{Player} 对象。类 \texttt{TeamReport} 不知道每个 \texttt{Team} 子类如何存储其 \texttt{Player} 对象序列，因此它与 \texttt{Team} 子类松耦合。图中灰色部分相较图 11.1 在逻辑上没有变化。}
+
+\begin{codeboxt}{代码清单 11.7（程序 11.2 Players-IteratorDP）：\texttt{Iterator.h}}
+#include "Player.h"
+
+class Iterator
+{
+public:
+    virtual ~Iterator() {};
+
+    virtual Player *next() = 0;
+    virtual bool has_next() const = 0;
+};
+
+class ArrayIterator : public Iterator
+{
+public:
+    ArrayIterator(Player *ps[]) : players(ps), cursor(0) {}
+
+    Player *next() override { return players[cursor++]; }  ①
+                                                           ①
+
+    bool has_next() const override                         ①
+    {                                                      ②
+        return cursor < 9;                                 ②
+    }                                                      ②
+
+private:
+    Player **players;
+    int cursor;                                            ③
+};
+
+class VectorIterator : public Iterator
+{
+public:
+    VectorIterator(const vector<Player *> ps)
+        : players(ps), cursor(players.begin()) {}
+
+    Player *next() override { return *(cursor++); }        ④
+                                                           ④
+
+    bool has_next() const override                         ④
+    {                                                      ④
+        return cursor != players.end();                    ④
+    }                                                      ④
+
+private:
+    vector<Player *> players;
+    vector<Player *>::iterator it;                         ⑤
+};
+
+class MapIterator : public Iterator
+{
+public:
+    MapIterator(const map<long, Player *> ps)
+        : players(ps), cursor(players.begin()) {}
+
+    Player *next() override { return (cursor++)->second; } ⑥
+                                                           ⑥
+
+    bool has_next() const override                         ⑥
+    {                                                      ⑥
+        return cursor != players.end();                    ⑥
+    }                                                      ⑥
+
+private:
+    map<long, Player *> players;
+    map<long, Player *>::iterator cursor;                  ⑦
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 遍历数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 遍历数组。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 数组游标}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 遍历 vector。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ vector 游标}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 遍历 map。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ map 游标}\par
+
+现在，每个 \texttt{Team} 子类都必须创建并返回一个适合其顺序集合形式的迭代器对象。
+
+\begin{codeboxt}{代码清单 11.8（程序 11.2 Players-IteratorDP）：\texttt{Team.h}}
+#include <string>
+#include <vector>
+#include <map>
+#include "Player.h"
+#include "Iterator.h"
+
+using namespace std;
+
+class Team
+{
+public:
+    Team(const string id) : id(id) {}
+    virtual ~Team() {}
+
+    string get_id() const { return id; }
+
+    virtual Iterator *create_iterator() = 0;
+
+private:
+    string id;
+};
+
+class Team_1: public Team
+{
+public:
+    Team_1();
+    ~Team_1() { for (int i = 0; i < 9; i++) delete players[i]; }
+
+    Iterator *create_iterator() override
+    {
+        return new ArrayIterator(players);   ①
+    }
+
+private:
+    Player *players[9];
+};
+
+class Team_2 : public Team
+{
+public:
+    Team_2();
+    ~Team_2 () { for (int i = 0; i < 9; i++) delete players[i]; }
+
+    Iterator *create_iterator() override
+    {
+        return new VectorIterator(players);  ②
+    }
+
+private:
+    vector<Player *> players;
+};
+
+class Team_3 : public Team
+{
+public:
+    Team_3();
+
+    ~Team_3 ()
+    {
+        for (auto it = players.begin(); it != players.end(); it++)
+        {
+            delete it->second;
+        }
+    }
+
+    Iterator *create_iterator() override
+    {
+        return new MapIterator(players);     ③
+    }
+
+private:
+    map<long, Player *> players;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 创建并返回一个数组迭代器。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 创建并返回一个 vector 迭代器。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 创建并返回一个 map 迭代器。}\par
+
+我们可以把类 \texttt{TeamReport} 精简到只剩一个 \texttt{print()} 成员函数。
+
+\begin{codeboxt}{代码清单 11.9（程序 11.2 Players-IteratorDP）：\texttt{TeamReport.h}}
+#include "Team.h"
+
+class TeamReport
+{
+public:
+    void print(Team& team);
+};
+\end{codeboxt}
+
+现在，类 \texttt{TeamReport} 将遍历不同 \texttt{Player} 对象顺序集合的任务委托给各个 \texttt{Iterator} 子类。因此，它的成员函数 \texttt{print()} 的实现变得简单得多，如下一代码清单所示。对 \texttt{create\_iterator()} 的调用依赖多态，为球队的 \texttt{Player} 对象顺序集合创建并返回合适的 \texttt{Iterator} 对象。
+
+\begin{codeboxt}{代码清单 11.10（程序 11.2 Players-IteratorDP）：\texttt{TeamReport.cpp}}
+#include <iostream>
+#include "Player.h"
+#include "Team.h"
+#include "TeamReport.h"
+
+using namespace std;
+
+void TeamReport::print(Team& team)
+{
+    cout << endl;
+    cout << team.get_id() << endl;
+
+    Iterator *it = team.create_iterator();  ①
+
+    while (it->has_next())                  ②
+    {
+        Player *player = it->next();        ③
+        cout << player->get_student_id() << " ";
+        cout << player->get_last_name()  << ", ";
+        cout << player->get_first_name() << endl;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态创建合适的迭代器。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 顺序集合中还有更多的 Player 对象吗？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 获取指向当前 Player 对象的指针，并推进到下一个对象。}\par
+
+同一个测试程序（代码清单 11.6）会生成相同的输出。
+
+\myGraphic{0.808}{images/CH11_F02_UN06_Mak.png}{}
+
+使用迭代器设计模式带来了若干重要好处：
+
+\begin{itemize}
+\item \emph{委托遍历}——类 \texttt{TeamReport} 将遍历顺序集合的工作委托给各个 \texttt{Iterator} 子类，这是委托原则（2.3.2 节）的一个应用。
+\item \emph{类之间松耦合}——类 \texttt{TeamReport} 不再需要知道每个 \texttt{Team} 子类如何实现其顺序集合，这是最少知识原则（2.3.2 节）的一个应用。因此，类 \texttt{TeamReport} 与 \texttt{Team} 子类松耦合。
+\item \emph{封装的遍历算法}——各个 \texttt{Iterator} 子类封装了用于遍历各种形式顺序集合的不同算法，这是封装变化原则（2.3.2 节）的一个应用。
+\item \emph{减少的代码重复}——遍历算法不再重复，这是不要重复自己原则（2.3.3 节）的一个应用。
+\item \emph{可共享的遍历算法}——在相似的顺序集合之间共享这些算法，或为其他集合添加新算法，都将变得很容易。
+\end{itemize}
+
+\subsection{11.1.4 迭代器的通用模型}
+
+图 11.3 展示了迭代器设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能针对某个架构问题构造出定制的解决方案（8.1.3 节）。
+
+\myGraphic{0.912}{images/CH11_F03_Mak.png}{图 11.3 迭代器设计模式的通用模型。可与图 11.2 对照。客户端将遍历顺序集合的工作委托给各个 \texttt{Iterator} 子类，因此客户端与这些集合松耦合。表 11.1 展示了示例应用如何应用该模式。}
+
+\begin{center}
+{\bfseries 表 11.1 示例应用对迭代器设计模式的应用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的应用 \\
+\midrule
+类 \texttt{Client} & 类 \texttt{TeamReport} \\
+超类 \texttt{SequentialCollection} & 超类 \texttt{Team} \\
+具体顺序集合 & 子类 \texttt{Team\_1}、\texttt{Team\_2} 和 \texttt{Team\_3} \\
+超类 \texttt{Iterator} & 超类 \texttt{Iterator} \\
+具体迭代器 & \texttt{ArrayIterator}、\texttt{VectorIterator} 和 \texttt{MapIterator} \\
+项 & \texttt{Player} 对象 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{mySidebar}{C++ 迭代器}
+
+我们对迭代器设计模式的实现在部分 \texttt{Iterator} 子类中使用了 C++ 原生迭代器（代码清单 11.7），即 \texttt{vector<Player *>::\allowbreak{}iterator} 和 \texttt{map<long,\allowbreak{} Player *>::\allowbreak{}iterator}。C++ 原生迭代器并不完全符合迭代器设计模式。它们没有迭代器超类，因此无法运用面向接口编程原则，编写一个像成员函数 \texttt{TeamReport::print()} 那样（代码清单 11.10）在运行时利用多态获取合适迭代器的函数。如果我们需要借助多态来遍历不同的顺序集合，迭代器设计模式可以作为 C++ 迭代器的良好包装。
+\end{mySidebar}
+
+\section{访问者设计模式封装了作用于数据集合的不同算法}
+
+访问者设计模式处理的是作用于应用数据集合的不同算法。该模式常用于为数据呈层次结构的架构提供模型；因此，该集合是一种树数据结构。其中的对象是树的节点，它们可以由不同的类实例化而来；因此，节点的数据可能涉及不同的数据类型。树顶端的节点是根节点。（在软件中，树常常是倒着生长的。）
+
+在运行时，应用会对这棵树进行多轮遍历。每一轮都采用一个算法，从根节点开始逐层向下访问（存取）每个节点。在一次访问过程中，算法会依据数据类型对节点数据执行相应的操作。每一轮都可以使用不同的算法。访问者设计模式封装了这些不同的算法。
+
+\myGraphic{0.717}{images/CH11_F03_UN07_Mak.png}{}
+
+图 11.4 是一个以树结构形式表示某商店所售商品的数据集合示例。顶部的 Store（商店）节点是根节点。树的节点包括三个部门：Produce（农产品）、Soups（汤品）和 Soaps（皂类）。Produce 部门有 Vegetables（蔬菜）和 Fruits（水果）两个类别。Soaps 部门有 Bar（块状皂）、Dish（洗碗皂）和 Laundry（洗衣皂）三个类别。树底部的叶节点（灰色阴影）表示商品。
+
+\myGraphic{0.884}{images/CH11_F04_Mak.png}{图 11.4 一个表示某商店层次化数据的示例树数据结构。Store 是根节点。中间的树节点是商店的部门 Produce、Soups 和 Soaps；Produce 部门中的类别 Vegetables 和 Fruits；以及 Soaps 部门中的类别 Bar、Dish 和 Laundry。底部的叶节点（灰色阴影）是商品。}
+
+这个商店应用可以对树进行多轮遍历，每一轮执行不同的算法。例如，第一轮的算法可以简单地按部门和类别层次化地打印数据。如果商品节点包含单价和已售数量，第二轮的算法可以打印每种商品售出了多少件。第三轮的算法可以计算并打印各部门销售这些商品所获得的收入。
+
+作为一个具体例子，我们将延续体育部门打印报告这一主题。假设该部门想要一个应用，用来打印关于某个周末进行的校内比赛的报告。名为 North、South、East 和 West 的宿舍楼各有参加棒球、橄榄球和排球比赛的队伍。我们可以把这个数据集合表示为一棵树结构（图 11.5）。每个 \texttt{Game} 节点都有指向叶 \texttt{Hall} 节点的指针，这些叶节点表示每场比赛获胜和落败的宿舍楼。\texttt{Game} 节点还各自包含其比赛的获胜得分和落败得分。\texttt{Intramural} 节点还有一个 \texttt{Hall} 对象的 vector，用来跟踪所有宿舍楼。这个 vector 不属于层次化树结构的一部分。
+
+\myGraphic{0.892}{images/CH11_F05_Mak.png}{图 11.5 一个以树结构形式表示的数据集合，它代表由宿舍楼 North、South、East 和 West 的队伍所进行的校内棒球、橄榄球和排球比赛。每个 \texttt{Games} 节点都有指向获胜和落败宿舍楼 \texttt{Hall} 节点的指针，并且还包含其比赛的获胜得分和落败得分。\texttt{Intramural} 节点还有一个 \texttt{Hall} 对象的 vector。}
+
+我们的校内比赛报告应用对这棵树进行三轮遍历。每一轮都使用不同的算法来打印一份特定的报告。第一轮的算法打印一份包含比赛结果的得分报告（Scores Report）：
+
+\begin{codebox}
+SCORES REPORT
+
+  baseball
+     West Hall beat  East Hall  5 to  3
+     East Hall beat South Hall  3 to  0
+
+  football
+    North Hall beat  West Hall 27 to 21
+
+  volleyball
+     West Hall beat South Hall 15 to 10
+    North Hall beat South Hall 15 to 13
+    South Hall beat  West Hall 15 to 14
+\end{codebox}
+
+第二轮的算法打印一份活动报告（Activities Report），显示每种运动各进行了多少场比赛：
+
+\begin{codebox}
+ACTIVITIES REPORT
+
+    baseball: 2 game(s)
+    football: 1 game(s)
+  volleyball: 3 game(s)
+\end{codebox}
+
+最后，第三轮的算法打印一份获胜报告（Winnings Report），显示每个宿舍楼赢了多少场比赛：
+
+\begin{codebox}
+WINNINGS REPORT
+
+  North Hall won 2 game(s)
+  South Hall won 1 game(s)
+   East Hall won 1 game(s)
+   West Hall won 2 game(s)
+\end{codebox}
+
+\subsection{11.2.1 期望的设计特性}
+
+一个对数据集合进行多轮遍历、且每一轮使用不同算法的应用，应具有以下设计特性：
+
+\begin{itemize}
+\item \emph{DF 1}——各轮算法之间应相互独立。
+\item \emph{DF 2}——数据集合与作用于集合数据的算法之间应相互独立。
+\item \emph{DF 3}——添加新的轮次及其算法时，不应需要修改数据集合。
+\end{itemize}
+
+\subsection{11.2.2 使用访问者设计模式之前}
+
+作为示范，应用的第一个版本将不使用访问者设计模式，它会存在一些重大缺陷。之后，我们会重构代码，使其依据该模式建模，并突出使用该模式带来的好处。
+
+图 11.6 展示了我们如何用四个类把这一层次化数据集合实现为一棵树：\texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall}。除 \texttt{Hall}（它表示叶节点）之外，每个类都聚合层次结构中紧邻其下的那个类。每个类都有成员变量和成员函数，用来实现这三个报告生成算法。
+
+\myGraphic{0.980}{images/CH11_F06_Mak.png}{图 11.6 校内体育报告应用第一个版本的四个主要类。为实现层次化树结构，除 \texttt{Hall} 之外的每个类都聚合层次结构中紧邻其下的那个类。每个类都有成员变量和成员函数，用来实现生成报告的算法。\texttt{Intramural} 类的 \texttt{Hall} 对象 vector 不属于该层次结构。}
+
+类 \texttt{Intramural} 有私有成员变量 \texttt{sports}，它是树数据结构下一层的 \texttt{Sport} 对象 vector。它还有私有成员变量 \texttt{halls}，一个用于跟踪所有宿舍楼的 vector。我们不能简单地依赖让所有 \texttt{Hall} 对象都被 \texttt{Game} 对象唯一指向，因为一个宿舍楼可能参加不止一场（或零场）比赛。类 \texttt{Sport} 有私有成员 \texttt{games}，它是树下一层中该运动的 \texttt{Game} 对象 vector。类 \texttt{Game} 有私有成员变量 \texttt{winner} 和 \texttt{loser}，它们分别指向表示获胜和落败宿舍楼的 \texttt{Hall} 对象，位于树的最底层。它还有私有成员变量 \texttt{winner\_points} 和 \texttt{loser\_points}。
+
+两个枚举类提供了枚举常量。每个类都有一个重载的 \texttt{<<} 输出运算符，用于生成报告。
+
+\begin{codeboxt}{代码清单 11.11（程序 11.3 Results）：\texttt{Enums.h}（使用设计模式之前）}
+#include <iostream>
+
+using namespace std;
+
+enum class SportType { BASEBALL, FOOTBALL, VOLLEYBALL };
+
+inline ostream& operator <<(ostream& ostr, const SportType& type)
+{
+    switch (type)
+    {
+        case SportType::BASEBALL   : ostr << "baseball";   break;
+        case SportType::FOOTBALL   : ostr << "football";   break;
+        case SportType::VOLLEYBALL : ostr << "volleyball"; break;
+    }
+
+    return ostr;
+}
+
+enum class HallName { NORTH, SOUTH, EAST, WEST };
+
+inline ostream& operator <<(ostream& ostr, const HallName& hall)
+{
+    switch (hall)
+    {
+        case HallName::NORTH : ostr << "North Hall"; break;
+        case HallName::SOUTH : ostr << "South Hall"; break;
+        case HallName::EAST  : ostr << "East Hall";  break;
+        case HallName::WEST  : ostr << "West Hall";  break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+每个 \texttt{Hall} 对象代表一个宿舍楼。它的私有 \texttt{win\_count} 成员变量记录该宿舍楼赢得比赛的次数。这个数字会为每个宿舍楼出现在获胜报告中。
+
+\begin{codeboxt}{代码清单 11.12（程序 11.3 Results）：\texttt{Hall.h}（使用设计模式之前）}
+#include "Enums.h"
+
+using namespace std;
+
+class Hall
+{
+public:
+    Hall(const HallName name) : name(name), win_count(0) {}
+
+    HallName get_name() const { return name; }
+
+    void increment_win_count() { win_count++; }
+    void print_win_count() const;
+
+private:
+    HallName name;
+    int win_count;
+};
+\end{codeboxt}
+
+成员函数 \texttt{print\_win\_count()} 打印获胜报告中的一行。例如，它可以打印
+
+\begin{codebox}
+North Hall won 2 game(s)
+\end{codebox}
+
+\begin{codeboxt}{代码清单 11.13（程序 11.3 Results）：\texttt{Hall.cpp}（使用设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "Hall.h"
+
+void Hall::print_win_count() const       ①
+{
+    cout << setw(12) << name << " won "
+         << win_count << " game(s)" << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印获胜报告中的一行。}\par
+
+每个 \texttt{Game} 对象代表两个宿舍楼之间进行的一场校内比赛。它的两个私有成员变量 \texttt{winner} 和 \texttt{loser} 分别指向代表赢得和输掉该比赛的宿舍楼的对象。成员变量 \texttt{winner\_points} 和 \texttt{loser\_points} 分别是获胜者和落败者的比赛得分。
+
+\begin{codeboxt}{代码清单 11.14（程序 11.3 Results）：\texttt{Game.h}（使用设计模式之前）}
+#include "Hall.h"
+
+using namespace std;
+
+class Game
+{
+public:
+    Game(Hall * const winner, const int winner_points,
+         Hall * const loser , const int loser_points)
+        : winner(winner), loser(loser),
+          winner_points(winner_points),
+          loser_points(loser_points)
+    {
+        winner->increment_win_count();
+    }
+
+    void print_game_score() const;
+
+private:
+    Hall *winner;
+    Hall *loser;
+
+    int winner_points;
+    int loser_points;
+};
+\end{codeboxt}
+
+成员函数 \texttt{print\_game\_score()} 打印单场比赛的结果，作为得分报告的一部分。例如，它可以打印
+
+\begin{codebox}
+West Hall beat East Hall 5 to 3
+\end{codebox}
+
+\begin{codeboxt}{代码清单 11.15（程序 11.3 Results）：\texttt{Game.cpp}（使用设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "Hall.h"
+#include "Game.h"
+
+using namespace std;
+
+void Game::print_game_score() const       ①
+{
+    cout << setw(14) << winner->get_name() << " beat "
+         << setw(10) << loser->get_name()
+         << setw(3)  << winner_points
+         << " to "   << setw(2) << loser_points << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印得分报告中的一行。}\par
+
+每个 \texttt{Sport} 对象代表一种运动，即棒球、橄榄球或排球。它的私有成员变量 \texttt{games} 是一个 vector，存放该运动类型已进行的比赛。成员函数 \texttt{append()} 将一个 \texttt{Game} 对象追加到该 vector 的末尾。
+
+\begin{codeboxt}{代码清单 11.16（程序 11.3 Results）：\texttt{Sport.h}（使用设计模式之前）}
+#include <vector>
+#include "Game.h"
+
+using namespace std;
+
+class Sport
+{
+public:
+    Sport(const SportType type) : type(type) {}
+    ~Sport() { for (Game *game : games) delete game; }
+
+    void add_game(Game *game) { games.push_back(game); }
+
+    void print_game_scores() const;
+    void print_game_count()  const;
+
+private:
+    SportType type;
+    vector<Game *> games;    ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 该运动已进行比赛的 vector。}\par
+
+成员函数 \texttt{print\_game\_scores()} 打印运动类型，然后遍历 \texttt{games} vector，打印该类型所有比赛的得分。这部分输出是得分报告的一部分（代码清单 11.17）。例如，该函数可以打印
+
+\begin{codebox}
+  volleyball
+     West Hall beat South Hall 15 to 10
+    South Hall beat North Hall 15 to 13
+    South Hall beat  West Hall 15 to 14
+\end{codebox}
+
+成员函数 \texttt{print\_game\_count()} 打印该运动类型已进行的比赛场数。这个计数会出现在活动报告的一行中。例如，
+
+\begin{codebox}
+    baseball: 2 game(s)
+\end{codebox}
+
+\begin{codeboxt}{代码清单 11.17（程序 11.3 Results）：\texttt{Sport.cpp}（使用设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "Game.h"
+#include "Sport.h"
+
+using namespace std;
+
+void Sport::print_game_scores() const     ①
+{
+    cout << endl << "  " << type << endl;
+
+    for (Game *game : games) game->print_game_score();
+}
+
+void Sport::print_game_count() const      ②
+{
+    cout << setw(12) << type << ": "
+         << games.size() << " game(s)" << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印该运动的比赛得分，作为得分报告的一部分。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 打印活动报告中的一行。}\par
+
+类 \texttt{Intramural} 是树的根。私有成员变量 \texttt{sports} 和 \texttt{halls} 是分别用于跟踪运动和宿舍楼的 vector。成员函数 \texttt{add\_sport()} 和 \texttt{add\_hall()} 将 \texttt{Sport} 和 \texttt{Hall} 对象追加到这些 vector 中。
+
+\begin{codeboxt}{代码清单 11.18（程序 11.3 Results）：\texttt{Intramural.h}（使用设计模式之前）}
+#include <map>
+#include "Sport.h"
+#include "Hall.h"
+
+class Intramural
+{
+public:
+    ~Intramural()
+    {
+        for (Sport *sport : sports) delete sport;
+        for (Hall  *hall  : halls)  delete hall;
+    }
+
+    void add_sport(Sport *sport) { sports.push_back(sport); }
+    void add_hall(Hall *hall)    { halls.push_back(hall); }
+
+    void print_scores_report() const;
+    void print_activities_report() const;
+    void print_winnings_report() const;
+
+private:
+    vector<Sport *> sports;
+    vector< Hall *>  halls;
+};
+\end{codeboxt}
+
+类 \texttt{Intramural} 的公有打印成员函数生成这三份校内体育报告（代码清单 11.19）：
+
+\begin{itemize}
+\item \emph{得分报告}——成员函数 \texttt{print\_scores\_report()} 遍历各个 \texttt{Sport} 对象，并对每个对象调用成员函数 \texttt{print\_game\_scores()}。
+\item \emph{活动报告}——成员函数 \texttt{print\_\allowbreak{}activities\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Sport} 对象，并对每个对象调用成员函数 \texttt{print\_game\_count()}。
+\item \emph{获胜报告}——成员函数 \texttt{print\_\allowbreak{}winnings\_\allowbreak{}report(\allowbreak{})\allowbreak{}} 遍历各个 \texttt{Hall} 对象，并对每个对象调用成员函数 \texttt{print\_win\_count()}。
+\end{itemize}
+
+\begin{codeboxt}{代码清单 11.19（程序 11.3 Results）：\texttt{Intramural.cpp}（使用设计模式之前）}
+#include <iostream>
+#include <iomanip>
+#include "Sport.h"
+#include "Hall.h"
+#include "Intramural.h"
+
+void Intramural::print_scores_report() const
+{
+    cout << endl << "SCORES REPORT" << endl;
+
+    for (Sport *sport : sports) sport->print_game_scores();
+}
+
+void Intramural::print_activities_report() const
+{
+    cout << endl << "ACTIVITIES REPORT" << endl << endl;
+
+    for (Sport *sport : sports) sport->print_game_count();
+}
+
+void Intramural::print_winnings_report() const
+{
+    cout << endl << "WINNINGS REPORT" << endl << endl;
+
+    for (Hall *hall : halls) hall->print_win_count();
+}
+\end{codeboxt}
+
+生成每一份报告都需要在主要类的成员函数之间形成一条调用链（图 11.7）。
+
+\myGraphic{0.439}{images/CH11_F07_Mak.png}{图 11.7 生成每一份报告都必须在主要类的成员函数之间形成一条调用链。}
+
+为了生成示例数据，测试程序首先调用函数 \texttt{build\_tree()}，该函数以硬编码方式构建一棵树数据结构并返回指向树根的指针。然后，程序调用根 \texttt{Intramural} 节点的成员函数，打印这三份校内比赛报告。
+
+\begin{codeboxt}{代码清单 11.20（程序 11.3 Results）：\texttt{tester.cpp}（使用设计模式之前）}
+#include "Enums.h"
+#include "Intramural.h"
+#include "Sport.h"
+#include "Game.h"
+#include "Hall.h"
+
+using namespace std;
+
+Intramural *build_tree();
+int main()
+{
+    Intramural *intramural = build_tree();
+
+    intramural->print_scores_report();                        ①
+    intramural->print_activities_report();                    ①
+    intramural->print_winnings_report();                      ①
+
+    delete intramural;
+    return 0;
+}
+
+Intramural *build_tree()
+{
+    Intramural *intramural = new Intramural();
+
+    Sport *baseball   = new Sport(SportType::BASEBALL);       ②
+    Sport *football   = new Sport(SportType::FOOTBALL);       ②
+    Sport *volleyball = new Sport(SportType::VOLLEYBALL);     ②
+
+    intramural->add_sport(baseball);
+    intramural->add_sport(football);
+    intramural->add_sport(volleyball);
+
+    Hall *north = new Hall(HallName::NORTH);                  ③
+    Hall *south = new Hall(HallName::SOUTH);                  ③
+    Hall *east  = new Hall(HallName::EAST);                   ③
+    Hall *west  = new Hall(HallName::WEST);                   ③
+
+    intramural->add_hall(north);
+    intramural->add_hall(south);
+    intramural->add_hall( east);
+    intramural->add_hall( west);
+
+    baseball->add_game(new Game(west, 5, east, 3));           ④
+    baseball->add_game(new Game(east, 3, south, 0));          ④
+                                                              ④
+    football->add_game(new Game(west, 21, north, 27));        ④
+                                                              ④
+    volleyball->add_game(new Game(west,  15, south, 10));     ④
+    volleyball->add_game(new Game(south, 13, north, 15));     ④
+    volleyball->add_game(new Game(south, 15, west,  14));     ④
+
+    return intramural;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印各份报告。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 创建各项运动。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 创建各个宿舍楼。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 创建各场比赛。}\par
+
+\myGraphic{0.773}{images/CH11_F07_UN08_Mak.png}{}
+
+这个应用存在许多缺陷。其中最严重的两个是
+
+\begin{itemize}
+\item \emph{承担多重职责的类}——类 \texttt{Intramural}、\texttt{Sport} 和 \texttt{Game} 各自都有两项主要职责。每个类都必须有成员变量和成员函数来将该数据集合实现为树结构。但每个类还必须有成员变量和成员函数来实现这三个报告生成算法。
+\item \emph{不灵活的应用架构}——如果我们决定修改某份报告的内容或添加一份新报告，就需要在整个项目涉及的各个类中做出改动。
+\end{itemize}
+
+\section{使用访问者设计模式之后}
+
+访问者设计模式消除了这些缺陷。它为我们这个示例校内比赛报告应用建模了一种软件架构，将用于生成报告的算法代码与维护树结构数据集合的代码分离开来。我们的应用将有三个 \texttt{Visitor} 类，每个类封装一个报告生成算法。\texttt{Visitor} 是一个接口，每个实现该接口的类都必须实现访问不同类型树节点的成员函数，以执行该类的算法（图 11.8）。在我们的示例中，这三个 \texttt{Visitor} 类是 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor}。它们分别实现生成得分报告、活动报告和获胜报告的算法。我们将能够修改或添加新的 \texttt{Visitor} 类及其算法，而不会影响数据集合。
+
+\begin{mySidebar}{访问者设计模式}
+
+“表示一个作用于某对象结构各元素的操作。访问者使你可以在不改变各元素的类的前提下，定义作用于这些元素的新操作”（GoF 331）。
+\end{mySidebar}
+
+\myGraphic{0.980}{images/CH11_F08_Mak.png}{图 11.8 相较图 11.6 在逻辑上没有变化的部分以灰色显示。与之前的图一样，数据集合的树节点是类 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 的对象。现在，每个树节点类都实现接口 \texttt{Node}，并拥有成员函数 \texttt{accept()} 来接受一个 \texttt{Visitor} 对象。三个 \texttt{Visitor} 类 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} 各自实现接口 \texttt{Visitor} 并封装一个报告生成算法。每个 \texttt{Visitor} 类都有访问树节点的成员函数，每种节点类型对应一个访问函数。}
+
+每个 \texttt{Visitor} 类都实现 Visitor 接口并封装生成某份特定报告的算法。类 \texttt{ScoresReportVisitor} 实现生成得分报告的算法。类似地，类 \texttt{ActivitiesReportVisitor} 实现生成活动报告的算法。最后，类 \texttt{WinningsReportVisitor} 实现生成获胜报告的算法。
+
+每个 \texttt{Visitor} 类都有成员函数 \texttt{visit\_Intramural()}、\texttt{visit\_Sport()}、\texttt{visit\_Game()} 和 \texttt{visit\_Hall()}，它们分别访问树数据结构中的 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 节点。
+
+\begin{codeboxt}{代码清单 11.21（程序 11.4 Results-VisitorDP）：\texttt{Visitor.h}}
+#include <map>
+#include "Enums.h"
+
+using namespace std;
+
+class Intramural;
+class Sport;
+class Game;
+class Hall;
+
+class Visitor
+{
+public:
+    virtual ~Visitor() {}
+
+    virtual void visit_Intramural(Intramural *node) = 0; ①
+    virtual void visit_Sport(Sport *node) = 0;           ①
+    virtual void visit_Game(Game *node) = 0;             ①
+    virtual void visit_Hall(Hall *node) = 0;             ①
+};
+
+class ScoresReportVisitor : public Visitor
+{
+public:
+    void visit_Intramural(Intramural *node) override;
+    void visit_Sport(Sport *node) override;
+    void visit_Game(Game *node) override;
+    void visit_Hall(Hall *node) override;
+};
+
+class ActivitiesReportVisitor : public Visitor
+{
+public:
+    void visit_Intramural(Intramural *node) override;
+    void visit_Sport(Sport *node) override;
+    void visit_Game(Game *node) override;
+    void visit_Hall(Hall *node) override;
+};
+
+class WinningsReportVisitor : public Visitor
+{
+public:
+    void visit_Intramural(Intramural *node) override;
+    void visit_Sport(Sport *node) override;
+    void visit_Game(Game *node) override;
+    void visit_Hall(Hall *node) override;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 访问不同类型树节点的成员函数}\par
+
+\myGraphic{0.875}{images/CH11_F08_UN09_Mak.png}{}
+
+\texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 现在各自都是超类 \texttt{Node} 的子类。每个 \texttt{Node} 类都必须实现 \texttt{accept()} 成员函数。
+
+\begin{codeboxt}{代码清单 11.22（程序 11.4 Results-VisitorDP）：\texttt{Node.h}}
+#include "Visitor.h"
+
+using namespace std;
+
+class Node
+{
+public:
+    virtual ~Node() {}
+
+    virtual void accept(Visitor& visitor) = 0;
+};
+\end{codeboxt}
+
+每个 \texttt{Node} 类都必须实现成员函数 \texttt{accept()}，它接受任意 \texttt{Visitor} 对象。为接受访问，节点会利用多态调用该访问者中适合此节点类型的访问成员函数。
+
+\texttt{accept()} 函数使应用能够在运行时把某种类型的节点（如 \texttt{Intramural,}）绑定到某种类型的访问者（如 \texttt{ScoresReportVisitor}）。在 \texttt{Intramural} 节点接受一个 \texttt{ScoresReportVisitor} 访问者之后，该节点会调用访问者的 \texttt{visit\_Intramural()} 成员函数（代码清单 11.23）。通过把指向自身的指针（\texttt{this}）传递给访问者的成员函数，节点让访问者可以访问该节点的公有成员函数。随后，访问者便可以利用该节点及其成员函数执行生成得分报告的算法。这个 \texttt{accept()} 函数还会遍历树中的 \texttt{Sport} 和 \texttt{Hall} 对象，让这些对象中的每一个都接受该访问者。该函数向各个 \texttt{Visitor} 类隐藏了数据集合的实现。
+
+\begin{codeboxt}{代码清单 11.23（程序 11.4 Results-VisitorDP）：\texttt{Intramural.h}}
+#include <vector>
+#include "Node.h"
+#include "Sport.h"
+#include "Visitor.h"
+
+class Intramural : public Node
+{
+public:
+    ~Intramural()
+    {
+        for (Sport *sport : sports) delete sport;
+        for (Hall  *hall  : halls)  delete hall;
+    }
+
+    void accept(Visitor& visitor) override
+    {
+        visitor.visit_Intramural(this);                          ①
+
+        for (Sport *sport : sports) sport->accept(visitor);      ②
+        for (Hall  *hall  : halls)   hall->accept(visitor);      ③
+    }
+
+    void add_sport(Sport *sport) { sports.push_back(sport); }
+    void add_hall(Hall *hall)    { halls.push_back(hall); }
+
+private:
+    vector<Sport *> sports;
+    vector< Hall *> halls;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态确定要调用哪个 Visitor 类的 visit\_Intramural() 成员函数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 让每个 Sport 对象接受该访问者。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 让每个 Hall 对象接受该访问者}\par
+
+\myGraphic{0.980}{images/CH11_F08_UN10_Mak.png}{}
+
+类似地，\texttt{Node} 类 \texttt{Sport} 实现成员函数 \texttt{accept()}，它接着利用多态确定要调用哪个 \texttt{Visitor} 类的 \texttt{visit\_Sport()} 成员函数（代码清单 11.24）。它会遍历各个 \texttt{Game} 对象，让每一个都接受该访问者。
+
+由于 \texttt{accept()} 函数把指向节点的指针（\texttt{this}）传递给了访问者的 \texttt{visit\_Sport()} 成员函数，该访问函数可以调用节点的公有 \texttt{get\_type()} 和 \texttt{get\_games\_count()} 成员函数。
+
+\begin{codeboxt}{代码清单 11.24（程序 11.4 Results-VisitorDP）：\texttt{Sport.h}}
+#include <vector>
+#include "Node.h"
+#include "Game.h"
+#include "Visitor.h"
+
+using namespace std;
+
+class Sport : public Node
+{
+public:
+    Sport(const SportType type) : type(type) {}
+    ~Sport() { for (Game *game : games) delete game; }
+
+    void accept(Visitor& visitor) override
+    {
+        visitor.visit_Sport(this);                       ①
+
+        for (Game *game : games) game->accept(visitor);  ②
+    }
+
+    SportType get_type() const { return type; }
+
+    void add_game(Game *game) { games.push_back(game); }
+    int get_games_count() const { return games.size(); }
+
+private:
+    SportType type;
+    vector<Game *> games;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态确定要调用哪个 Visitor 类的 visit\_Sport() 成员函数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 让每个 Game 对象接受该访问者。}\par
+
+\texttt{Node} 类 \texttt{Game} 同样如此。\texttt{Game} 节点有公有成员函数 \texttt{get\_winner()}、\texttt{get\_loser()}、\texttt{get\_winner\_points()} 和 \texttt{get\_loser\_points()}，访问者的 \texttt{visit\_Game()} 成员函数可以调用它们。
+
+\begin{codeboxt}{代码清单 11.25（程序 11.4 Results-VisitorDP）：\texttt{Game.h}}
+#include "Node.h"
+#include "Hall.h"
+#include "Visitor.h"
+
+class Game : public Node
+{
+public:
+    Game(Hall * const winner, const int winner_points,
+         Hall * const loser , const int loser_points)
+        : winner(winner), loser(loser),
+          winner_points(winner_points),
+          loser_points(loser_points)
+    {
+        winner->increment_win_count();
+    }
+
+    void accept(Visitor& visitor) override
+    {
+        visitor.visit_Game(this);  ①
+    }
+    Hall *get_winner() const { return winner; }
+    Hall *get_loser()  const { return loser;  }
+
+    int get_winner_points() const { return winner_points; }
+    int get_loser_points()  const { return  loser_points; }
+
+private:
+    Hall *winner;
+    Hall *loser;
+
+    int winner_points;
+    int loser_points;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态确定要调用哪个 Visitor 类的 visit\_Game() 成员函数。}\par
+
+\myGraphic{0.850}{images/CH11_F08_UN11_Mak.png}{}
+
+至于 \texttt{Node} 类 \texttt{Hall}，它有公有成员函数 \texttt{get\_name()} 和 \texttt{get\_win\_count()}，访问者的 \texttt{visit\_Hall()} 成员函数可以调用它们。
+
+\begin{codeboxt}{代码清单 11.26（程序 11.4 Results-VisitorDP）：\texttt{Hall.h}}
+#include "Enums.h"
+#include "Node.h"
+#include "Visitor.h"
+
+class Hall : public Node
+{
+public:
+    Hall(const HallName name) : name(name), win_count(0) {}
+
+    void accept(Visitor& visitor) override
+    {
+        visitor.visit_Hall(this);          ①
+    }
+
+    HallName get_name() const { return name; }
+
+    int get_win_count() const  { return win_count; }
+    void increment_win_count() { win_count++; }
+
+private:
+    HallName name;
+    int win_count;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 使用多态确定要调用哪个 Visitor 类的 visit\_Hall() 成员函数。}\par
+
+在我们这个版本的体育报告应用中，\texttt{Visitor} 类 \texttt{ScoresReportVisitor} 封装了原本分散在 \texttt{Intramural}、\texttt{Sport} 和 \texttt{Game} 各类中用于生成报告的全部代码（表 11.2）。
+
+\begin{center}
+{\bfseries 表 11.2 \texttt{Visitor} 类 \texttt{ScoresReportVisitor} 封装了生成得分报告的算法。}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+第一个版本 & 使用 ScoresReportVisitor 类的版本 \\
+\midrule
+\texttt{Intramural::\allowbreak{}print\_\allowbreak{}scores\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_Intramural()} \\
+\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}scores(\allowbreak{})\allowbreak{}} & \texttt{visit\_Sport()} \\
+\texttt{Game::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}score(\allowbreak{})\allowbreak{}} & \texttt{visit\_Game()} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+子类 \texttt{ScoresReportVisitor} 的各个访问成员函数封装了生成得分报告的算法（代码清单 11.27）：
+
+\begin{enumerate}
+\item 成员函数 \texttt{visit\_Intramural()} 打印报告标题 \texttt{SCORES REPORT}。
+\item 成员函数 \texttt{visit\_Sport()} 打印运动类型的名称。
+\item 成员函数 \texttt{visit\_Game()} 打印一场比赛的结果。
+\item 成员函数 \texttt{visit\_Hall()} 不执行任何操作。
+\end{enumerate}
+
+\begin{codeboxt}{代码清单 11.27（程序 11.4 Results-VisitorDP）：\texttt{ScoresReportVisitor.cpp}}
+#include <iostream>
+#include <iomanip>
+#include "Enums.h"
+#include "Intramural.h"
+#include "Sport.h"
+#include "Game.h"
+
+using namespace std;
+
+void ScoresReportVisitor::visit_Intramural(Intramural *intramural)
+{
+    cout << endl << "SCORES REPORT" << endl;
+}
+
+void ScoresReportVisitor::visit_Sport(Sport *sport)
+{
+    cout << endl << "  " << sport->get_type() << endl;
+}
+
+void ScoresReportVisitor::visit_Game(Game *game)
+{
+    Hall *winner = game->get_winner();
+    Hall *loser  = game->get_loser();
+
+    int winner_points = game->get_winner_points();
+    int  loser_points = game->get_loser_points();
+
+    cout << setw(14) << winner->get_name() << " beat "
+         << setw(10) << loser->get_name()
+         << setw(3)  << winner_points
+         << " to "   << setw(2) << loser_points << endl;
+}
+
+void ScoresReportVisitor::visit_Hall(Hall *hall)
+{
+    //什么都不做
+}
+\end{codeboxt}
+
+\myGraphic{0.907}{images/CH11_F08_UN12_Mak.png}{}
+
+\texttt{Visitor} 类 \texttt{ActivitiesReportVisitor} 的各个访问成员函数封装了原本驻留在 \texttt{Intramural} 和 \texttt{Sport} 类中用于生成体育报告的全部代码（表 11.3）。
+
+\begin{center}
+{\bfseries 表 11.3 \texttt{Visitor} 类 \texttt{ActivitiesReportVisitor} 封装了生成活动报告的算法。}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+第一个版本 & 使用 ActivitiesReportVisitor 类的版本 \\
+\midrule
+\texttt{Intramural::\allowbreak{}print\_\allowbreak{}activities\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_Intramural()} \\
+\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} & \texttt{visit\_Sport()} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+子类 \texttt{ActivitiesReportVisitor} 的各个访问成员函数实现了生成体育报告的算法（代码清单 11.28）。
+
+\begin{enumerate}
+\item 成员函数 \texttt{visit\_Intramural()} 打印报告标题 \texttt{ACTIVITIES REPORT}。
+\item 成员函数 \texttt{visit\_Sport()} 打印该运动类型的比赛场数。
+\item 成员函数 \texttt{visit\_Game()} 不执行任何操作。
+\item 成员函数 \texttt{visit\_Hall()} 不执行任何操作。
+\end{enumerate}
+
+\begin{codeboxt}{代码清单 11.28（程序 11.4 Results-VisitorDP）：\texttt{ActivitiesReportVisitor.\allowbreak{}cpp}}
+#include <iostream>
+#include <iomanip>
+#include "Enums.h"
+#include "Intramural.h"
+#include "Sport.h"
+#include "Game.h"
+
+using namespace std;
+
+void ActivitiesReportVisitor::visit_Intramural(Intramural *intramural)
+{
+    cout << endl << "ACTIVITIES REPORT" << endl << endl;
+}
+
+void ActivitiesReportVisitor::visit_Sport(Sport *sport)
+{
+    cout << setw(12) << sport->get_type() << ": "
+         << sport->get_games_count() << " game(s)" << endl;
+}
+
+void ActivitiesReportVisitor::visit_Game(Game *game)
+{
+    //什么都不做
+}
+
+void ActivitiesReportVisitor::visit_Hall(Hall *hall)
+{
+    //什么都不做
+}
+\end{codeboxt}
+
+\texttt{Visitor} 类 \texttt{WinningsReportVisitor} 的各个访问成员函数封装了原本驻留在 \texttt{Intramural} 和 \texttt{Sport} 类中用于生成获胜报告的全部代码（表 11.4）。
+
+\begin{center}
+{\bfseries 表 11.4 \texttt{Visitor} 类 \texttt{WinningsReportVisitor} 封装了生成获胜报告的算法。}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+第一个版本 & 使用 WinningsReportVisitor 类的版本 \\
+\midrule
+\texttt{Intramural::\allowbreak{}print\_\allowbreak{}halls\_\allowbreak{}report(\allowbreak{})\allowbreak{}} & \texttt{visit\_Intramural()} \\
+\texttt{Sport::\allowbreak{}print\_\allowbreak{}game\_\allowbreak{}count(\allowbreak{})\allowbreak{}} & \texttt{visit\_Hall()} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+子类 \texttt{WinningsReportVisitor} 的各个访问成员函数实现了生成宿舍楼报告的算法（代码清单 11.29）：
+
+\begin{enumerate}
+\item 成员函数 \texttt{visit\_Intramural()} 打印报告标题 \texttt{WINNINGS REPORT}。
+\item 成员函数 \texttt{visit\_Sport()} 不执行任何操作。
+\item 成员函数 \texttt{visit\_Game()} 不执行任何操作。
+\item 成员函数 \texttt{visit\_Hall()} 打印某个宿舍楼的获胜次数。
+\end{enumerate}
+
+\begin{codeboxt}{代码清单 11.29（程序 11.4 Results-VisitorDP）：\texttt{WinningsReportVisitor.\allowbreak{}cpp}}
+#include <iostream>
+#include <iomanip>
+#include "Enums.h"
+#include "Intramural.h"
+#include "Sport.h"
+#include "Game.h"
+
+using namespace std;
+
+void WinningsReportVisitor::visit_Intramural(Intramural *intramural)
+{
+    cout << endl << "WINNINGS REPORT" << endl << endl;
+}
+
+void WinningsReportVisitor::visit_Sport(Sport *sport)
+{
+    //什么都不做
+}
+
+void WinningsReportVisitor::visit_Game(Game *game)
+{
+    //什么都不做
+}
+
+void WinningsReportVisitor::visit_Hall(Hall *hall)
+{
+    cout << setw(12) << hall->get_name() << " won "
+         << hall->get_win_count() << " game(s)" << endl;
+}
+\end{codeboxt}
+
+\myGraphic{0.828}{images/CH11_F08_UN13_Mak.png}{}
+
+构建好示例树数据结构之后，测试程序创建 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} 对象。然后，它通过让 \texttt{intramural\_node}（树根）依次接受每个访问者对象来生成每一份报告。
+
+\begin{codeboxt}{代码清单 11.30（程序 11.4 Results-VisitorDP）：\texttt{tester.cpp}}
+#include "Intramural.h"
+#include "Sport.h"
+#include "Game.h"
+#include "Hall.h"
+#include "Visitor.h"
+ 
+using namespace std;
+ 
+Intramural *build_tree();
+ 
+int main()
+{
+    Intramural *intramural_node = build_tree();
+ 
+    ScoresReportVisitor     scores_report_visitor;
+    ActivitiesReportVisitor activities_report_visitor;
+    WinningsReportVisitor   winnings_report_visitor;
+ 
+    intramural_node->accept(scores_report_visitor);        ①
+    intramural_node->accept(activities_report_visitor);    ②
+    intramural_node->accept(winnings_report_visitor);      ③
+ 
+    delete intramural_node;
+    return 0;
+}
+ 
+Intramural *build_tree()
+{
+    Intramural *intramural_node = new Intramural();
+    Sport *baseball   = new Sport(SportType::BASEBALL);
+    Sport *football   = new Sport(SportType::FOOTBALL);
+    Sport *volleyball = new Sport(SportType::VOLLEYBALL);
+ 
+    intramural_node->add_sport(baseball);
+    intramural_node->add_sport(football);
+    intramural_node->add_sport(volleyball);
+ 
+    Hall *north = new Hall(HallName::NORTH);
+    Hall *south = new Hall(HallName::SOUTH);
+    Hall *east  = new Hall(HallName::EAST);
+    Hall *west  = new Hall(HallName::WEST);
+ 
+    intramural_node->add_hall(north);
+    intramural_node->add_hall(south);
+    intramural_node->add_hall(  east);
+    intramural_node->add_hall( west);
+ 
+    baseball->add_game(new Game(west, 5, east,  3));
+    baseball->add_game(new Game(east, 3, south, 0));
+ 
+    football->add_game(new Game(north, 27, west, 21));
+ 
+    volleyball->add_game(new Game(west,  15, south, 10));
+    volleyball->add_game(new Game(north, 15, south, 13));
+    volleyball->add_game(new Game(south, 15, west,  14));
+ 
+    return intramural_node;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印得分报告。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 打印活动报告。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 打印获胜报告。}\par
+
+使用访问者设计模式为我们这个校内比赛报告应用第二个版本的架构建模，其关键好处包括
+
+\begin{itemize}
+\item \emph{封装的算法}——用于生成并打印比赛报告（Games Report）、体育报告（Sports Report）和宿舍楼报告（Residence Halls Report）的算法分别封装在 \texttt{Visitor} 类 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} 中。这就是封装变化原则（2.3.2 节）。将有可能在修改、删除某个报告算法或添加新算法时，不影响其他类。
+\item \emph{职责单一的类}——\texttt{Node} 类 \texttt{Intramural}、\texttt{Sport}、\texttt{Game} 和 \texttt{Hall} 只负责维护树数据结构。\texttt{Visitor} 类只负责生成报告。这就是单一职责原则（2.3 节）。
+\item \emph{松耦合}——树数据结构与报告生成算法之间松耦合，各个算法之间也松耦合。\texttt{Node} 类不知道报告生成算法是什么，也不知道它们由 \texttt{Visitor} 类如何实现。这就是最少知识原则（2.3.2 节）。我们将能够在修改、删除算法或添加新算法时，不修改数据结构或已有的算法。
+\end{itemize}
+
+\subsection{11.3.1 访问者的通用模型}
+
+图 11.9 展示了访问者设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能针对某个架构问题构造出定制的解决方案（8.1.3 节）。
+
+\myGraphic{0.980}{images/CH11_F09_Mak.png}{图 11.9 访问者设计模式的通用模型。可与图 11.8 对照。每个 \texttt{Visitor} 类封装一个算法。为了在遍历 \texttt{Element} 对象的一轮过程中执行某个算法，每个元素对象都接受一个 \texttt{Visitor} 对象。每个具体 \texttt{Element} 对象的 \texttt{accept()} 函数会调用与该 \texttt{Element} 对象相对应的访问成员函数。当这些访问成员函数依次访问 \texttt{Element} 对象时，它们共同执行了 \texttt{Visitor} 类的算法。}
+
+表 11.5 展示了示例应用如何应用该模式。
+
+\begin{center}
+{\bfseries 表 11.5 示例应用对访问者方法设计模式的应用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的应用 \\
+\midrule
+超类 \texttt{Element} & 接口 \texttt{Node} \\
+子类 \texttt{ConcreteElementA} 等 & 类 \texttt{Intramural}\texttt{,} \texttt{Sport}\texttt{,} \texttt{Game} 和 \texttt{Hall} \\
+超类 \texttt{Visitor} & 接口 \texttt{Visitor} \\
+子类 \texttt{ConcreteVisitor1} 等 & 类 \texttt{ScoresReportVisitor}、\texttt{ActivitiesReportVisitor} 和 \texttt{WinningsReportVisitor} \\
+成员函数 \texttt{visit\_\allowbreak{}ConcreteElementA(\allowbreak{})\allowbreak{}} 等 & 成员函数 \texttt{visit\_Intramural()}、\texttt{visit\_Sport()}、\texttt{vis}\texttt{it\_Game()} 和 \texttt{visit\_Hall()} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\myGraphic{0.903}{images/CH11_F09_UN14_Mak.png}{}
+
+\section*{小结}
+
+\begin{itemize}
+\item 迭代器设计模式为这样一种软件架构提供了解决方案：它有一个算法，顺序处理存储于多个顺序集合中的元素，而不暴露这些集合是如何实现的。客户端及其算法与这些集合松耦合。
+\item 我们将能够在修改或删除某个数据集合，或添加一个带有其迭代器的新顺序集合时，不修改算法或已有的集合。
+\item 访问者设计模式为这样一种软件架构提供了解决方案：它对单个数据集合中的对象进行多轮遍历。这些对象可以由不同的类实例化而来。每一轮对对象执行不同的算法，每个算法都有处理每种类型对象的成员函数。
+\item 访问者设计模式把每个算法封装为一个访问者类，因此算法与数据集合松耦合，算法之间也松耦合。我们将能够在修改、删除算法或添加新算法时，不修改数据集合或已有的算法。
+\end{itemize}

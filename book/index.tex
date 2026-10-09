@@ -1,0 +1,76 @@
+% book/index.tex —— 封面、目录与全书章节索引
+% 想调整章节顺序：直接移动下面的行即可
+
+\begin{center}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture, overlay, inner sep=0pt]
+\node at (current page.center)
+{\includegraphics[width=\paperwidth, keepaspectratio=false]{images/cover.jpg}};
+\end{tikzpicture}
+\newpage
+\thispagestyle{empty}
+\vspace*{60bp}
+\Huge
+\textbf{面向对象软件设计}
+\\[10pt]
+\Large
+\textbf{C++ 实践}
+\\[18pt]
+\normalsize
+Object-Oriented Software Design in C++
+\\[10pt]
+作者：Ronald Mak（罗纳德·马克）
+
+\vspace{20bp}
+\myGraphic{0.10}{images/Manning_M_small.png}{}
+
+Manning Shelter Island
+\end{center}
+
+\newpage
+\thispagestyle{empty}
+\vfill
+\begin{center}
+本书中文版由曼宁出版社（Manning Publications）授权翻译出版。
+\end{center}
+\vfill
+\newpage
+
+\myFrontNoToc{content/front/02-title}
+
+\myFrontNoToc{content/front/03-copyright}
+
+\newpage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+
+\myFront{前言}{content/front/05-preface}
+\myFront{致谢}{content/front/06-acknowledgments}
+\myFront{关于本书}{content/front/07-about-this-book}
+\myFront{关于作者}{content/front/08-about-the-author}
+\myFront{关于封面插图}{content/front/09-about-the-cover}
+
+\myPart{1}{引言}{content/part/p1}
+\myChapter{1}{通往良好设计的软件之路}{content/main/01}
+\myChapter{2}{迭代以获得良好设计}{content/main/02}
+\myPart{2}{设计正确的应用}{content/part/p2}
+\myChapter{3}{获取需求，构建正确的应用}{content/main/03}
+\myChapter{4}{良好的类设计，把应用做对}{content/main/04}
+\myPart{3}{把应用设计好}{content/part/p3}
+\myChapter{5}{隐藏类的实现}{content/main/05}
+\myChapter{6}{不要让你的用户感到意外}{content/main/06}
+\myChapter{7}{正确设计子类}{content/main/07}
+\myPart{4}{设计模式解决应用架构问题}{content/part/p4}
+\myChapter{8}{模板方法(Template Method)与策略(Strategy)设计模式}{content/main/08}
+\myChapter{9}{工厂方法(Factory Method)与抽象工厂\\(Abstract Factory)设计模式}{content/main/09}
+\myChapter{10}{适配器与外观设计模式}{content/main/10}
+\myChapter{11}{迭代器(Iterator)与访问者(Visitor)设计模式}{content/main/11}
+\myChapter{12}{观察者设计模式}{content/main/12}
+\myChapter{13}{状态设计模式}{content/main/13}
+\myChapter{14}{单例、组合与装饰器设计模式}{content/main/14}
+\myPart{5}{其他设计技术}{content/part/p5}
+\myChapter{15}{用递归与回溯设计解决方案}{content/main/15}
+\myChapter{16}{设计多线程程序}{content/main/16}
+
+\myFront{索引}{content/back/01-index}

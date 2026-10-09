@@ -1,0 +1,1302 @@
+\begin{myChapterIntro}{本章涵盖以下内容}
+\begin{itemize}
+\item 隐藏类实现的重要性
+\item 最少知识原则
+\item 惰性求值
+\item 取值函数与设值函数，以及不可变对象
+\item 迪米特法则的规则
+\item 开闭原则
+\end{itemize}
+\end{myChapterIntro}
+
+设计良好的应用会融入经过验证的设计原则。第 4 章讨论了松耦合在类设计中的重要性。两个松耦合的类彼此之间只有最小的依赖，这有助于确保一个类的变化不会引起另一个类的变化。
+
+\myGraphic{0.893}{images/CH05_00_UN01_Mak.png}{}
+
+当其他程序员赞赏并使用我们编写的类时，我们当然可以感到自豪。但设计良好的类会通过把成员变量和函数设为 private 来隐藏其实现。类只应把其他程序员需要访问的成员设为 public 来暴露它们。
+
+本章涵盖的设计原则支持一种最小化类之间依赖的策略。实现隐藏（implementation hiding）是封装的重要组成部分。如果我们隐藏了一个类的实现，其他类就无法依赖它们访问不到的东西。因此，我们可以修改实现，而不必迫使其他类随之改变。
+
+下一章将涵盖更多设计原则。我们将看到这些原则如何相互支撑、协同工作。后面的章节将涵盖设计模式（design pattern），它们提供了可用于为常见编程问题开发定制解决方案的模型。设计原则是设计模式的基础。
+
+\section{最少知识原则与隐藏的实现}
+
+回忆一下，类的成员变量表示状态——对象在运行时的每个状态由其成员变量的一组唯一取值来刻画。类的成员函数表示对象的运行时行为。类的\emph{实现}就是我们编写该类成员变量和成员函数的方式。
+
+例如，再回想第 2 章中表示目录里一本书的 \texttt{Book} 类。它的实现可能包含诸如书名和作者之类的组成部分，它们表示一本书的固有属性。其他类不应关心我们如何实现这些属性——它们既可能是已经赋给 \texttt{Book} 对象的字符串值，也可能是我们请求时从数据库中动态查得的值。当然，不应允许来自客户应用的类修改一本书的书名或作者。因此，这些属性应该是 private。然而，类应提供 public 的手段，让另一个类能够访问一本书的书名和作者，却无需知道它们的实现。
+
+最小化类 \texttt{A} 对类 \texttt{B} 的依赖的首要方式，就是让类 \texttt{A} 尽可能少地了解类 \texttt{B} 的实现。这当然就是最少知识原则（2.3.2 节和 4.2.2 节）。这一原则也被称为\emph{迪米特法则}，以古希腊农业女神命名，寓意用松耦合的类来培育软件。类 \texttt{B} 应该只暴露其他代码使用该类所必需的那么多内容，并隐藏其余部分。在 C++ 类中，隐藏是通过把成员变量和函数声明为 private 来实现的。只能由该类其他成员函数调用的私有成员函数通常被称为\emph{辅助函数}（helper function）。
+
+\emph{隐藏}并不一定意味着\emph{不可见}。除非你的类已经编译好并保存在某个库中，否则开发者也许能够阅读其源代码。\emph{隐藏}意味着\emph{不可访问}。类的私有成员变量和函数对其他代码而言是不可访问的。类也可以通过把成员声明为 protected 来部分隐藏其实现。这样只有该类的子类才能访问这些 protected 成员。\emph{隐藏的实现代码实际上是封装起来的。}我们可以修改一个类隐藏的实现，而不影响任何使用该类的其他代码。
+
+\myGraphic{0.784}{images/CH05_00_UN02_Mak.png}{}
+
+的确，一条好的经验法则是：设计类时，把每一个成员变量和成员函数都设为 private（或 protected），只有那些为了让他代码使用该类而必须设为 public 的除外。有句老话说：“一旦 public，就永远 public。”如果你把某个成员变量或函数设为 public，日后可能就无法在不迫使代码重写的情况下把它改成 private。
+
+\section{公有取值函数与设值函数有选择地访问隐藏的实现}
+
+在代码清单 5.1 中，\texttt{Item} 类通过把成员变量 \texttt{name}、\texttt{weight} 和 \texttt{price} 设为 private，隐藏了它实现状态的方式。于是，该类可以提供公有的\emph{取值函数}（getter）和\emph{设值函数}（setter）成员函数，更正式的名称是\emph{访问函数}（accessor）和\emph{修改函数}（mutator）。这些函数供任何使用该类的代码调用。取值函数让代码能探查 \texttt{Item} 对象的当前状态，例如返回私有成员变量 \texttt{weight} 的值，而不透露状态是如何实现的。设值函数让代码能修改 \texttt{Item} 对象的状态，例如为私有成员变量 \texttt{price} 提供一个新值，而不透露状态是如何实现的。
+
+\begin{codeboxt}{代码清单 5.1（程序 5.1 DemeterItem）：\texttt{Item.cpp}}
+#include <string>
+
+using namespace std;
+
+class Item
+{
+public:
+    Item(const string n, const double w, const double p)
+        : name(n), weight(w), price(p) {}
+
+    string get_name()   const { return name; }        ①
+    double get_weight() const { return weight; }      ①
+    double get_price()  const { return price; }       ①
+
+    void set_price(const double p) { price = p; }     ②
+
+private:
+    string name;                                      ③
+    double weight;                                    ③
+    double price;                                     ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 取值函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 设值函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 隐藏的状态实现}\par
+
+如图 5.1 所示，公有取值函数 \texttt{get\_price()} 的调用者并不知道该类如何实现状态。该函数返回私有 \texttt{price} 成员变量的当前值。或者，该函数也可以通过其他隐藏的手段获取价格，例如在价格数据库中动态查找。使用 \texttt{Item} 类的代码不应依赖任何特定的实现。
+
+\myGraphic{0.980}{images/CH05_F01_Mak.png}{图 5.1 取值函数让代码能够从 \texttt{Item} 对象的隐藏状态中获取价格值。设值函数让代码能够修改 \texttt{Item} 对象隐藏状态中的 \texttt{price} 值。两个函数都不透露该类如何实现状态。例如，我们稍后也许决定让成员函数 \texttt{get\_price()} 从数据库中动态查找价格。我们将能够做出这一改动，而无需修改该函数的调用者。}
+
+通过隐藏类实现状态的方式，再提供公有的取值函数和设值函数，我们就能控制代码在运行时如何探查或修改对象的状态。例如，运行时检查可以防止设值函数用无效值破坏对象的状态：
+
+\begin{codebox}
+    void Item::set_price(const double p)
+    {
+        assert(p > 0.00);
+        price = p;
+    }
+\end{codebox}
+
+\myGraphic{0.711}{images/CH05_F01_UN03_Mak.png}{}
+
+当然，在实际应用中，我们处理错误的参数值应当比立刻中止程序优雅得多。
+
+如果我们不改变公有取值函数和设值函数的签名（即不改变调用它们的方式），就能修改类实现状态的方式，而不必迫使使用该类的代码发生变化。5.4 节将进一步讨论设值函数的作用。
+
+\section{类 Date：实现隐藏的示例}
+
+下面这个示例应用的历次开发迭代展示了隐藏类实现的重要性，以及若不隐藏实现可能遇到的问题。假设该应用使用一个 \texttt{Date} 类来维护已安排预约的日期。一个日历日期由年、月、日（月中的某天）组成。因此，\texttt{Date} 类可以通过把成员变量 \texttt{year}、\texttt{month} 和 \texttt{day} 设为 private 来隐藏其实现。
+
+\begin{mySidebar}{日与日期}
+
+日期对许多应用都很重要。遗憾的是，日常术语可能会造成混淆。一\emph{日}是指任意一段 24 小时的时间，按惯例是从午夜到午夜。在当今世界大部分地区使用的公历（格里高利历）中，某个具体的日子由一个\emph{日期}来标识，该日期由三个整数值组成：\emph{年}、\emph{月}和\emph{日}（月中的某天）。一个示例日期（以美国格式书写）是 9/2/2025，表示 2025 年 9 月 2 日。
+
+在日常使用中，\emph{日}和\emph{日期}这两个词的含义经常重叠。我们只用一个月份和月中的某一天来指代特殊的日子（例如，今\emph{日}是 7 月 20 日，我的生\emph{日}是 9 月 2 日，新年\emph{日}是 1 月 1 日）。然而，Don 的出\emph{生日期}是 1938 年 1 月 10 日。更让人困惑的是，月中的某天本身也被称为一个\emph{日期}（例如，今天的\emph{日期}是 12 号）。从上下文中应当清楚指的是哪一\emph{日}，例如圣诞\emph{日}是 12 月 25 日，而圣诞节有 12 \emph{天}。
+
+在我们的示例中，\texttt{Date} 类由三个成员变量组成——\texttt{year}、\texttt{month} 和 \texttt{day}——其中 \texttt{day} 是月中的某天（day of the month）的简称。
+
+如果我们要设计一个 \texttt{Day} 类，它会与 \texttt{Date} 类构成一对一聚合——每个 \texttt{Day} 对象都会有一个成员变量，指向一个表示其标识日期的 \texttt{Date} 对象。
+\end{mySidebar}
+
+接下来，假设该应用必须对 \texttt{Date} 对象进行日期运算：
+
+\begin{itemize}
+\item 从该日期起 \emph{n} 天之后是哪一天，其中 \emph{n} 可以为正（表示该日期之后的某个日期）或为负（表示该日期之前的某个日期）？
+\item 从该日期到另一个日期有多少天？
+\end{itemize}
+
+遗憾的是，由于公历的规则，用公历进行日期运算出了名地困难：
+
+\begin{itemize}
+\item 四月、六月、九月和十一月各有 30 天。
+\item 二月有 28 天，闰年时为 29 天。
+\item 其余各月都有 31 天。
+\item 能被 4 整除的年份是闰年，不过在 1582 年之后，能被 100 整除但不能被 400 整除的年份不是闰年。
+\item 不存在公元 0 年。公元 1 年的前一年是公元前 1 年（即 −1 年）。
+\item 在改用公历的过程中，有 10 天被跳过。1582 年 10 月 4 日的下一天是 1582 年 10 月 15 日。
+\end{itemize}
+
+\subsection{5.3.1 迭代 1：用循环进行日期运算}
+
+下面的代码清单是进行日期运算的 \texttt{Date} 类。
+
+\begin{codeboxt}{代码清单 5.2（程序 5.2 DateArithmetic-1）：\texttt{Date.h}}
+#include <set>
+
+using namespace std;
+
+class Date
+{
+public:
+    Date(const int y, const int m, const int d)
+        : year(y), month(m), day(d) {}
+
+    int get_year()  const { return year; }                       ①
+    int get_month() const { return month; }                      ①
+    int get_day()   const { return day; }                        ①
+
+    Date add_days(int n) const;                                  ②
+    int days_from(const Date& other) const;                      ②
+          
+    void print();
+
+private:
+    static const set<int> LONG_MONTHS;
+
+    static const int JANUARY  = 1;                               ③
+    static const int FEBRUARY = 2;                               ③
+    static const int DECEMBER = 12;                              ③
+                                                                 ③
+    static const int GREGORIAN_START_YEAR = 1582;                ③
+    static const int GREGORIAN_START_MONTH = 10;                 ③
+    static const int GREGORIAN_START_DATE = 15;                  ③
+    static const int JULIAN_END_DATE = 4;                        ③
+
+    int year, month, day;                                        ④
+
+    static int days_in_month(const int year, const int month);   ⑤
+    static bool is_leap_year(const int year);                    ⑤
+                                                                 ⑤
+
+    int compare_to(const Date& other) const;                     ⑤
+    Date next_date() const;                                      ⑤
+    Date previous_date() const;                                  ⑤
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 公有取值函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 公有日期运算函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 公历规则的私有隐藏常量}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 私有隐藏的状态实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 私有隐藏的辅助函数}\par
+
+下面的代码清单展示了一种实现日期运算的方式，但它的效率非常低。
+
+\begin{codeboxt}{代码清单 5.3（程序 5.2 DateArithmetic-1）：\texttt{Date.cpp}（非常低效）}
+#include <iostream>
+#include <set>
+#include "Date.h"
+
+using namespace std;
+
+Date Date::add_days(int n) const
+{
+    Date date = *this;                            ①
+
+    while (n > 0)
+    {
+        date = date.next_date();                  ②
+        n--;                                      ②
+    }
+
+    while (n < 0)
+    {
+        date = date.previous_date();              ③
+        n++;                                      ③
+    }
+
+    return date;
+}
+
+int Date::days_from(const Date& other) const
+{
+    Date date = *this;                            ④
+    int n = 0;
+
+    while (date.compare_to(other) > 0)
+    {
+        date = date.previous_date();              ⑤
+        n++;                                      ⑤
+    }
+
+    while (date.compare_to(other) < 0)
+    {
+        date = date.next_date();                  ⑥ 
+        n--;                                      ⑥
+    }
+    return n;
+}
+
+const set<int> Date::LONG_MONTHS { 1, 3, 5, 7, 8, 10, 12 };
+
+int Date::days_in_month(const int year, const int month)
+{
+   if (LONG_MONTHS.find(month) != LONG_MONTHS.end()) return 31;
+   if (month == 2) return is_leap_year(year) ? 29 : 28;
+   return 30;
+}
+
+bool Date::is_leap_year(const int year)
+{
+   if (year%4 != 0) return false;
+   if (year < GREGORIAN_START_YEAR) return true;
+
+   return (year%100 != 0) || (year%400 == 0);
+}
+
+int Date::compare_to(const Date& other) const
+{
+    if (year > other.year)   return 1;              ⑦
+    if (year < other.year)   return -1;             ⑦
+    if (month > other.month) return 1;              ⑦
+    if (month < other.month) return -1;             ⑦
+                                                    ⑦
+    return day - other.day;                         ⑦
+}
+
+Date Date::next_date() const                        ⑧
+{
+    int y = year;
+    int m = month;
+    int d = day;
+
+    if (   y == GREGORIAN_START_YEAR
+        && m == GREGORIAN_START_MONTH
+        && d == JULIAN_END_DATE)      d = GREGORIAN_START_DATE;
+    else if (d < days_in_month(y, m)) d++;
+    else
+    {
+        d = 1;
+        m++;
+
+        if (m > DECEMBER)
+        {
+            m = JANUARY;
+            y++;
+            if (y == 0) y++;  //没有 0 年
+        }
+    }
+
+    return Date(y, m, d);
+}
+
+Date Date::previous_date() const                  ⑨
+{
+    int y = year;
+    int m = month;
+    int d = day;
+
+    if (   y == GREGORIAN_START_YEAR
+        && m == GREGORIAN_START_MONTH
+        && d == GREGORIAN_START_DATE) d = JULIAN_END_DATE;
+    else if (d > 1)                   d--;
+    else
+    {
+        m--;
+
+        if (m < JANUARY)
+        {
+            m = DECEMBER;
+            y--;
+            if (y == 0) y--;  //没有 0 年
+        }
+
+        d = days_in_month(y, m);
+    }
+
+    return Date(y, m, d);
+}
+
+void Date::print()
+{
+    cout << month << "/" << day << "/";
+    if (year > 0) cout <<  year;
+    else          cout << -year << " BCE";
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 从该日期的一个副本开始。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 向未来循环 n 天。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 向过去循环 n 天。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 从该日期的一个副本开始。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 循环统计过去的天数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 循环统计未来的天数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 如果该日期在另一个日期之后，则返回正值。如果该日期在另一个日期之前，则返回负值。如果两个日期相同，则返回 0。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 应用公历规则返回下一个日期。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 应用公历规则返回上一个日期。}\par
+
+成员函数 \texttt{add\_days()} 从该日期开始，如果参数 \texttt{n} 的值为正，则逐日向未来迭代 \texttt{n} 天；如果 \texttt{n} 的值为负，则逐日向过去迭代 \texttt{n} 天。成员函数 \texttt{days\_from()} 从该日期开始，逐日迭代以统计向过去或向未来的天数，具体取决于该日期分别落在 \texttt{Date} 参数之后还是之前。两个成员函数都在各自的循环中调用辅助函数 \texttt{previous\_date()} 和 \texttt{next\_date()}。
+
+辅助函数 \texttt{compare\_to()} 将当前日期与 \texttt{Date} 参数进行比较。如果该日期在参数之前，则返回负值；如果该日期在参数之后，则返回正值；如果两个日期相同，则返回 0。只有值的符号有意义。
+
+辅助函数 \texttt{previous\_date()} 和 \texttt{next\_date()} 各自都必须应用棘手的公历规则，分别计算并返回该日期的前一天或后一天。
+
+成员函数 \texttt{print()} 以美国格式打印日期，即 month/day/year。例如，用 9/2/2025 表示 2025 年 9 月 2 日。
+
+\myGraphic{0.818}{images/CH05_F01_UN04_Mak.png}{}
+
+实际情况甚至更糟。成员函数 \texttt{add\_days()} 和 \texttt{days\_from()} 中的每一次迭代在调用 \texttt{previous\_date()} 或 \texttt{next\_date()} 时都会得到一个新的 \texttt{Date} 对象。函数 \texttt{add\_days()} 只返回最后一次迭代所创建的那个 \texttt{Date} 对象。下面的代码清单是一个简单的测试程序。
+
+\begin{codeboxt}{代码清单 5.4（程序 5.2 DateArithmetic-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Date.h"
+
+using namespace std;
+
+int main()
+{
+    Date date1(2025, 9, 2);  //2025 年 9 月 2 日
+    Date date2(2027, 4, 3);  //2027 年 4 月 3 日
+
+    cout << "date1 = "; date1.print(); cout << endl;
+    cout << "date2 = "; date2.print(); cout << endl;
+
+    int count = date2.days_from(date1);
+    cout << "count = " << count << endl;
+
+    cout << "should be date2: ";
+    date1.add_days(count).print(); cout << endl;
+    return 0;
+}
+\end{codeboxt}
+
+输出为
+
+\begin{codebox}
+date1 = 9/2/2025
+date2 = 4/3/2027
+count = 578
+should be date2: 4/3/2027
+\end{codebox}
+
+该应用功能可用，看起来也能正确地执行日期运算。然而，它的效率极低。成员函数 \texttt{add\_days()} 的循环次数必须等于参数 \texttt{n} 的值。成员函数 \texttt{days\_from()} 的循环次数必须等于从该日期到 \texttt{Date} 参数之间的天数，并且每次循环开始时都要调用成员函数 \texttt{compare\_to()}。由于公历规则，在循环内调用辅助函数 \texttt{next\_date()} 和 \texttt{previous\_date()} 代价高昂，而且每次调用都会创建并返回一个 \texttt{Date} 对象。这显然是一个糟糕的设计（图 5.2）。我们需要回溯，想出一个更好的设计。
+
+\myGraphic{0.340}{images/CH05_F02_Mak.png}{图 5.2 迭代 1 版本的 \texttt{Date} 类能正确地执行日期运算，但做得不好，因为要按照公历规则逐日进行代价高昂的循环。这一版本只配得到一块煤。}
+
+\subsection{5.3.2 迭代 2：儒略日数简化日期运算}
+
+进行日期运算的一种高效得多的方式，是用\emph{儒略日数}来标识每一天，而不是用公历的年、月、日。某一天的儒略日数是从公历公元前 4713 年 1 月 1 日正午起算的天数。我们只在正午时使用儒略日数，这样该数始终是整数。有了儒略日数，日期运算就变得非常简单。
+
+\begin{mySidebar}{儒略日数}
+
+不要被“Julian”这个名字在各种历法中的用法弄糊涂了。天文学家使用\emph{儒略日数}来标识日子，而不是使用年、月、日。一个儒略日数统计的是自公历公元前 4713 年 1 月 1 日正午起的\emph{天数}，因此那一天的正午对应儒略日数 0。由于它把一天中的小时也考虑在内，儒略日数可以带小数部分，但在正午时是整数。16 世纪的历史学家约瑟夫·尤斯图斯·斯卡利杰（Josephus Justus Scaliger）发明了这一概念，并以他父亲 Julius 的名字为其命名。
+
+在一日的儒略日数与其对应的公历年、月、日之间进行转换，要用到复杂的算法。下面应用中的算法来自 \emph{Numerical Recipes, the Art of Scientific Computing} 第 3 版，作者为 William H. Press 等人，剑桥大学出版社，2007 年。
+
+一个有用的转换里程碑是儒略日数 2,440,000，它对应公历日期 1968 年 5 月 23 日。
+
+儒略日数与罗马皇帝尤利乌斯·凯撒（Julius Caesar）于公元前 45 年引入的儒略\emph{历}无关。
+
+某一天的儒略\emph{日期}由年份和该年的第几天组合而成。例如，2024 年 1 月 1 日的儒略日期是 2024-01，2024 年 12 月 31 日的儒略日期是 2024-366（2024 年是闰年）。这同样与儒略日数无关。
+\end{mySidebar}
+
+\texttt{Date} 类的第二次设计迭代（代码清单 5.5）使用儒略日数。与之前版本的类一样，我们希望隐藏实现其对象状态的方式，因此成员变量 \texttt{julian} 是 private。我们不再需要私有成员变量 \texttt{year}、\texttt{month} 和 \texttt{day}。辅助函数 \texttt{to\_julian()} 把年、月、日转换为儒略日数。调用公有构造函数的方式没有改变——我们仍旧向它传入年、月、日这一组三个值。构造函数调用 \texttt{to\_julian()} 由这组三个值计算出对应的儒略日数。一个私有构造函数直接初始化儒略日数。辅助函数 \texttt{to\_ymd()} 把儒略日数转换为对应的年、月、日。
+
+\begin{codeboxt}{代码清单 5.5（程序 5.3 DateArithmetic-2）：\texttt{Date.h}}
+#include <set>
+
+using namespace std;
+
+class Date
+{
+public:
+    Date(const int year, const int month, const int day)
+        : julian(to_julian(year, month, day)) {}               ①
+    ...
+
+private:
+    static const set<int> LONG_MONTHS;
+
+    static const int JANUARY  = ...
+    ...
+    static const int MAX_MONTH_DAYS  = 31;
+    static const int MONTHS_PER_YEAR = 12;
+
+    Date(int j) : julian(j) {}                                  ②
+
+    int julian;                                                 ③
+
+    static int days_in_month(const int year, const int month);
+    static bool is_leap_year(const int year);
+
+    static int to_julian(const int year, const int month,       ④
+                         const int day);                        ④
+    static void to_ymd(const int julian, int& year, int& month, ⑤
+                                         int& day);             ⑤
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 公有构造函数调用 to\_julian()，由年、月、日初始化私有成员变量 julian。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 私有构造函数直接初始化儒略日数。的月份。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 隐藏的状态实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 隐藏的辅助函数，用于把年、月、日转换为儒略日数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 隐藏的辅助函数，用于把儒略日数转换为年、月、日}\par
+
+代码清单 5.6 表明，使用儒略日数进行日期运算的效率要高得多。成员函数 \texttt{add\_days()} 只是把参数 \texttt{n} 的值加到当前日期的儒略日数上，从而得到新日期的儒略日数。成员函数 \texttt{days\_from()} 从当前日期的儒略日数中减去另一个日期的儒略日数，从而得到天数。
+
+由于我们隐藏了 \texttt{Date} 类的实现，我们得以彻底改变实现，而没有引起使用该类的代码发生变化。我们可以像以前一样调用 \texttt{Date} 构造函数来创建 \texttt{Date} 对象，并原样调用公有取值函数 \texttt{get\_year()}、\texttt{get\_month()} 和 \texttt{get\_day()} 来获取日期的年、月、日。此外，我们可以像以前一样调用公有成员函数 \texttt{add\_days()} 和 \texttt{days\_from()}，并得到相同的预期结果。
+
+\begin{codeboxt}{代码清单 5.6（程序 5.3 DateArithmetic-2）：\texttt{Date.cpp}（可以更好）}
+#include <iostream>
+#include <set>
+#include <math.h>
+#include "Date.h"
+
+int Date::get_year() const
+{
+    int year, month, day;
+    to_ymd(julian, year, month, day);                               ①
+    return year;
+}
+
+int Date::get_month() const
+{
+    int year, month, day;
+    to_ymd(julian, year, month, day);                               ①
+    return month;
+}
+
+int Date::get_day() const
+{
+    int year, month, day;
+    to_ymd(julian, year, month, day);                               ①
+    return day;
+}
+
+Date Date::add_days(const int n) const 
+{ 
+    return Date(julian + n);                                        ②
+}
+
+int Date::days_from(const Date& other) const
+{
+    return julian - other.julian;                                   ③
+}
+
+const set<int> Date::LONG_MONTHS { 1, 3, 5, 7, 8, 10, 12 };
+
+int Date::days_in_month(const int year, const int month) ...
+
+bool Date::is_leap_year(const int year) ...
+
+int Date::to_julian(const int year, const int month, const int day) ④
+{
+    int y = year;
+    if (year < 0) y++;
+
+    int m = month;
+    if (month > 2) m++;
+    else
+    {
+        y--;
+        m += 13;
+    }
+
+    long j = static_cast<long>(floor(365.25*y) + floor(30.6001*m))
+                    + day + 1720995;
+
+    const long GREGORIAN_CUTOFF =
+        GREGORIAN_START_DATE +
+        MAX_MONTH_DAYS*(GREGORIAN_START_MONTH +
+                               MONTHS_PER_YEAR*GREGORIAN_START_YEAR);
+
+    if (day + MAX_MONTH_DAYS*(month + MONTHS_PER_YEAR*year) >=
+                                                    GREGORIAN_CUTOFF)
+    {
+        int x = static_cast<int>(0.01*y);
+        j += 2 - x + static_cast<int>(0.25*x);
+    }
+
+    return j;
+}
+
+void Date::to_ymd(int julian, int& year, int& month, int& day)      ④
+{
+    long ja = julian;
+
+    const long GREGORIAN_CUTOFF = 2299161;
+
+    if (julian >= GREGORIAN_CUTOFF)
+    {
+        long jalpha = static_cast<long>(
+            (static_cast<float>(julian - 1867216) - 0.25)/36524.25);
+        ja += 1 + jalpha - static_cast<long>(0.25*jalpha);
+    }
+
+    long jb = ja + 1524;
+    long jc = static_cast<long>(
+        6680.0 + (static_cast<float>(jb - 2439870) - 122.1)/365.25);
+    long jd = static_cast<long>(365*jc + (0.25*jc));
+    long je = static_cast<long>((jb - jd)/30.6001);
+
+    day = jb - jd - static_cast<long>(30.6001*je);
+
+    month = je - 1;
+    if (month > 12) month -= 12;
+
+    year = jc - 4715;
+    if (month > 2) year--;
+    if (year <= 0) year--;
+}
+
+void Date::print()
+{
+    int year, month, day;
+    to_ymd(julian, year, month, day);                               ⑤
+
+    cout << month << "/" << day << "/";
+    if (year > 0) cout <<  year;
+    else          cout << -year << " BCE";
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 把儒略日数转换为年、月、日。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 对儒略日数做一次简单加法后返回一个新的 Date。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 儒略日数的简单减法}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 来自 Numerical Recipes, the Art of Scientific Computing（第 3 版，剑桥大学出版社，2007 年）的转换算法}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 从儒略日数转换，以打印年、月、日。}\par
+
+同一个测试程序（代码清单 5.4）产生相同的输出。
+
+尽管 \texttt{Date} 类的第二次迭代可以非常高效地进行日期运算，但它引入了另一种低效。辅助函数 \texttt{to\_julian()} 计算与公历年、月、日对应的儒略日数。反过来，成员函数 \texttt{to\_ymd()} 计算与儒略日数对应的年、月、日。由于公历规则，两者都很复杂。
+
+公有构造函数调用 \texttt{to\_julian()}，由年、月、日的值初始化 \texttt{julian}（代码清单 5.5）。取值函数 \texttt{get\_year()}、\texttt{get\_month()} 和 \texttt{get\_day()} 中的每一个都必须先调用 \texttt{to\_ymd()}，才能分别返回年、月、日。公有成员函数 \texttt{print()} 也必须调用 \texttt{to\_ymd()}。
+
+\myGraphic{0.626}{images/CH05_F02_UN05_Mak.png}{}
+
+我们仍然没有好的设计（图 5.3）。但我们可以通过第三次迭代来提高 \texttt{Date} 类的效率。
+
+\myGraphic{0.760}{images/CH05_F03_Mak.png}{图 5.3 迭代 2 版本的 \texttt{Date} 类使用儒略日数非常高效地执行日期运算，但获取年、月、日的取值函数各自都必须调用一个代价高昂的转换算法。我们又得到了一块煤。}
+
+\subsection{5.3.3 迭代 3：采用惰性求值的混合方案}
+
+我们怎样才能既快速访问年、月、日，又能高效地进行日期运算呢？\texttt{Date} 类的这次第三个迭代采用了一种混合方案。这个版本拥有全部四个私有成员变量：\texttt{year}、\texttt{month}、\texttt{day} 和 \texttt{julian}。
+
+\begin{codeboxt}{代码清单 5.7（程序 5.4 DateArithmetic-3）：\texttt{Date.h}（高效的混合版本）}
+#include <set>
+
+using namespace std;
+
+class Date
+{
+public:
+    Date(const int y, const int m, const int d)
+        : year(y), month(m), day(d), julian(0),
+          ymd_valid(true), julian_valid(false) {}  ①
+
+    int get_year();
+    int get_month();
+    int get_day();
+
+    Date add_days(const int n);
+    int days_from(Date& other);
+
+    void print();
+
+private:
+    static const set<int> LONG_MONTHS;
+
+    static const int JANUARY  = ...
+...
+
+    Date(int j)
+        : year(2000), month(1), day(1), julian(j),
+          ymd_valid(false), julian_valid(true) {}  ②
+
+    int year, month, day;   
+    int julian;
+
+    bool ymd_valid;                                ③
+    bool julian_valid;                             ④
+
+    static int days_in_month(const int year, const int month);
+    static bool is_leap_year(const int year);
+
+    void validate_ymd();                           ⑤
+    void validate_julian();                        ⑥
+
+    static int to_julian(const int year, const int month,
+                         const int day);
+    static void to_ymd(const int julian, int& year, int& month,
+                                         int& day);
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 在 Date 对象创建后，year、month 和 day 的值是有效的，但 julian 的值不是。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 在 Date 对象创建后，julian 的值是有效的，但 year、month 和 day 的值不是。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 年、月、日这一组三个值是否有效？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ julian 的值是否有效？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 隐藏的辅助函数，用于让年、月、日这一组三个值变得有效}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 隐藏的辅助函数，用于让 julian 的值变得有效。}\par
+
+布尔成员变量 \texttt{ymd\_valid} 和 \texttt{julian\_valid} 有助于确保在必要时，\texttt{julian} 的值与 \texttt{year}、\texttt{month}、\texttt{day} 这一组三个值保持同步。辅助函数 \texttt{validate\_ymd()} 让这组三个值与 \texttt{julian} 的当前值同步。辅助函数 \texttt{validate\_julian()} 让 \texttt{julian} 的值与这组三个值的当前值同步。
+
+\begin{codeboxt}{代码清单 5.8（程序 5.4 DateArithmetic-3）：\texttt{Date.cpp}（高效的混合版本）}
+#include <iostream>
+#include <set>
+#include <math.h>
+#include "Date.h"
+
+int Date::get_year()
+{
+    validate_ymd();                             ①
+    return year;
+}
+
+int Date::get_month()
+{
+    validate_ymd();                             ①
+    return month;
+}
+
+int Date::get_day()
+{
+    validate_ymd();                             ①
+    return day;
+}
+
+Date Date::add_days(const int n)
+{
+    validate_julian();                          ②
+    return Date(julian + n);
+}
+
+int Date::days_from(Date& other)
+{
+    validate_julian();                          ②
+    other.validate_julian();                    ②
+    return julian - other.julian;
+}
+
+const set<int> Date::LONG_MONTHS ...
+
+int Date::days_in_month(const int year, const int month) ...
+
+bool Date::is_leap_year(const int year) ...
+
+void Date::validate_ymd()                       ③
+{                                               ③
+    if (!ymd_valid)                             ③
+    {                                           ③
+        to_ymd(julian, year, month, day);       ③
+        ymd_valid = true;                       ③
+    }                                           ③
+}                                               ③
+
+void Date::validate_julian()                    ④
+{                                               ④
+    if (!julian_valid)                          ④
+    {                                           ④
+        julian = to_julian(year, month, day);   ④
+        julian_valid = true;                    ④
+    }                                           ④
+}                                               ④
+
+int Date::to_julian(const int year, const int month, const int day) ...
+
+void Date::to_ymd(int julian, int& year, int& month, int& day) ...
+
+void Date::print()
+{
+    validate_ymd();                             ⑤
+
+    cout << month << "/" << day << "/";
+    if (year > 0) cout <<  year;
+    else          cout << -year << " BCE";
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 在返回年、月、日的值之前先验证它们。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 在进行日期运算之前先验证儒略日数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 让年、月、日这组三个值与 julian 的当前值同步。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 让 julian 的值与年、月、日这组三个值的当前值同步。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 在打印年、月、日的值之前先验证它们。}\par
+
+公有取值函数 \texttt{get\_year()}、\texttt{get\_month()} 和 \texttt{get\_year()} 每个都必须先调用辅助函数 \texttt{validate\_ymd()}，以确保它返回的值与 \texttt{julian} 的当前值同步。公有成员函数 \texttt{print(}) 在打印之前也必须调用 \texttt{validate\_ymd()}。公有成员函数 \texttt{add\_days()} 和 \texttt{days\_from()} 都用儒略日数进行日期运算，它们各自都必须调用辅助函数 \texttt{validate\_julian()}，以确保 \texttt{julian} 的值与 \texttt{year}、\texttt{month}、\texttt{day} 的当前值同步。
+
+辅助函数 \texttt{validate\_ymd()} 只有在 \texttt{year}、\texttt{month}、\texttt{day} 的值尚未与 \texttt{julian} 的值同步时，才调用代价高昂的辅助函数 \texttt{to\_ymd()}。私有布尔成员变量 \texttt{ymd\_valid} 跟踪这一同步状态。类似地，辅助函数 \texttt{validate\_julian()} 只有在 \texttt{julian} 的值尚未与 \texttt{year}、\texttt{month}、\texttt{day} 的值同步时，才调用代价高昂的辅助函数 \texttt{to\_julian()}。私有布尔成员变量 \texttt{julian\_valid} 跟踪同步状态。
+
+我们只在即将访问 \texttt{year}、\texttt{month}、\texttt{day} 的值时才调用辅助函数 \texttt{to\_ymd()}。我们只在即将使用 \texttt{julian} 的值进行日期运算时才调用辅助函数 \texttt{to\_julian()}。这是\emph{惰性求值原则}（Lazy Evaluation Principle）的一个例子：我们把计算推迟到需要结果时才进行，从而避免不必要的计算，使代码更高效。
+
+\begin{mySidebar}{惰性求值原则}
+
+如果在运行时我们并不立即需要某个计算的结果，那么就应该偷个懒，把这个计算推迟到需要结果时再做。如果计算代价高昂或耗时，惰性求值原则对提升性能尤其有用。
+\end{mySidebar}
+
+\myGraphic{0.787}{images/CH05_F03_UN06_Mak.png}{}
+
+由于我们用私有成员变量隐藏了 \texttt{Date} 类的实现，并提供了公有取值函数，我们再次得以重构代码，进一步提高其效率。我们把实现层面的改动封装了起来。使用 \texttt{Date} 类的代码只需知道，\texttt{Date} 对象的状态由它的年、月、日来刻画，并且 \texttt{Date} 对象可以高效地进行日期运算。我们隐藏了用儒略日数支持日期运算这一事实（图 5.4）。
+
+\myGraphic{0.777}{images/CH05_F04_Mak.png}{图 5.4 迭代 3 版本的 \texttt{Date} 类是一个使用惰性求值的混合体。它在三个版本中性能最佳。这一版本配得上一罐黄金。}
+
+\section{公有设值函数谨慎地修改隐藏的实现}
+
+公有取值函数让代码能够探查对象的状态，而不透露状态是如何实现的。另一方面，公有设值函数让代码能够修改对象的状态，同样不透露状态是如何实现的。
+
+本章中 \texttt{Date} 类的三个版本都没有提供任何公有设值函数。因此，一旦我们在运行时用年、月、日的值构造出一个 \texttt{Date} 对象，该对象就是\emph{不可变}的——没有办法改变它的状态。不可变对象往往有应用逻辑上的合理理由。我们将在 5.7 节进一步了解不可变对象。
+
+代码清单 5.9 展示了 \texttt{Date} 类的另一个版本。这个版本有选择地允许访问其实现的另一部分——它的儒略日数。我们现在把接受一个整数值来初始化成员变量 \texttt{julian} 的构造函数设为 public。公有取值函数 \texttt{get\_julian()} 返回私有数据成员 \texttt{julian} 的值。公有设值函数 \texttt{set\_julian()} 把 \texttt{julian} 设为其参数值，从而改变 \texttt{Date} 对象的状态。因此，在这个版本中，\texttt{Date} 对象是可变的。
+
+\begin{codeboxt}{代码清单 5.9（程序 5.5 DateArithmetic-4）：\texttt{Date.h}}
+#include <set>
+
+using namespace std;
+
+class Date
+{
+public:
+    Date()
+        : year(2000), month(1), day(1), julian(0),
+          ymd_valid(false), julian_valid(false) {}
+
+    Date(const int y, const int m, const int d)
+        : year(y), month(m), day(d), julian(0),
+          ymd_valid(true), julian_valid(false) {}
+
+    Date(int j)                                     ①
+        : year(2000), month(1), day(1), julian(j),  ①
+          ymd_valid(false), julian_valid(true) {}   ①
+
+    ...
+
+    int get_julian();                               ②
+    void set_julian(const int j);                   ③
+
+    ...
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 用于初始化儒略日数的公有构造函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 儒略日数的取值函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 儒略日数的设值函数}\par
+
+代码清单 5.10 展示了公有成员函数 \texttt{get\_julian()} 和 \texttt{set\_julian()} 的实现。函数 \texttt{set\_julian()} 让代码能够以安全的方式修改私有成员变量 \texttt{julian} 的值。它先检查参数的值再使用，如果值为负就中止程序。实际应用处理这一错误应当比立刻中止更为优雅。类似地，每个构造函数也应当检查其参数值。
+
+\begin{codeboxt}{代码清单 5.10（程序 5.5 DateArithmetic-4）：\texttt{Date.cpp}（最优的混合版本）}
+...
+
+int Date::get_julian()
+{
+    validate_julian();
+    return julian;
+}
+
+void Date::set_julian(const int j)
+{
+    assert(j >= 0);
+    julian = j;
+    julian_valid = true;
+    ymd_valid = false;
+}
+
+...
+\end{codeboxt}
+
+新的测试程序练习了对 \texttt{Date} 对象儒略日数的访问和设置。
+
+\begin{codeboxt}{代码清单 5.11（程序 5.5 DateArithmetic-4）：\texttt{tester.cpp}}
+#include <iostream>
+#include <iomanip>
+#include "Date.h"
+
+using namespace std;
+
+int main()
+{
+    Date date1(2025, 9, 2);  //2025 年 9 月 2 日
+    Date date2(2027, 4, 3);  //2027 年 4 月 3 日
+
+    cout << "date1 = "; date1.print(); cout << endl;
+    cout << "date2 = "; date2.print(); cout << endl;
+
+    int count = date2.days_from(date1);
+    cout << "count = " << count << endl;
+
+    cout << "should be date2: ";
+    date1.add_days(count).print(); cout << endl << endl;
+
+    int j1 = date1.get_julian();
+    cout << "date1 Julian day number = " << j1 << endl << endl;
+
+    Date d;
+    int js[] = { 0, 2440000, 3000000 };
+
+    for (int j : js)
+    {
+        d.set_julian(j);
+        cout << setw(8) << d.get_julian();
+        cout << «: «; d.print(); cout << endl;
+    }
+
+    cout << endl;
+
+    d.set_julian(j1);
+    cout << "should be date1: "; d.print(); cout << endl;
+
+    return 0;
+}
+\end{codeboxt}
+
+打印的结果是
+
+\begin{codebox}
+date1 = 9/2/2025
+date2 = 4/3/2027
+count = 578
+should be date2: 4/3/2027
+
+date1 Julian number = 2460921
+
+       0: 1/1/-4713
+ 2440000: 5/23/1968
+ 3000000: 8/15/3501
+
+should be date1: 9/2/2025
+\end{codebox}
+
+\section{当心危险的设值函数}
+
+我们是否总应倾向于提供设值函数呢？隐藏实现中那一组三个值——年、月、日——又该怎么办？我们来看看，如果提供额外的设值函数，可能会发生什么。
+
+\begin{codeboxt}{代码清单 5.12（程序 5.6 DateArithmetic-5）：\texttt{Date.cpp}（设计糟糕）}
+void Date::set_year(const int y)
+{
+    assert(y != 0);
+
+    validate_ymd();
+    year = y;
+    julian_valid = false;
+}
+
+void Date::set_month(const int m)
+{
+    assert((m >= 1) && (m <= 12));
+
+    validate_ymd();
+    month = m;
+    julian_valid = false;
+}
+
+void Date::set_day(const int d)
+{
+    assert((d >= 1) && (d <= 31));  //需要更多检查！
+
+    validate_ymd();
+    day = d;
+    julian_valid = false;
+}
+\end{codeboxt}
+
+在实际应用中，设值函数 \texttt{set\_day()} 需要对其参数值进行全面得多的验证，还要考虑当前的月份和年份。下面的代码清单是用于这个设计糟糕的 \texttt{Date} 类版本的测试程序。
+
+\begin{codeboxt}{代码清单 5.13（程序 5.6 DateArithmetic-5）：\texttt{tester.cpp}}
+#include <iostream>
+#include <iomanip>
+#include "Date.h"
+
+using namespace std;
+
+int main()
+{
+    Date d(2030, 1, 31);  //2030 年 1 月 31 日
+    cout << "starting date: "; d.print(); cout << endl;
+    cout << "Julian day number = " << d.get_julian() << endl << endl;
+
+    d.set_month(2);                                 ①
+    cout << "modified date: "; d.print(); cout << endl;
+    int j = d.get_julian();
+    d.set_julian(j);
+    cout << "surprise date: "; d.print(); cout << endl;
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 有问题的月份设置}\par
+
+输出为
+
+\begin{codebox}
+starting date: 1/31/2030
+Julian day number = 2462533
+
+modified date: 2/31/2030
+surprise date: 3/3/2030
+\end{codebox}
+
+通过提供设值函数来分别设置 \texttt{Date} 对象私有的 \texttt{year}、\texttt{month} 和 \texttt{day} 成员变量，我们竟然把这个对象置于了无效状态，即不存在的日期 2030 年 2 月 31 日。接着，通过设置那个不存在的日期的儒略日数，我们最终得到了 2030 年 3 月 3 日，一个令人讨厌的意外。我们绝不能允许设值函数把对象置于无效状态。下一章将讨论代码中的意外。
+
+\myGraphic{0.776}{images/CH05_F04_UN07_Mak.png}{}
+
+如果我们想允许设置一个已有 \texttt{Date} 对象的年、月、日，一个安全得多的替代方案是提供一个一次性修改这三者的设值函数：
+
+\begin{codebox}
+void Date::set_ymd(const int y, const int m, const int d)
+{
+    ...
+}
+\end{codebox}
+
+这样一来，在实际应用中，设值函数检查参数以确保三个值的组合能构成一个有效的 \texttt{Date} 对象就会容易得多。当然，接受年、月、日参数值的 \texttt{Date} 构造函数也应当检查参数值。
+
+\section{迪米特法则的规则}
+
+迪米特法则规定了几条规则，帮助我们设计出正确的松耦合类。遵循这些规则，我们就能避免设计出对另一个类有某些问题性依赖的类。具体来说，这些规则说明了类 \texttt{A} 的成员函数 \texttt{afunc} 能否调用另一个类 \texttt{B} 的成员函数 \texttt{bfunc}：
+
+A. 如果类 \texttt{A} 聚合了该对象（即类 \texttt{A} 的一个成员变量的值就是该 \texttt{B} 类对象，或是指向该 \texttt{B} 类对象的指针），那么函数 \texttt{afunc} 就可以调用类 \texttt{B} 对象上的函数 \texttt{bfunc}。
+
+B. 如果该对象是作为参数传给 \texttt{afunc} 的，那么函数 \texttt{afunc} 就可以调用类 \texttt{B} 对象上的函数 \texttt{bfunc}。
+
+C. 如果该对象是由 \texttt{afunc} 实例化的，那么函数 \texttt{afunc} 就可以调用类 \texttt{B} 对象上的函数 \texttt{bfunc}。
+
+D. 对于由对另一个对象的成员函数的调用所返回的类 \texttt{B} 对象，函数 \texttt{afunc} 不应调用其上的函数 \texttt{bfunc}。
+
+迪米特法则基本上是说，一个类只应调用与它关系密切的对象的成员函数。类 \texttt{DemeterAuto}、\texttt{Engine} 和 \texttt{Sparkplug} 提供了遵守和违反该法则规则的示例。
+
+\begin{codeboxt}{代码清单 5.14（程序 5.7 DemeterAuto）：\texttt{DemeterAuto.h}}
+class Sparkplug
+{
+public:
+    void replace() { /* replace sparkplug */ }
+};
+
+class Engine
+{
+public:
+    Sparkplug *get_sparkplug() const { return plug; }
+    void replace_sparkplug()
+    {
+        plug->replace();                         ①
+    }
+
+private:
+    Sparkplug *plug;
+};
+
+class DemeterAuto
+{
+public:
+    void service_sparkplug(Sparkplug *plug)
+    {
+        plug->replace();                         ②
+    }
+
+    void maintain_auto()
+    {
+        engine.replace_sparkplug();              ③
+
+        Sparkplug *plug1 = engine.get_sparkplug();
+        plug1->replace();                        ④
+
+        Sparkplug *plug2 = new Sparkplug();
+        plug2->replace();                        ⑤
+    }
+
+private:
+    Engine engine;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 遵守：plug 是类 Engine 的成员变量（规则 A）。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 遵守：plug 是成员函数 service\_sparkplug() 的参数（规则 B）。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 遵守：engine 是类 DemeterAuto 的成员变量（规则 A）。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 违反：plug1 的值指向 Engine 对象返回的一个对象（规则 D）。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 遵守：plug2 的值指向由成员函数 maintain\_auto() 实例化的对象（规则 C）。}\par
+
+\section{但实现真的被隐藏了吗？}
+
+要编写一个存储员工记录的应用，我们可以有一个 \texttt{Employee} 类，通过与 \texttt{Date} 类的一对一聚合来记录员工的出生日期（代码清单 5.15）。我们希望应用的普通用户无法修改 \texttt{Employee} 对象——当我们创建了一个对象之后，此类用户不应能够更改员工的 id、姓名和出生日期。三个私有成员变量 \texttt{employee\_id}、\texttt{name} 和 \texttt{birthdate} 都位于隐藏的状态实现中，且该类自身没有设值函数。
+
+然而，我们将使用 \texttt{Date} 类的可变版本（代码清单 5.9 和 5.10），它带有公有的 \texttt{set\_julian()} 设值函数。我们假设应用中另一个类，比如 \texttt{EmployeeForAdmin}，也聚合了 \texttt{Date} 类，但带有设值函数，允许管理员用户修正员工出生日期中的错误。然而，普通用户不应能够修改员工的出生日期。把 \texttt{birthdate} 设为 private 就足够了吗？
+
+\begin{codeboxt}{代码清单 5.15（程序 5.8 HiddenDate-1）：\texttt{Employee.h}（有缺陷的设计）}
+#include <iostream>
+#include <string>
+#include "Date.h"
+
+using namespace std;
+
+class Employee
+{
+public:
+    Employee(long id, string name, Date *bdate)
+        : employee_id(id), name(name), birthdate(bdate) {}
+
+    Date *get_birthdate() const { return birthdate; }
+
+    friend ostream& operator <<(ostream& os, const Employee& emp);
+
+private:
+    long employee_id;
+    string name;
+
+    Date *birthdate;
+};
+
+inline ostream& operator <<(ostream& os, const Employee& emp)
+{
+    os << "Employee #" <<emp.employee_id << endl;
+    os << "  Name: " << emp.name << endl;
+    os << "  Birthdate: "; emp.birthdate->print(); os << endl;
+
+    return os;
+}
+\end{codeboxt}
+
+既然 \texttt{Employee} 类没有设值函数，\texttt{Employee} 对象就真的不可变吗？代码清单 5.16 是一个测试程序。
+
+\begin{codeboxt}{代码清单 5.16（程序 5.8 HiddenDate-1）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Employee.h"
+
+using namespace std;
+
+int main()
+{
+    Date *date1 = new Date(2000, 1, 10);
+    Employee mary(1234567890, "Mary", date1);     ①
+    cout << mary << endl;
+
+    int julian1 = date1->get_julian();
+    date1->set_julian(julian1 + 366);             ②
+    cout << mary << endl;
+
+    Date *date2 = mary.get_birthdate();
+    int julian2 = date2->get_julian();
+    date2->set_julian(julian2 + 365);             ③
+    cout << mary << endl;
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 这个 Employee 对象不可变吗？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 把出生日期的年份改为 2001}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 把出生日期的年份改为 2002}\par
+
+输出如下：
+
+\begin{codebox}
+Employee #1234567890
+  Name: Mary
+  Birthdate: 1/10/2000
+
+Employee #1234567890
+  Name: Mary
+  Birthdate: 1/10/2001
+
+Employee #1234567890
+  Name: Mary
+  Birthdate: 1/10/2002
+\end{codebox}
+
+显然，\texttt{Employee} 对象不是不可变的。这里有几处设计失误：
+
+\begin{itemize}
+\item 我们首先动态地创建了一个新的 \texttt{Birthday} 对象，并把它的指针赋给变量 \texttt{date1}。我们用 \texttt{date1} 创建了 \texttt{Employee} 对象。
+\item 由于我们拥有一个指针，指向现在嵌入 \texttt{Employee} 对象的那个 \texttt{Birthday} 对象，我们得以用该指针更改员工的出生年份。
+\item 利用 \texttt{Employee} 类的取值函数，我们获得了一个指向 \texttt{Employee} 对象内嵌的 \texttt{Birthday} 对象的指针。我们又用该指针再次更改了员工的出生年份。
+\end{itemize}
+
+\myGraphic{0.740}{images/CH05_F04_UN08_Mak.png}{}
+
+这无疑是一处隐蔽的设计缺陷。如果一个类的对象本应是不可变的，却提供了指向其隐藏状态实现的指针，我们就可能在运行时无意中用这些指针修改对象的状态。
+
+有一些补救办法可以确保 \texttt{Employee} 对象不可变，如代码清单 5.17 所示。类的构造函数应当存储一份传给它的 \texttt{Date} 对象的副本。取值函数应当返回一个指向内嵌 \texttt{Date} 对象副本的指针。这样，就不可能更改嵌入 \texttt{Employee} 对象中的出生日期了。
+
+\begin{codeboxt}{代码清单 5.17（程序 5.9 HiddenDate-2）：\texttt{Employee.h}（修正后的设计）}
+#include <iostream>
+#include <string>
+#include "Date.h"
+
+using namespace std;
+
+class Employee
+{
+public:
+    Employee(long id, string name, Date *bdate)
+        : employee_id(id), name(name),
+          birthdate(new Date(*bdate)) {}                           ①
+
+    long employee_id;
+    string name;
+
+    Date *get_birthdate() const { return new Date(*birthdate); }   ②
+
+    ...
+
+private:
+    Date *birthdate;
+};
+...
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 存储传入的 Date 对象的一份副本。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 返回一个指向所存储 Date 对象副本的指针。}\par
+
+使用同一个测试程序，输出表明员工的出生日期没有改变：
+
+\begin{codebox}
+Employee #1234567890
+  Name: Mary
+  Birthdate: 1/10/2000
+
+Employee #1234567890
+  Name: Mary
+  Birthdate: 1/10/2000
+
+Employee #1234567890
+  Name: Mary
+  Birthdate: 1/10/2000
+\end{codebox}
+
+\section{开闭原则支持代码稳定性}
+
+在第 2 章中，在图书目录应用的第三次开发迭代期间，我们为超类 \texttt{Attributes} 创建了几个子类。图 5.5 展示了那个命运多舛的设计。
+
+尽管我们最终认定，对该应用而言拥有许多子类是一个糟糕的设计，但图 5.5 是开闭原则的一个很好的例子：按照该原则，我们应当让一个类对修改关闭，而对子类化开放（2.3.3 节）。它假设我们确信某个类已经捕捉到一组对象的所有共同属性和行为，因此该类的设计不应改变。这支持了代码稳定性。然而，我们允许为那些具有超出共同属性和行为的对象扩展该类。换句话说，被关闭的类是超类，而扩展则是它的子类。
+
+\myGraphic{0.980}{images/CH05_F05_Mak.png}{图 5.5 图书目录应用的一个设计，包含超类 \texttt{Attributes} 及其子类。在 \texttt{Attributes} 的类图中，符号 \texttt{\#} 表示成员函数 \texttt{is\_match(Attributes)} 是 protected——它对子类可见，但对其他代码隐藏。}
+
+开闭原则是另一种设计具有隐藏实现的类的方式。通过把超类的成员变量和成员函数设为 private，我们可以隐藏其子类所继承的状态和行为的共同部分是如何实现的。在类 \texttt{Attributes} 中，成员变量 \texttt{title}、\texttt{last} 和 \texttt{first} 是 private。\texttt{FictionAttrs} 扩展了 \texttt{Attributes}，因此该类如何实现书名——也就是说，子类对象隐藏了它们如何实现自身状态中 \texttt{title}、\texttt{last} 和 \texttt{first} 这几个部分。该类用其私有的 \texttt{year} 和 \texttt{genre} 成员变量扩展了它隐藏的状态实现。
+
+\myGraphic{0.893}{images/CH05_F05_UN09_Mak.png}{}
+
+下面的代码清单是开闭原则的另一个例子。假设 \texttt{Mammal} 类拥有某个特定应用所需要的哺乳动物的所有共同属性和行为。因此，我们可以关闭这个类。
+
+\begin{codeboxt}{代码清单 5.18（程序 5.10 Mammals）：\texttt{Mammal.h}}
+#include <iostream>
+
+using namespace std;
+
+class Mammal
+{
+public:
+    Mammal(const double w, const double h) : weight(w), height(h) {}
+    virtual ~Mammal() {}
+
+    virtual void eat() = 0;                          ①
+    virtual void perform() = 0;                      ①
+
+    double get_weight() const { return weight; }     ②
+    double get_height() const { return height; }     ②
+
+protected:
+    void sleep()                                     ③
+    {                                                ③
+        cout << "close eyes" << endl;                ③
+        snore();                                     ③
+    }                                                ③
+
+private:
+    double weight, height;                           ④
+    void snore()                                     ⑤
+    {                                                ⑤
+        cout << "Zzzz" << endl;                      ⑤
+    }                                                ⑤
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由子类实现的共同公有行为}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 由该超类实现的共同公有行为}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 只有子类可以访问的隐藏的共同行为}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 隐藏的共同状态实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 隐藏的共同行为实现}\par
+
+我们关闭了 \texttt{Mammal} 类，但可以让它对扩展保持开放。子类 \texttt{Human} 和 \texttt{Cat} 各自通过添加自己的成员变量和函数来扩展该类。每个子类都必须定义成员函数 \texttt{eat()} 和 \texttt{perform()}。受保护（protected）的成员函数 \texttt{sleep()} 对 \texttt{Mammal} 的子类可见，但对其他代码隐藏。
+
+\begin{codeboxt}{代码清单 5.19（程序 5.10 Mammals）：\texttt{Mammals}.h}
+#include <iostream>
+#include "Mammal.h"
+
+class Human : public Mammal
+{
+public:
+    Human(const double w, const double h, const bool ng)
+        : Mammal(w, h), needs_glasses(ng) {};
+
+    ~Human() {};
+
+    void eat()     { cout << "eat with knife and fork"      ①
+                          << endl; }                        ①
+    void perform() { read_book(); sleep(); }                ①
+
+private:
+    bool needs_glasses;                                     ②
+
+    void read_book()                                        ③
+    {                                                       ③
+        if (needs_glasses) cout << "squint" << endl;        ③
+        cout << «turn pages» << endl;                       ③
+    }                                                       ③
+};
+
+class Cat : public Mammal
+{
+public:
+    Cat(const double w, const double h, const double ff)
+        : Mammal(w, h), fur_factor(ff) {};
+
+    ~Cat() {}
+
+    void eat()     { cout << "eat from a bowl" << endl; }   ④
+    void perform() { shed(); }                              ④
+
+private:
+    double fur_factor;                                      ⑤
+
+    void shed()                                             ⑥
+    {                                                       ⑥
+        cout << "shed ";                                    ⑥
+        if (fur_factor > 1.0) cout << "a lot";              ⑥
+        else                  cout << "a little";           ⑥
+        cout << endl;                                       ⑥
+    }                                                       ⑥
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 供人类使用的共同行为的公有实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 供人类使用的隐藏的扩展状态实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 供人类使用的隐藏的扩展行为实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 供猫使用的共同行为的公有实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 供猫使用的隐藏的扩展状态实现}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 供猫使用的隐藏的扩展行为实现}\par
+
+子类 \texttt{Human} 隐藏了它那部分状态（成员变量 \texttt{needs\_glasses}）和行为（成员函数 \texttt{read\_book()}）的实现。同样，子类 \texttt{Cat} 隐藏了它那部分状态（成员变量 \texttt{fur\_factor}）和行为（成员函数 \texttt{shed()}）的实现。由于它们在超类 \texttt{Mammal} 中被声明为纯虚函数，两个子类都必须实现公有成员函数 \texttt{eat()} 和 \texttt{perform()}。每个子类状态（身高和体重）和行为（打鼾）的共同部分的实现都由其超类 \texttt{Mammal} 隐藏。下面的代码清单是一个测试程序。
+
+\begin{codeboxt}{代码清单 5.20（程序 5.10 Mammals）：\texttt{tester.cpp}}
+#include "Mammals.h"
+
+int main()
+{
+    Human ron(77.11, 1.85, true);
+    cout << "Human Ron" << endl;
+    cout << "weight: " << ron.get_weight() << " kg" << endl;
+    cout << "height: " << ron.get_height() << " m" << endl;
+    ron.eat();
+    ron.perform();
+
+    cout << endl;
+ 
+    Cat buddy(5.55, 0.30, 1.25);
+    cout << "Cat Buddy" << endl;
+    cout << "weight: " << buddy.get_weight() << " kg" << endl;
+    cout << "height: " << buddy.get_height() << " m" << endl;
+    buddy.eat();
+    buddy.perform();
+
+    return 0;
+}
+\end{codeboxt}
+
+输出为
+
+\begin{codebox}
+Human Ron
+weight: 77.11 kg
+height: 1.85 m
+eat with knife and fork
+squint
+turn pages
+close eyes
+Zzzz
+
+Cat Buddy
+weight: 5.55 kg
+height: 0.3 m
+eat from a bowl
+shed a lot
+\end{codebox}
+
+我们在超类中实现一份共同的核心实现，并将其锁定以免进一步改动，从而支持代码稳定性；但我们可以在子类中扩展实现。我们可以隐藏共同的实现和扩展的实现。
+
+\section*{小结}
+
+\begin{itemize}
+\item 通过隐藏类实现状态的方式来最小化对某个类的依赖，从而支持封装。把成员变量和成员函数设为 private 来隐藏它们。当一个类隐藏的实现被封装起来后，我们可以重构实现来改进它，而不会引起任何使用该类的代码发生变化。
+\item 公有取值函数和设值函数成员函数允许对隐藏的对象状态进行受控访问。取值函数从对象的状态中返回值，而不透露状态是如何实现的。设值函数修改对象的状态，而不透露状态是如何实现的。
+\item 设值成员函数不应把对象置于无效状态。我们必须谨慎决定提供哪些设值函数。
+\item 不可变的类创建出的对象在我们构造之后无法被修改。这样的类不应提供公有设值函数。
+\item 对象本应不可变的类绝不能提供指向其隐藏状态实现的指针，因为那会让其他代码在运行时用这些指针修改对象的状态。
+\item 根据惰性求值原则，应当通过把一个代价高昂的计算推迟到需要其结果时才进行，来提升运行时性能。
+\item 迪米特法则规定了一些规则，用来指导设计出对其他类没有问题性依赖的类。
+\item 开闭原则主张让超类对修改关闭，而对子类的扩展开放。超类可以隐藏并封装其子类所继承的状态和行为的共同部分的实现。这一原则支持代码稳定性。
+\end{itemize}

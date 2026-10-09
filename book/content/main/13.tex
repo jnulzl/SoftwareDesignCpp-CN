@@ -1,0 +1,1239 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 状态设计模式
+\end{itemize}
+\end{myChapterIntro}
+
+第 12 章展示了观察者（Observer）设计模式如何为一个应用提供模型：在该应用中，主题对象（发布者）通过为观察者对象（订阅者）提供内容数据，在应用的运行中扮演着关键角色。在本章中，同样有一个对象扮演着关键角色。我们必须监控这个对象在运行时的状态变化，因为它的行为对应用的运行至关重要。
+
+正如我们在 4.5 节中所见，改变对象成员变量取值的事件可以促使对象从一种状态转换到另一种状态。对象可以依据其当前状态表现出不同的行为。状态（State）设计模式为管理对象的各种状态、状态转换，以及每种状态下的不同行为提供了模型。
+
+\myGraphic{0.980}{images/CH13_00_UN01_Mak.png}{}
+
+\begin{myWarning}{注意}
+请务必阅读第 4 部分的引言，以了解关于设计模式的一般性重要信息，并弄清本章及后续各章如何讲解每一种模式。
+\end{myWarning}
+
+\section{状态设计模式为状态转换建模}
+
+这里有一个类比。你的汽车是一个复杂的对象，可以处于若干种状态，但同一时刻只能处于其中一种。例如，它可以处于熄火（off）、怠速（idling）、行驶（moving）或停止（stopped）状态。当汽车处于熄火状态时，你可以启动它。当它处于怠速状态时，你可以踩下油门，让它转换到行驶状态。当它处于行驶状态时，你可以踩下刹车，让它转换到停止状态。因此，在每种状态下，你都可以执行某些动作，让汽车正确地转换到另一个合理状态。汽车的行为取决于它所处的状态。例如，当它处于行驶状态时，它可以向前行驶。
+
+不过，汽车还必须处理不合理或无用的动作。例如，如果汽车已经停下，踩刹车不会产生任何效果。如果一辆老式汽车正在向前行驶，你转动点火钥匙会发出令人难受的刺耳摩擦声。
+
+在软件中，状态设计模式为那些必须管理对象运行时状态与行为的软件应用提供了模型。应用必须处理所有可能促使对象从一种状态转换到另一种状态的动作，无论这些动作是否合理。
+
+回想一下，对象在运行时的状态由其成员变量取值的集合唯一确定。我们的应用中可能有这样一个对象，其当前状态至关重要、需要监控，而应用的整个运行在很大程度上取决于该对象的当前状态及其行为方式。一种有用的设计策略是为各种状态显式命名，以便更容易地引用每一种状态。
+
+在我们的具体示例中，考虑体育场里的一台自动售票机。在任何时刻，这台机器都可能处于若干个已命名状态中的某一个（图 13.1）：
+
+\begin{itemize}
+\item \texttt{READY}——机器已就绪，可以接受顾客的信用卡。
+\item \texttt{VALIDATING}——机器正在验证顾客的信用卡。
+\item \texttt{TICKET\_SOLD}——机器已向顾客售出一张票。
+\item \texttt{SOLD\_OUT}——比赛门票已售罄，机器无法再售出任何票。
+\end{itemize}
+
+决定机器当前状态的成员变量有
+
+\begin{itemize}
+\item \texttt{count}——机器中剩余的票数（整数）
+\item \texttt{card\_inserted}——是否已插入顾客的信用卡（true 或 false）
+\item \texttt{card\_validity}——信用卡的有效性（YES、NO 或 UNKNOWN）
+\end{itemize}
+
+顾客的动作可以改变成员变量的取值，从而引发状态转换。但有时，机器本身也能引发状态转换。如果售票机处于 \texttt{READY} 状态，顾客插入信用卡的动作会使机器转换到 \texttt{VALIDATING} 状态。在该状态下，机器可以执行检查信用卡是否通过验证的动作。如果卡有效，机器便转换到 \texttt{TICKET\_SOLD} 状态，此时顾客可以执行取票的动作。但如果卡无效，机器就转换回 \texttt{READY} 状态。顾客可以在卡通过验证之前将其取出，这会迫使机器回到 \texttt{READY} 状态。顾客取走已售出的票同样会使机器转换回 \texttt{READY} 状态。但如果顾客取走的是最后一张票，机器就转换到 \texttt{SOLD\_OUT} 状态。回到 \texttt{READY} 状态后，顾客可以执行取出信用卡的动作。没有任何转换可以离开 \texttt{SOLD\_OUT} 状态。
+
+因此，顾客和售票机可能的动作有
+
+\begin{enumerate}
+\item 插入信用卡（由顾客执行）。
+\item 检查信用卡的验证状态（由售票机执行）。
+\item 取走已购的票（由顾客执行）。
+\item 取出信用卡（由顾客执行）。
+\end{enumerate}
+
+无论在何种状态下，售票机都无法控制顾客可能采取的动作，即便这些动作出乎意料。例如，顾客可能在信用卡通过验证之前就将其取出，也可能在尚未付款时就想取票。因此，机器还必须支持那些我们视为不合理的顾客动作。机器必须在每一种状态下处理所有可能的动作（图 13.1）。
+
+\myGraphic{0.980}{images/CH13_F01_Mak.png}{图 13.1 展示自动售票机四种状态及其状态转换的 UML 状态图。机器会跟踪它剩余的票数、是否插入了信用卡，以及信用卡的验证状态。顾客与机器的动作（带编号；例如 \textbf{1: insert card}）或某些条件（放在方括号中；例如 \textbf{[card invalid]}）可以引发从一种状态到另一种状态的转换。本图只展示会引发转换的动作。}
+
+为了尽可能保持简单，该图只展示会引发转换的动作。它不展示不合理的动作，例如当机器处于 \texttt{TICKET\_SOLD} 状态、卡仍插在机器中时又把一张信用卡插入机器。我们可以假定，不合理的动作不会导致状态转换；因此，机器会停留在当前状态。
+
+我们的示例应用是售票机的一个简单模拟。机器只有三张票。为了与应用交互，我们通过扮演顾客或机器的角色来触发各种动作。对于每一次 \texttt{Command?} 提示，我们可以输入 1 来插入信用卡，输入 2 来验证信用卡，输入 3 来取票，或者输入 4 来取出信用卡。应用会在内部跟踪其当前状态，并且必须根据该状态对每个动作做出正确的行为。输入 0 会终止程序。
+
+为了便于测试和调试，应用会在每次命令提示之前用方括号打印出售票机的当前状态、剩余的票数、是否插入了信用卡，以及信用卡的有效性。例如，
+
+\begin{codebox}
+[TICKET_SOLD 2 true yes] Command?
+\end{codebox}
+
+表示售票机处于 \texttt{TICKET\_SOLD} 状态，还剩两张票，已插入信用卡，且卡有效。
+
+以下是与售票机应用交互的示例。应用必须能够在每一种状态下处理所有动作。我们的输入（\texttt{1}、\texttt{2}、\texttt{3}、\texttt{4} 或 \texttt{0}）以粗体显示。
+
+\begin{itemize}
+\item 我们成功购买了一张票，机器返回 \texttt{READY} 状态： 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 3 false unknown] Command? \textbf{1} Validating your credit card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [VALIDATING 3 true unknown] Command? \textbf{2} Your credit card is validated. Take your ticket. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [TICKET\_SOLD 3 true yes] Command? \textbf{3} Remove your credit card. Enjoy the game! 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 2 true yes] Command? \textbf{4} You’ve removed your credit card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 2 false unknown] Command? \textbf{0} Done!
+\item 我们在机器已售罄时尝试购买一张票。机器停留在 \texttt{SOLD\_OUT} 状态： 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [\texttt{SOLD\_OUT} 0 false unknown] Command? 1 *** Game sold out. *** Remove your credit card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [\texttt{SOLD\_OUT} 0 true unknown] Command? \textbf{4} You’ve removed your credit card.
+\item 我们改变主意，在信用卡尚在验证时将其取出。机器返回 \texttt{READY} 状态： 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 3 false unknown] Command? \textbf{1} Validating your credit card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [VALIDATING 3 true unknown] Command? \textbf{4} You removed your credit card before it was validated. No sale. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 3 false unknown] Command?
+\item 机器未能验证信用卡并将其拒绝。我们取出信用卡后，机器返回 \texttt{READY} 状态： 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 2 false unknown] Command? \textbf{1} Validating your credit card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [VALIDATING 2 true unknown] Command? \textbf{2} *** Credit card rejected. *** Remove your card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 2 true no] Command? \textbf{4} You’ve removed your credit card.
+\item 我们在机器仍在检查信用卡有效性时尝试取票。这是一个不合理的动作，机器停留在当前的 \texttt{VALIDATING} 状态： 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [READY 3 false unknown] Command? \textbf{1} Validating your credit card. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [VALIDATING 3 true unknown] Command? \textbf{3} Still checking your credit card’s validity. 1: insert card, 2: check card validity 3: take ticket, 4: remove card, 0: quit [VALIDATING 3 true unknown] Command?
+\end{itemize}
+
+作为演示，我们的售票机示例应用的第一个版本不使用状态设计模式，随后我们会看到它的主要缺陷。第二个版本将使用该模式，我们会体会到它带来的好处。
+
+\subsection{13.1.1 期望的设计特性}
+
+一个成功实现状态、行为与状态转换的应用应具备以下设计特性：
+
+\begin{itemize}
+\item \emph{DF 1}——在运行时，应用的当前状态始终清晰明了。
+\item \emph{DF 2}——每种状态对应的代码，包括其行为和转换，都应得到良好的封装。
+\item \emph{DF 3}——每种状态对应的代码都应处理所有动作，无论这些动作对该状态是否合理。
+\item \emph{DF 4}——应当能够以尽可能少的代码改动来添加、删除或修改状态。
+\item \emph{DF 5}——除转换之外，各状态之间的依赖应当尽可能少。
+\end{itemize}
+
+\subsection{13.1.2 使用状态设计模式之前}
+
+对于最初的版本，我们可以用直截了当的方式设计售票机模拟应用。我们会看到它具备多少项期望的设计特性。之后，我们将采用一个仿照状态设计模式构建的设计来重构该应用。
+
+类 \texttt{TicketMachine} 是我们应用第一个版本的核心（图 13.2）。
+
+\myGraphic{0.526}{images/CH13_F02_Mak.png}{图 13.2 类 \texttt{TicketMachine} 是售票机应用第一个版本的核心。它的成员变量跟踪票数、是否插入了信用卡、信用卡的有效性，以及当前状态的名称。公有成员函数实现了顾客与机器的动作。}
+
+枚举类 \texttt{State} 和 \texttt{Validity} 分别表示售票机的状态和信用卡的有效性。它们各自都有一个重载的输出 \texttt{<<} 运算符。
+
+\begin{codeboxt}{代码清单 13.1（程序 13.1 Tickets）：\texttt{Enums.h}（使用设计模式之前）}
+#include <iostream>
+
+using namespace std;
+
+enum class State
+{
+    READY, VALIDATING, TICKET_SOLD, SOLD_OUT
+};
+
+inline ostream& operator <<(ostream& ostr, const State& state)
+{
+    switch (state)
+    {
+        case State::READY:       ostr << "READY ";       break;
+        case State::VALIDATING:  ostr << "VALIDATING ";  break;
+        case State::TICKET_SOLD: ostr << "TICKET_SOLD "; break;
+        case State::SOLD_OUT:    ostr << "SOLD_OUT ";    break;
+    }
+
+    return ostr;
+}
+
+enum class Validity
+{
+    YES, NO, UNKNOWN
+};
+
+inline ostream& operator <<(ostream& ostr, const Validity& valid)
+{
+    switch (valid)
+    {
+        case Validity::YES:     ostr << "yes";     break;
+        case Validity::NO:      ostr << "no";      break;
+        case Validity::UNKNOWN: ostr << "unknown"; break;
+    }
+
+    return ostr;
+}
+\end{codeboxt}
+
+类 \texttt{TicketMachine} 的私有成员变量跟踪票数、是否插入了信用卡、信用卡的有效性，以及机器的当前状态。它的成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 实现了顾客与机器的动作（图 13.1）。机器的初始状态是 \texttt{READY}。
+
+\begin{codeboxt}{代码清单 13.2（程序 13.1 Tickets）：\texttt{TicketMachine.h}（使用设计模式之前）}
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include "Enums.h"
+
+class TicketMachine
+{
+public:
+    TicketMachine(const int c)
+        : count(c), card_inserted(false),
+          card_validity(Validity::UNKNOWN), state(State::READY) ①
+    {
+        srand(time(NULL));
+    }
+
+    int      get_count()    const { return count; }
+    bool     get_inserted() const { return card_inserted; }
+    Validity get_validity() const { return card_validity; }
+    State    get()    const { return state; }
+
+    void run();
+
+    void insert_credit_card();  //1                            ②
+    void check_validity();      //2                            ②
+    void take_ticket();         //3                            ②
+    void remove_credit_card();  //4                            ②
+
+private:
+    int      count;
+    bool     card_inserted;
+    Validity card_validity;
+    State    state;                                             ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 初始 READY 状态}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 动作成员函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 机器的当前状态}\par
+
+无论售票机处于何种状态，每个成员函数都必须处理全部四种动作，即便某个动作对某一特定状态并无意义。这些动作会使机器依据其当前状态表现出不同的行为。有些动作可以引发状态转换。
+
+表 13.1 展示了由动作函数 \texttt{insert\_credit\_card()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+
+\begin{center}
+{\bfseries 表 13.1 动作函数 1：\texttt{insert\_credit\_card()}}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+售票机状态 & 机器在每种状态下的行为 \\
+\midrule
+\texttt{READY} & 如果尚未插入卡，\par 否则，如果已插入的卡无效，\par 否则， \\
+\texttt{VALIDATING} & 如果已插入的卡无效，\par 否则， \\
+\texttt{TICKET\_SOLD} & 输出“取走你已经购买的票。”\par 将 \texttt{card\_inserted} 设为 true。\par 将 \texttt{card\_validity} 设为 unknown。 \\
+\texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 输出“请取出你的卡。”\par 将 \texttt{card\_inserted} 设为 true。\par 将 \texttt{card\_validity} 设为 unknown。 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+当售票机处于 \texttt{READY} 状态、顾客将信用卡插入售票机时，成员函数 \texttt{insert\_credit\_card()} 是购票流程的起始函数。但该函数应处理所有状态下的所有动作。如果机器处于 \texttt{READY} 状态，并且我们在机器中尚未有卡时插入一张信用卡，机器就转换到 \texttt{VALIDATING} 状态。
+
+\begin{codeboxt}{代码清单 13.3（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 1 部分，共 5 部分）（使用设计模式之前）}
+#include <iostream>
+#include "Enums.h"
+#include "TicketMachine.h"
+
+using namespace std;
+
+void TicketMachine::insert_credit_card()  //动作 1
+{
+    switch (state)
+    {
+        case State::READY:
+        {
+            if (!card_inserted)
+            {
+                cout << "Validating your credit card. " << endl;
+
+                card_inserted = true;
+                card_validity = Validity::UNKNOWN;
+                state = State::VALIDATING;               ①
+            }
+            else if (card_validity == Validity::NO)
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+            }
+            else
+            {
+                cout << "Remove the credit card that’s "
+                     << "already inserted." << endl;
+            }
+
+            break;
+        }
+
+        case State::VALIDATING:
+        {
+            if (card_validity == Validity::NO)
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+                state = State::READY;                         ②
+            }
+            else
+            {
+                cout << "You’ve already inserted your credit card. "
+                     << "Checking its validation." << endl;
+            }
+
+            break;
+        }
+
+        case State::TICKET_SOLD:
+        {
+            cout << "Take the ticket you’ve already bought."
+                 << endl;
+
+            card_inserted = true;
+            card_validity = Validity::UNKNOWN;
+
+            break;
+        }
+
+        case State::SOLD_OUT:
+        {
+            cout << "*** Game sold out. ***" << endl;
+            cout << "Remove your credit card." << endl;
+
+            card_inserted = true;
+            card_validity = Validity::UNKNOWN;
+
+            break;
+        }
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 转换到 VALIDATING 状态。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 转换到 READY 状态。}\par
+
+表 13.2 展示了由动作函数 \texttt{check\_validity()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+
+\begin{center}
+{\bfseries 表 13.2 动作函数 2：\texttt{check\_validity()}}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+售票机状态 & 机器在每种状态下的行为 \\
+\midrule
+\texttt{READY} & 如果未插入卡，\par 否则，如果卡有效，\par 否则， \\
+\texttt{VALIDATING} & 如果卡的有效性未知，\par 如果卡有效，\par 否则， \\
+\texttt{TICKET\_SOLD} & 输出“取走你已经购买的票。” \\
+\texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 如果已插入卡 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+在我们插入信用卡、售票机处于 \texttt{VALIDATING} 状态之后，成员函数 \texttt{check\_validity()} 是机器检查信用卡是否通过验证的动作。但如下面的代码清单所示，该函数应处理所有状态下的所有动作。如果卡有效，机器就转换到 \texttt{TICKET\_SOLD} 状态；否则，它返回 \texttt{READY} 状态。
+
+\begin{codeboxt}{代码清单 13.4（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 2 部分，共 5 部分）（使用设计模式之前）}
+void TicketMachine::check_validity()  //动作 2
+{
+    switch (state)
+    {
+        case State::READY:
+        {
+            if (!card_inserted)
+            {
+                cout << "First insert your credit card." << endl;
+            }
+            else if (card_validity == Validity::YES)
+            {
+                cout << "Remove the credit card that’s "
+                     << "already inserted." << endl;
+            }
+            else
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+            }
+
+            break;
+        }
+
+        case State::VALIDATING:
+        {
+            if (card_validity == Validity::UNKNOWN)
+            {
+                bool valid = rand()%2 == 1;
+                card_validity = valid ? Validity::YES : Validity::NO;
+            }
+
+            if (card_validity == Validity::YES)
+            {
+                cout << "Your credit card is validated. "
+                     << "Take your ticket." << endl;
+
+                state = State::TICKET_SOLD;                      ①
+            }
+            else
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+
+                state = State::READY;                            ②
+            }
+
+            break;
+        }
+
+        case State::TICKET_SOLD:
+        {
+            cout << "Take the ticket that you’ve already bought. "
+                 << endl;
+            break;
+        }
+
+        case State::SOLD_OUT:
+        {
+            cout << "*** Game sold out. ***" << endl;
+
+            if (card_inserted)
+            {
+                cout << "Remove your credit card." << endl;
+            }
+
+            break;
+        }
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 转换到 TICKET\_SOLD 状态。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 转换回 READY 状态。}\par
+
+表 13.3 展示了由动作函数 \texttt{take\_ticket()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+
+\begin{center}
+{\bfseries 表 13.3 动作函数 3：\texttt{take\_ticket()}}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+售票机状态 & 机器在每种状态下的行为 \\
+\midrule
+\texttt{READY} & 如果未插入卡，\par 否则，如果卡的有效性未知，\par 否则，如果卡有效，\par 否则， \\
+\texttt{VALIDATING} & 如果卡的有效性未知，\par 否则，如果卡有效，\par 否则， \\
+\texttt{TICKET\_SOLD} & 输出“请取出你的信用卡。”\par 输出“祝你看比赛愉快！”\par 将票数减一。\par 如果票数 > 0，\par 否则， \\
+\texttt{SOLD\_OUT} & 输出“比赛已售罄。”\par 如果已插入卡， \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+当机器处于 \texttt{TICKET\_SOLD} 状态时，成员函数 \texttt{take\_ticket()} 是顾客取走刚购买的票的动作，但它应处理所有状态下的所有动作。如果还有余票，机器就转换回 \texttt{READY} 状态。否则，它转换到 \texttt{SOLD\_OUT} 状态。
+
+\begin{codeboxt}{代码清单 13.5（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 3 部分，共 5 部分）（使用设计模式之前）}
+void TicketMachine::take_ticket()  //动作 3
+{
+    switch (state)
+    {
+        case State::READY:
+        {
+            if (!card_inserted)
+            {
+                cout << "First insert your credit card." << endl;
+            }
+            else if (card_validity == Validity::UNKNOWN)
+            {
+                cout << "Still checking your credit card’s validity."
+                     << endl;
+            }
+            else if (card_validity == Validity::YES)
+            {
+                cout << "Take the ticket that you’ve already "
+                     << "bought. Remove your card." << endl;
+            }
+            else
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+            }
+
+            break;
+        }
+
+        case State::VALIDATING:
+        {
+            if (card_validity == Validity::UNKNOWN)
+            {
+                cout << "Still checking your credit card’s validity."
+                     << endl;
+            }
+            else if (card_validity == Validity::YES)
+            {
+                cout << "Your card is already validated. "
+                     << "Take your ticket." << endl;
+            }
+            else
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+            }
+
+            break;
+        }
+
+        case State::TICKET_SOLD:
+        {
+            cout << "Remove your credit card. "
+                 << "Enjoy the game!" << endl;
+
+            count--;
+            if (count > 0)
+            {
+                state = State::READY;       ①
+            }
+            else
+            {
+                state = State::SOLD_OUT;    ②
+            }
+
+            break;
+        }
+        case State::SOLD_OUT:
+        {
+            cout << "*** Game sold out. ***" << endl;
+
+            if (card_inserted)
+            {
+                cout << "Remove your credit card." << endl;
+            }
+
+            break;
+        }
+    }
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 转换回 READY 状态。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 转换到 SOLD\_OUT 状态。}\par
+
+表 13.4 展示了由动作函数 \texttt{remove\_credit\_card()} 引起的售票机在每种状态下的行为。请将该表中标示的转换与图 13.1 所示的转换进行比较。
+
+\begin{center}
+{\bfseries 表 13.4 动作函数 4：\texttt{remove\_credit\_card()}}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+售票机状态 & 机器在每种状态下的行为 \\
+\midrule
+\texttt{READY} & 如果已插入卡，\par 否则，\par 将 \texttt{card\_inserted} 设为 false。\par 将 \texttt{card\_validity} 设为 unknown。 \\
+\texttt{VALIDATING} & 如果未插入卡，\par 否则，如果卡无效，\par 否则，\par 将 \texttt{card\_inserted} 设为 false。\par 将 \texttt{card\_validity} 设为 unknown。\par \textbf{转换到 READY 状态}。 \\
+\texttt{TICKET\_SOLD} & 输出“请先取走你的票。” \\
+\texttt{SOLD\_OUT} & 如果已插入卡，\par 否则， \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+当我们从售票机中取出信用卡、机器处于 \texttt{READY} 或 \texttt{VALIDATING} 状态时，成员函数 \texttt{remove\_credit\_card()} 就是相应的动作。但一如既往，它应处理所有状态下的所有动作。如果我们在机器处于 \texttt{VALIDATING} 状态（机器尚未验证信用卡）时取出卡，机器就转换回 \texttt{READY} 状态。
+
+\begin{codeboxt}{代码清单 13.6（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 4 部分，共 5 部分）（使用设计模式之前）}
+void TicketMachine::remove_credit_card()  //动作 4
+{
+    switch (state)
+    {
+        case State::READY:
+        {
+            if (card_inserted)
+            {
+                cout << "You’ve removed your credit card." << endl;
+            }
+            else
+            {
+                cout << "No credit card inserted." << endl;
+            }
+
+            card_inserted = false;
+            card_validity = Validity::UNKNOWN;
+            break;
+        }
+
+        case State::VALIDATING:
+        {
+            if (!card_inserted)
+            {
+                cout << "No credit card inserted." << endl;
+            }
+            else if (card_validity == Validity::NO)
+            {
+                cout << "*** Credit card rejected. *** " << endl;
+                cout << "Remove your card." << endl;
+            }
+            else
+            {
+                cout << "You removed your credit card before it "
+                     << "was validated. No sale." << endl;
+            }
+
+            card_inserted = false;
+            card_validity = Validity::UNKNOWN;
+            state = State::READY;                         ①
+            break;
+        }
+
+        case State::TICKET_SOLD:
+        {
+            cout << "First take your ticket." << endl;
+            break;
+        }
+
+        case State::SOLD_OUT:
+        {
+            if (card_inserted)
+            {
+                cout << "You’ve removed your credit card." << endl;
+
+                card_inserted = false;
+                card_validity = Validity::UNKNOWN;
+            }
+            else
+            {
+                cout << "No credit card inserted." << endl;
+            }
+            break;
+        }
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 转换回 READY 状态。}\par
+
+最后，成员函数 \texttt{run()} 运行模拟。
+
+\begin{codeboxt}{代码清单 13.7（程序 13.1 Tickets）：\texttt{TicketMachine.cpp}（第 5 部分，共 5 部分）（使用设计模式之前）}
+void TicketMachine::run()
+{
+    int command;
+
+    do
+    {
+        cout << endl;
+        cout << "1: insert card, 2: check card validity" << endl;
+        cout << "3: take ticket, 4: remove card, 0: quit" << endl;
+        cout << "[" << state << " " << count
+             << " " << boolalpha << card_inserted
+             << " " << card_validity << "] ";
+        cout << "Command? ";
+
+        cin >> command;                             ①
+
+        switch (command)
+        {
+            case 1: insert_credit_card(); break;    ②
+            case 2: check_validity();     break;    ②
+            case 3: take_ticket();        break;    ②
+            case 4: remove_credit_card(); break;    ②
+
+            case 0: cout << endl << "Done!" << endl; break;
+
+            default: cout << "*** Invalid command. ***" << endl;
+        }
+    } while (command != 0);
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 从用户处读取 1、2、3、4 或 0。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 执行顾客与机器的动作。}\par
+
+测试程序创建一个带有三张票的 \texttt{TicketMachine} 对象，并调用 \texttt{run()} 成员函数。
+
+\begin{codeboxt}{代码清单 13.8（程序 13.1 Tickets）：\texttt{tester.cpp}}
+#include <iostream>
+#include "TicketMachine.h"
+
+using namespace std;
+
+int main()
+{
+    TicketMachine machine(3);
+    machine.run();
+
+    return 0;
+}
+\end{codeboxt}
+
+\myGraphic{0.892}{images/CH13_F02_UN02_Mak.png}{}
+
+这个版本的售票机应用能够正确运行。我们可以与之交互，并看到正确的行为。但它存在重大缺陷，包括以下几项：
+
+\begin{itemize}
+\item \emph{多重职责}——类 \texttt{TicketMachine} 不仅要跟踪机器的状态，还要负责所有状态中发生的所有动作。全部应用逻辑都集中在这一个类中。
+\item \emph{封装不佳}——各状态及其行为没有得到良好的封装。
+\item \emph{代码缺乏灵活性}——如果我们需要修改、添加或删除售票机状态及其动作，就必须改动 \texttt{TicketMachine} 类。
+\end{itemize}
+
+\subsection{13.1.3 使用状态设计模式之后}
+
+状态设计模式为能够消除这些缺陷的软件架构提供了模型（图 13.3）。超类 \texttt{State} 的每一个子类都表示售票机的一种状态，而每个 \texttt{State} 子类都封装了对其状态下的所有顾客与机器动作的处理。类 \texttt{StatesBlock} 以私有方式聚合所有 \texttt{State} 子类，其公有成员函数 \texttt{get\_initial\_state()} 返回售票机的初始状态。类 \texttt{StatesBlock} 使各个 \texttt{State} 子类之间松耦合，也使类 \texttt{TicketMachine} 与各个 \texttt{State} 子类之间松耦合。
+
+类 \texttt{TicketMachine} 的成员变量 \texttt{state} 指向表示机器当前状态的 \texttt{State} 对象。通过多态，该类把各个动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 的处理委托给当前 \texttt{State} 对象中对应的动作成员函数。每个 \texttt{State} 子类的动作成员函数都返回一个 \texttt{State} 对象，即机器接下来应转换到的状态。
+
+\begin{mySidebar}{状态设计模式}
+
+“允许一个对象在其内部状态改变时改变自身的行为。对象看起来似乎改变了它的类”（GoF 305）。
+\end{mySidebar}
+
+\myGraphic{0.980}{images/CH13_F03_Mak.png}{图 13.3 超类 \texttt{State} 的各子类封装了对售票机每种状态下的顾客与机器动作的处理。子类的每个动作成员函数都返回一个 \texttt{State} 对象，即售票机接下来要转换到的状态。通过在类 \texttt{StatesBlock} 中聚合这些子类，各子类之间松耦合，而类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间也松耦合。类 \texttt{TicketMachine} 的每个动作成员函数都委托给私有成员变量 \texttt{state} 所指向的当前 \texttt{State} 对象中对应的成员函数。}
+
+在这个版本的应用中，类 \texttt{TicketMachine} 要简单得多，因为它不再负责管理各种状态及其顾客与机器动作（代码清单 13.9）。构造函数通过按引用传递 \texttt{count}、\texttt{card\_inserted} 和 \texttt{card\_validity} 成员变量来创建 \texttt{StatesBlock} 对象，以便各 \texttt{State} 子类在执行运行时行为时可以访问并修改它们的值。构造函数还通过调用类 \texttt{StatesBlock} 的 \texttt{get\_initial\_state()} 成员函数来设置 \texttt{state} 成员变量的初始值。
+
+\myGraphic{0.787}{images/CH13_F03_UN03_Mak.png}{}
+
+成员变量 \texttt{state} 始终指向表示机器当前状态的 \texttt{State} 对象。类 \texttt{TicketMachine} 把各个动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 的处理委托给当前 \texttt{State} 对象。因此，正是指当前的 \texttt{State} 对象决定了售票机对每个顾客动作的行为方式。每个动作成员函数都返回一个 \texttt{State} 对象，即机器接下来应转换到的状态。如果顾客执行了一个不需要转换的不合理动作，动作函数只需返回当前状态对应的 \texttt{State} 对象。
+
+\begin{codeboxt}{代码清单 13.9（程序 13.2 Tickets-StateDP）：\texttt{TicketMachine.h}}
+#include <time.h>
+
+#include "Enums.h"
+#include "State.h"
+#include "StatesBlock.h"
+
+class TicketMachine
+{
+public:
+    TicketMachine(const int c)
+        : count(c), card_inserted(false),
+          card_validity(Validity::UNKNOWN)
+    {
+        srand(time(NULL));
+
+        StatesBlock *block = new StatesBlock(count, card_inserted,  ①
+                                                    card_validity); ①
+        state = block->get_initial_state();                         ②
+
+    }
+
+    void run();
+
+    void insert_credit_card()                                       ③
+    {                                                               ③
+        state = state->insert_credit_card();                        ③
+    }                                                               ③
+                                                                    ③
+    void check_validity()                                           ③
+    {                                                               ③
+        state = state->check_validity();                            ③
+    }                                                               ③
+                                                                    ③
+    void take_ticket()                                              ③
+    {                                                               ③
+        state = state->take_ticket();                               ③
+    }                                                               ③
+                                                                    ③
+    void remove_credit_card()                                       ③
+    {                                                               ③
+        state = state->remove_credit_card();                        ③
+    }                                                               ③
+
+private:
+    int      count;
+    bool     card_inserted;
+    Validity card_validity;
+
+    State *state;                                                   ④
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 通过按引用传递参数来创建 State 对象块。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 设置初始状态。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 将动作委托给当前 State 对象并获取下一个状态。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 当前 State 对象}\par
+
+模拟运行售票机的 \texttt{run()} 成员函数需要在其中一条输出语句上做一处小改动（以粗体标出）：
+
+\begin{codebox}
+        cout << "[" << state->get_id() << " " << count
+             << " " << boolalpha << card_inserted
+             << " " << card_validity << "] ";
+\end{codebox}
+
+类 \texttt{StatesBlock} 的构造函数按引用从类 \texttt{TicketMachine} 接收 \texttt{count}、\texttt{card\_inserted} 和 \texttt{card\_validity} 参数。接着，它又按引用依次传递这些参数，以创建并聚合 \texttt{State} 子类的 \texttt{READY}、\texttt{VALIDATING}、\texttt{TICKET\_SOLD} 和 \texttt{SOLD\_OUT} 对象。
+
+\begin{codeboxt}{代码清单 13.10（程序 13.2 Tickets-StateDP）：\texttt{StatesBlock.h}}
+#include "State.h"
+
+class StatesBlock
+{
+public:
+    StatesBlock(int& count, bool& card_inserted,             ①
+                Validity& card_validity)                     ①
+    {
+        READY_state = new READY(*this, count,                ②
+                                card_inserted,
+                                card_validity);
+        VALIDATING_state = new VALIDATING(*this, count,      ②
+                                          card_inserted,
+                                          card_validity);
+        TICKET_SOLD_state = new TICKET_SOLD(*this, count,    ②
+                                            card_inserted,
+                                            card_validity);
+        SOLD_OUT_state = new SOLD_OUT(*this, count,          ②
+                                      card_inserted,
+                                      card_validity);
+    }
+
+        ~StatesBlock()
+
+    {
+        delete READY_state;
+        delete VALIDATING_state;
+        delete TICKET_SOLD_state;
+        delete SOLD_OUT_state;
+    }
+
+    State *get_initial_state() const { return READY_state; } ③
+
+    friend READY;
+    friend VALIDATING;
+    friend TICKET_SOLD;
+    friend SOLD_OUT;
+
+private:
+    READY       *READY_state;                                ④
+    VALIDATING  *VALIDATING_state;                           ④
+    TICKET_SOLD *TICKET_SOLD_state;                          ④
+    SOLD_OUT    *SOLD_OUT_state;                             ④
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 按引用从类 TicketMachine 接收参数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 按引用传递同样的参数来构造 State 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 初始 READY 状态}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 聚合的 State 对象}\par
+
+类 \texttt{State} 是子类 \texttt{READY}、\texttt{VALIDATING}、\texttt{TICKET\_SOLD} 和 \texttt{SOLD\_OUT} 的超类（代码清单 13.11）。它的构造函数按引用从各子类的构造函数接收参数。它把这些引用存储到其受保护的引用成员变量 \texttt{count}、\texttt{card\_inserted} 和 \texttt{card\_validity} 中。这样，各个子类在执行各自的行为时，就能够访问并修改类 \texttt{TicketMachine} 中对应的成员变量。
+
+受保护的成员变量 \texttt{states} 是一个对类 \texttt{StatesBlock} 的引用，而该类聚合了各 \texttt{State} 子类。通过在类 \texttt{StatesBlock} 中聚合这些子类，各子类之间松耦合，而类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间也松耦合。
+
+\begin{codeboxt}{代码清单 13.11（程序 13.2 Tickets-StateDP）：\texttt{State.h}（第 1 部分，共 2 部分）}
+#include <string>
+#include "Enums.h"
+
+using namespace std;
+
+class StatesBlock;
+
+class State
+{
+public:
+    State(const string id, StatesBlock& states_block,               ①
+          int& count, bool& card_inserted, Validity& card_validity) ①
+        : id(id), states(states_block),
+          count(count), card_inserted(card_inserted),
+          card_validity(card_validity) {}
+    virtual ~State() {}
+
+    friend class TicketMachine;
+
+private:
+    string id;
+
+protected:
+    StatesBlock& states;
+
+    int&      count;                                                ②
+    bool&     card_inserted;                                        ②
+    Validity& card_validity;                                        ②
+
+    virtual State *insert_credit_card() = 0;  //动作 1           ③
+    virtual State *check_validity()     = 0;  //动作 2           ③
+    virtual State *take_ticket()        = 0;  //动作 3           ③
+    virtual State *remove_credit_card() = 0;  //动作 4           ③
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由各子类传入的引用参数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 使各子类能够访问并修改 TicketMachine 成员变量的引用变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 由每个子类来实现}\par
+
+每个 \texttt{State} 子类都必须实现顾客动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()}，以执行我们为每种状态定义的顾客与机器动作行为。每个成员函数都返回一个 \texttt{State} 对象，即售票机接下来要转换到的状态。
+
+\begin{codeboxt}{代码清单 13.12（程序 13.2 Tickets-StateDP）：\texttt{State.h}（第 2 部分，共 2 部分）}
+class READY : public State
+{
+public:
+    READY(StatesBlock& states, int& count,                   ①
+          bool& card_inserted, Validity& card_validity)      ①
+        : State("READY", states, count,
+                card_inserted, card_validity) {}
+
+private:
+    State *insert_credit_card() override;  //动作 1
+    State *check_validity()     override;  //动作 2
+    State *take_ticket()        override;  //动作 3
+    State *remove_credit_card() override;  //动作 4
+};
+
+class VALIDATING : public State
+{
+public:
+    VALIDATING(StatesBlock& states, int& count,               ①
+               bool& card_inserted, Validity& card_validity)  ①
+        : State("VALIDATING", states, count,
+                card_inserted, card_validity) {}
+
+private:
+    State *insert_credit_card() override;  //动作 1
+    State *check_validity()     override;  //动作 2
+    State *take_ticket()        override;  //动作 3
+    State *remove_credit_card() override;  //动作 4
+};
+
+class TICKET_SOLD : public State
+{
+public:
+    TICKET_SOLD(StatesBlock& states, int& count,              ①
+                bool& card_inserted, Validity& card_validity) ①
+        : State("TICKET_SOLD", states, count,
+                card_inserted, card_validity) {}
+
+private:
+    State *insert_credit_card() override;  //动作 1
+    State *check_validity()     override;  //动作 2
+    State *take_ticket()        override;  //动作 3
+    State *remove_credit_card() override;  //动作 4
+};
+
+class SOLD_OUT : public State
+{
+public:
+    SOLD_OUT(StatesBlock& states, int& count,                 ①
+             bool& card_inserted, Validity& card_validity)    ①
+        : State("SOLD_OUT", states, count,
+                card_inserted, card_validity) {}
+
+private:
+    State *insert_credit_card() override;  //动作 1
+    State *check_validity()     override;  //动作 2
+    State *take_ticket()        override;  //动作 3
+    State *remove_credit_card() override;  //动作 4
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 按引用从类 TicketMachine 传入的参数}\par
+
+\myGraphic{0.897}{images/CH13_F03_UN04_Mak.png}{}
+
+要体会应用从第一个版本到当前版本在架构上的变化，请把下面这些 \texttt{State} 子类实现的代码清单与代码清单 13.2–13.7 进行比较。
+
+\texttt{State} 子类 \texttt{READY} 封装了机器处于 \texttt{READY} 状态时的所有顾客与机器动作（代码清单 13.13）。每个动作成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{remove\_credit\_card()} 都执行 \texttt{READY} 状态下该动作的行为，然后返回售票机接下来要转换到的状态。例如，
+
+\begin{codebox}
+return states.VALIDATING_state;
+\end{codebox}
+
+如果不应该发生转换，那么 return 语句就是
+
+\begin{codebox}
+return this;
+\end{codebox}
+
+这表示停留在当前状态。
+
+\begin{codeboxt}{代码清单 13.13（程序 13.2 Tickets-StateDP）：\texttt{READY.cpp}}
+#include <iostream>
+#include "Enums.h"
+#include "State.h"
+#include "StatesBlock.h"
+
+using namespace std;
+
+State *READY::insert_credit_card()  //动作 1
+{
+    if (!card_inserted)
+    {
+        cout << "Validating your credit card. " << endl;
+
+        card_inserted = true;
+        card_validity = Validity::UNKNOWN;
+        return states.VALIDATING_state;
+    }
+    else if (card_validity == Validity::NO)
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+        return this;
+    }
+    else
+    {
+        cout << "Remove the credit card that’s "
+             << "already inserted." << endl;
+        return this;
+    }
+}
+
+State *READY::check_validity()  //动作 2
+{
+    if (card_inserted)
+    {
+        cout << "First insert your credit card." << endl;
+    }
+    else if (card_validity == Validity::YES)
+    {
+        cout << "Remove the credit card that’s "
+             << "already inserted." << endl;
+    }
+    else
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+    }
+
+    return this;
+}
+
+State *READY::take_ticket()  //动作 3
+{
+    if (!card_inserted)
+    {
+        cout << "First insert your credit card." << endl;
+    }
+    else if (card_validity == Validity::UNKNOWN)
+    {
+        cout << "Still checking your credit card’s validity." 
+             << endl;
+    }
+    else if (card_validity == Validity::YES)
+    {
+        cout << "Take the ticket that you’ve already "
+             << "bought. Remove your card." << endl;
+    }
+    else
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+    }
+
+    return this;
+}
+
+State *READY::remove_credit_card()  //动作 4
+{
+    if (card_inserted)
+    {
+        cout << "You’ve removed your credit card." << endl;
+    }
+    else
+    {
+        cout << "No credit card inserted." << endl;
+    }
+
+    card_inserted = false;
+    card_validity = Validity::UNKNOWN;
+    return this;
+}
+\end{codeboxt}
+
+State 子类 \texttt{VALIDATING} 封装了机器处于 \texttt{VALIDATING} 状态时的所有顾客与机器动作。
+
+\begin{codeboxt}{代码清单 13.14（程序 13.2 Tickets-StateDP）：\texttt{VALIDATING.cpp}}
+#include <iostream>
+#include "Enums.h"
+#include "State.h"
+#include "StatesBlock.h"
+
+using namespace std;
+
+State *VALIDATING::insert_credit_card()  //动作 1
+{
+    if (card_validity == Validity::NO)
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+
+        return states.READY_state;
+    }
+    else
+    {
+        cout << "You’ve already inserted your credit card. "
+             << "Checking its validation." << endl;
+
+        return this;
+    }
+}
+
+State *VALIDATING::check_validity()  //动作 2
+{
+    if (card_validity == Validity::UNKNOWN)
+    {
+        bool valid = rand()%2 == 1;
+        card_validity = valid ? Validity::YES : Validity::NO;
+    }
+    if (card_validity == Validity::YES)
+    {
+        cout << "Your credit card is validated. "
+             << "Take your ticket." << endl;
+
+        return states.TICKET_SOLD_state;
+    }
+    else
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+
+        return states.READY_state;
+    }
+}
+
+State *VALIDATING::take_ticket()  //动作 3
+{
+    if (card_validity == Validity::UNKNOWN)
+    {
+        cout << "Still checking your credit card’s validity."
+             << endl;
+    }
+    else if (card_validity == Validity::YES)
+    {
+        cout << "Your card is already validated. "
+             << "Take your ticket." << endl;
+    }
+    else
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+    }
+
+    return this;
+}
+
+State *VALIDATING::remove_credit_card()  //动作 4
+{
+    if (!card_inserted)
+    {
+        cout << "No credit card inserted." << endl;
+    }
+    else if (card_validity == Validity::NO)
+    {
+        cout << "*** Credit card rejected. *** " << endl;
+        cout << "Remove your card." << endl;
+    }
+    else
+    {
+        cout << "You removed your credit card before it "
+             << "was validated. No sale." << endl;
+    }
+
+    card_inserted = false;
+    card_validity = Validity::UNKNOWN;
+    return states.READY_state;
+}
+\end{codeboxt}
+
+\texttt{State} 子类 \texttt{TICKET\_SOLD} 封装了机器处于 \texttt{TICKET\_SOLD} 状态时的所有顾客与机器动作。
+
+\begin{codeboxt}{代码清单 13.15（程序 13.2 Tickets-StateDP）：\texttt{TICKET\_SOLD.cpp}}
+#include <iostream>
+#include "Enums.h"
+#include "State.h"
+#include "StatesBlock.h"
+
+using namespace std;
+
+State *TICKET_SOLD::insert_credit_card()  //动作 1
+{
+    cout << "Take the ticket you’ve already bought."
+         << endl;
+
+    card_inserted = true;
+    card_validity = Validity::UNKNOWN;
+    return this;
+}
+
+State *TICKET_SOLD::check_validity()  //动作 2
+{
+    cout << "Take the ticket that you’ve already bought. "
+         << endl;
+
+    return this;
+}
+
+State *TICKET_SOLD::take_ticket()  //动作 3
+{
+    cout << "Remove your credit card. "
+         << "Enjoy the game!" << endl;
+
+    count--;
+    if (count > 0)
+    {
+        return states.READY_state;
+    }
+    else
+    {
+        return states.SOLD_OUT_state;
+    }
+}
+
+State *TICKET_SOLD::remove_credit_card()  //动作 4
+{
+    cout << "First take your ticket." << endl;
+
+    return this;
+}
+\end{codeboxt}
+
+\texttt{State} 子类 \texttt{SOLD\_OUT} 封装了机器处于 \texttt{SOLD\_OUT} 状态时的所有顾客与机器动作。没有任何转换可以离开 \texttt{SOLD\_OUT} 状态。
+
+\begin{codeboxt}{代码清单 13.16（程序 13.2 Tickets-StateDP）：\texttt{SOLD\_OUT.cpp}}
+#include <iostream>
+#include "Enums.h"
+#include "State.h"
+
+using namespace std;
+
+State *SOLD_OUT::insert_credit_card()  //动作 1
+{
+    cout << "*** Game sold out. ***" << endl;
+    cout << "Remove your credit card." << endl;
+
+    card_inserted = true;
+    card_validity = Validity::UNKNOWN;
+    return this;
+}
+
+State *SOLD_OUT::check_validity()  //动作 2
+{
+    cout << "*** Game sold out. ***" << endl;
+
+    if (card_inserted)
+    {
+        cout << "Remove your credit card." << endl;
+    }
+
+    return this;
+}
+
+State *SOLD_OUT::take_ticket()  //动作 3
+{
+    cout << "*** Game sold out. ***" << endl;
+    if (card_inserted)
+    {
+        cout << "Remove your credit card." << endl;
+    }
+
+    return this;
+}
+
+State *SOLD_OUT::remove_credit_card()  //动作 4
+{
+    if (card_inserted)
+    {
+        cout << "You’ve removed your credit card." << endl;
+
+        card_inserted = false;
+        card_validity = Validity::UNKNOWN;
+    }
+    else
+    {
+        cout << "No credit card inserted." << endl;
+    }
+
+    return this;
+}
+\end{codeboxt}
+
+这个版本的售票机应用与第一个版本运行效果类似。但仿照状态设计模式为其建模带来了以下好处：
+
+\begin{itemize}
+\item \emph{封装了顾客动作}——当售票机处于相应状态时，每个 \texttt{State} 子类都封装了所有的顾客动作。这样，就能够在修改某种状态的行为、或者删除或添加状态时，不改动其他 \texttt{State} 子类或类 \texttt{TicketMachine}。这就是封装变化（Encapsulate What Varies）原则（2.3.2 节）。
+\item \emph{单一职责的类}——类 \texttt{TicketMachine} 只负责跟踪其当前 \texttt{state} 及其他成员变量的取值。它不再负责每种状态的顾客动作。这就是单一职责原则（2.3 节）。
+\item \emph{松耦合的类}——各 \texttt{State} 子类之间松耦合，并且类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间松耦合。遵循最少知识原则（2.3.2 节），类 \texttt{TicketMachine} 不依赖任何 \texttt{State} 子类。
+\end{itemize}
+
+\subsection{13.1.4 状态的通用模型}
+
+图 13.4 展示了状态设计模式的通用模型。回想一下，正是从设计模式的通用模型出发，我们才能为某个架构问题创建定制解决方案（8.1.3 节）。
+
+\myGraphic{0.590}{images/CH13_F04_Mak.png}{图 13.4 状态设计模式的通用模型。请将其与图 13.3 进行比较。上图展示的是 \texttt{Context} 类聚合各 \texttt{State} 子类；与之不同，图 13.3 展示的是把 \texttt{State} 子类封装在 \texttt{StatesBlock} 类中，这样就能使各 \texttt{State} 子类之间松耦合，并使类 \texttt{TicketMachine} 与各 \texttt{State} 子类之间松耦合。此外，在图 13.3 中，每个顾客动作成员函数都返回售票机将要转换到的 \texttt{State} 对象。}
+
+表 13.5 展示了示例应用如何应用该模式。
+
+\begin{center}
+{\bfseries 表 13.5 示例应用对该状态方法设计模式的应用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用的应用方式 \\
+\midrule
+类 \texttt{Context} & 类 \texttt{TicketMachine}（使用了类 \texttt{StatesBlock}） \\
+超类 \texttt{State} & 超类 \texttt{State} \\
+\texttt{子类 ConcreteStateA、ConcreteStateB 等} & 子类 \texttt{READY}、\texttt{VALIDATING,\allowbreak{} TICKET\_\allowbreak{}SOLD} 和 \texttt{SOLD\_OUT} \\
+成员函数 \texttt{handle()} & 成员函数 \texttt{insert\_credit\_card()}、\texttt{check\_validity()}、\texttt{take\_ticket()} 和 \texttt{r}\texttt{emove\_credit\_card()} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\myGraphic{0.875}{images/CH13_F04_UN05_Mak.png}{}
+
+状态设计模式和访问者（Visitor）设计模式都秉持把数据与作用于数据的操作相分离的理念。访问者设计模式为这样一种架构建模：它按照数据对象的不同数据类型，封装作用于这些对象的不同算法。状态设计模式则为这样一种架构建模：它按照对象的不同状态，封装对象的不同行为。
+
+\section*{小结}
+
+\begin{itemize}
+\item 状态设计模式为这样一种软件架构建模：监控某个特定对象的运行时状态很重要。
+\item 对对象执行的一组动作会使其依据当前状态表现出相应的行为。
+\item 有些动作会使对象发生状态转换。
+\item 各个独立的状态类分别封装对象处于对应状态时的动作行为。
+\item 每个状态类都必须实现所有的动作行为。
+\end{itemize}

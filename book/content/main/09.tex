@@ -1,0 +1,806 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 工厂方法设计模式
+\item 抽象工厂设计模式
+\end{itemize}
+\end{myChapterIntro}
+
+第 8 章提到，应用开发的核心是算法和数据。本章的两个设计模式为应用在运行时如何部署软件工厂来创建对象建模。
+
+\myGraphic{0.893}{images/CH09_00_UN01_Mak.png}{}
+
+工厂方法设计模式为创建一组相关对象提供了模型。我们的示例应用展示了该设计模式如何让学校体育部把职责委托给校队运动和校内运动组织。抽象工厂设计模式更进一步，为创建对象族提供了模型，可防止把来自不同族的对象混在一起。我们会扩展示例应用，以确保校队运动和校内运动组织各自职责分明。
+
+在本章中，我们会逐步开发另一个示例应用。每当遇到架构设计问题时，我们就一次引入一个合适的模式来为其解决方案建模。
+
+\begin{myWarning}{注意}
+请务必阅读第 4 部分的引言，其中包含关于设计模式整体的重要信息，并说明了本章及后续章节如何讲解每种模式。
+\end{myWarning}
+
+\section{工厂方法设计模式让子类创建对象}
+
+一类常见的软件架构问题涉及一组相关对象。例如，假设我们要为一家生产福特和通用汽车发动机的厂商开发应用。该厂商一次只处理一种车型的发动机，但它并不总能事先知道会处理哪一种。此外，之后还可能有一家别的汽车厂商要求它生产发动机。我们是否应该有一个 \texttt{EngineManufacturer} 类，管理所有车型的发动机并决定生产哪些？它是否应该带有子类？再增加一种车型及其发动机会有多容易？工厂方法设计模式通过把对象的创建委托给子类，为封装对象创建提供了模型。
+
+作为一个具体例子，我们来扩展示例体育应用，加入一个 \texttt{AthleticsDept} 类，管理两类运动：校队和校内。该类还将负责生成体育报告。
+
+\subsection{9.1.1 期望的设计特性}
+
+一个让每项运动各自生成其报告的应用，应具备以下特性：
+
+\begin{itemize}
+\item \emph{DF 1}——与第 8 章的策略设计模式示例类似，每项运动都将负责招募球员和获取场地。
+\item \emph{DF 2}——\texttt{AthleticsDept} 类在管理各运动队时，不会出现把校队与校内队职责弄混的风险。
+\item \emph{DF 3}——添加类别和运动项目应当容易，例如俱乐部运动。
+\end{itemize}
+
+\subsection{9.1.2 使用工厂方法设计模式之前}
+
+图 9.1 展示了我们对应用的第一个设计。类 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy} 与策略设计模式示例（程序 8.4，图 8.6）相比没有变化。但现在我们有了校队和校内运动，以及校队和校内的球员。
+
+\myGraphic{0.980}{images/CH09_F01_Mak.png}{图 9.1 类 \texttt{AthleticsDept} 为校队和校内运动生成报告。图中灰色部分在逻辑上与图 8.6 相比没有变化。}
+
+接口 \texttt{PlayerStrategy} 没有变化，但新增了实现它的校队球员类和校内球员类。每个类都必须实现成员函数 \texttt{strategy()}。接口 \texttt{VenueStrategy} 及实现它的类都没有变化。
+
+\begin{codeboxt}{代码清单 9.1（程序 9.1 Provisions）：\texttt{PlayerStrategy.h}（使用设计模式之前）}
+#include <string>
+
+using namespace std;
+
+class PlayerStrategy
+{
+public:
+    virtual ~PlayerStrategy() {}
+
+    virtual string strategy() const = 0;
+};
+
+class VarsityBaseballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "varsity baseball players";
+    }
+};
+
+class VarsityFootballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "varsity football players";
+    }
+};
+
+class IntramuralBaseballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "intramural baseball players";
+    }
+};
+
+class IntramuralFootballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "intramural football players";
+    }
+};
+
+class IntramuralVolleyballPlayers : public PlayerStrategy
+{
+public:
+    string strategy() const override
+    {
+        return "intramural volleyball players";
+    }
+};
+\end{codeboxt}
+
+类 \texttt{Sport} 现在有一个成员变量 \texttt{category}，用于记录该运动属于哪个体育部门。
+
+\begin{codeboxt}{代码清单 9.2（程序 9.1 Provisions）：\texttt{Sport.h}（使用设计模式之前）}
+#include <iostream>
+#include <string>
+
+#include "PlayerStrategy.h"
+#include "VenueStrategy.h"
+
+using namespace std;
+
+enum class Type ...
+
+enum class Category { VARSITY, INTRAMURAL };
+
+inline ostream& operator <<(ostream& ostr, const Category category)
+{
+    switch (category)
+    {
+        case Category::VARSITY:    ostr << "varsity";    break;
+        case Category::INTRAMURAL: ostr << "intramural"; break;
+    }
+
+    return ostr;
+}
+
+class Sport
+{
+public:
+    Sport(const Type t, const Category c,
+          PlayerStrategy * const ps, VenueStrategy * const vs)
+        : type(t), category(c),
+          player_strategy(ps), venue_strategy(vs) {}
+
+    ~Sport()
+    {
+        delete player_strategy;
+        delete venue_strategy;
+    }
+
+    Type     get_type()     const { return type; }
+    Category get_category() const { return category; }
+
+    string recruit_players() const
+    {
+        return player_strategy->strategy();
+    }
+
+    string reserve_venue() const
+    {
+        return venue_strategy->strategy();
+    }
+
+    void set_player_strategy(PlayerStrategy * const ps)
+    {
+        player_strategy = ps;
+    }
+
+    void set_venue_strategy(VenueStrategy * const vs)
+    {
+        venue_strategy = vs;
+    }
+
+private:
+    Type type;
+    Category category;
+    PlayerStrategy *player_strategy;
+    VenueStrategy  *venue_strategy;
+};
+\end{codeboxt}
+
+类 \texttt{Sport} 有了新的子类，每项校队运动和校内运动各对应一个。校队在场内比赛，但可惜的是，校内队被降级到露天场地。
+
+\begin{codeboxt}{代码清单 9.3（程序 9.1 Provisions）：\texttt{Sports.h}（使用设计模式之前）}
+#include "Sport.h"
+#include "PlayerStrategy.h"
+#include "VenueStrategy.h"
+
+using namespace std;
+
+class VarsityBaseball : public Sport
+{
+public:
+    VarsityBaseball() : Sport(Type::BASEBALL, Category::VARSITY,
+                              new VarsityBaseballPlayers(),
+                              new Stadium()) {}
+};
+
+class VarsityFootball : public Sport
+{
+public:
+    VarsityFootball() : Sport(Type::FOOTBALL, Category::VARSITY,
+                              new VarsityFootballPlayers(),
+                              new Stadium()) {}
+};
+
+class IntramuralBaseball : public Sport
+{
+public:
+    IntramuralBaseball() : Sport(Type::BASEBALL, 
+                                 Category::INTRAMURAL,
+                                 new IntramuralBaseballPlayers(),
+                                 new OpenField()) {}
+};
+
+class IntramuralFootball : public Sport
+{
+public:
+    IntramuralFootball() : Sport(Type::FOOTBALL, 
+                                 Category::INTRAMURAL,
+                                 new IntramuralFootballPlayers(),
+                                 new OpenField()) {}
+};
+
+class IntramuralVolleyball : public Sport
+{
+public:
+    IntramuralVolleyball() : Sport(Type::VOLLEYBALL, 
+                                   Category::INTRAMURAL,
+                                   new IntramuralVolleyballPlayers(),
+                                   new OpenField()) {}
+};
+\end{codeboxt}
+
+类 \texttt{AthleticsDept} 负责生成体育报告。
+
+\begin{codeboxt}{代码清单 9.4（程序 9.1 Provisions）：\texttt{AthleticsDept.h}（使用设计模式之前）}
+#include "Sport.h"
+
+class AthleticsDept
+{
+public:
+    void generate_report(const Category& category, const Type& type);
+};
+\end{codeboxt}
+
+成员函数 \texttt{generate\_report()} 借助嵌套的 \texttt{switch} 语句来处理两个类别中的所有运动，从而完成工作。
+
+\begin{codeboxt}{代码清单 9.5（程序 9.1 Provisions）：\texttt{AthleticsDept.cpp}（使用设计模式之前）}
+#include <iostream>
+#include "Sport.h"
+#include "Sports.h"
+#include "AthleticsDept.h"
+
+void AthleticsDept::generate_report(const Category& category,
+                                    const Type& type)
+{
+    Sport *sport;
+
+    switch (dept)
+    {
+        case Category::VARSITY:      ①
+            switch (type)            ①
+            {
+                case Type::BASEBALL:
+                {
+                    sport = new VarsityBaseball();
+                    break;
+                }
+
+                case Type::FOOTBALL:
+                {
+                    sport = new VarsityFootball();
+                    break;
+                }
+
+                case Type::VOLLEYBALL:
+                {
+                    sport = nullptr;
+                    break;
+                }
+            }
+
+            cout << "varsity ";
+            break;
+
+        case Category::INTRAMURAL:   ②
+            switch (type)            ②
+            {
+                case Type::BASEBALL:
+                {
+                    sport = new IntramuralBaseball();
+                    break;
+                }
+
+                case Type::FOOTBALL:
+                {
+                    sport = new IntramuralFootball();
+                    break;
+                }
+
+                case Type::VOLLEYBALL:
+                {
+                    sport = new IntramuralVolleyball();
+                    break;
+                }
+            }
+
+            cout << "intramural ";
+            break;
+    }
+
+    cout << sport->get_category() << " "
+         << sport->get_type() << endl;
+    cout << "  players: " << sport->recruit_players() << endl;
+    cout << "    venue: " << sport->reserve_venue()   << endl;
+    cout << endl;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 校队运动}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 校内运动}\par
+
+\myGraphic{0.647}{images/CH09_F01_UN02_Mak.png}{}
+
+嵌套的 \texttt{switch} 语句常常使代码变得复杂且容易出错。下面的代码清单是这一版本应用的测试程序。
+
+\begin{codeboxt}{代码清单 9.6（程序 9.1 Provisions）：\texttt{tester.cpp}（使用设计模式之前）}
+#include <iostream>
+#include "Sport.h"
+#include "Sports.h"
+#include "AthleticsDept.h"
+
+using namespace std;
+
+int main()
+{
+    AthleticsDept dept;
+
+    dept.generate_report(Category::VARSITY, Type::BASEBALL);
+    dept.generate_report(Category::VARSITY, Type::FOOTBALL);
+
+    dept.generate_report(Category::INTRAMURAL, Type::BASEBALL);
+    dept.generate_report(Category::INTRAMURAL, Type::FOOTBALL);
+    dept.generate_report(Category::INTRAMURAL, Type::VOLLEYBALL);
+
+    return 0;
+}
+\end{codeboxt}
+
+输出为
+
+\begin{codebox}
+varsity baseball
+  players: varsity baseball players
+    venue: sports stadium
+
+varsity football
+  players: varsity football players
+    venue: sports stadium
+
+intramural baseball
+  players: intramural baseball players
+    venue: open field
+
+intramural football
+  players: intramural football players
+    venue: open field
+
+intramural volleyball
+  players: intramural volleyball players
+    venue: open field
+\end{codebox}
+
+我们很容易看出这一架构的一些明显缺陷：
+
+\begin{itemize}
+\item \emph{嵌套的 switch 语句}——它们既笨拙又容易出错。
+\item \emph{没有封装可能变化的部分}——如果我们要增删运动项目，或新增一个运动类别（如俱乐部运动），就必须修改 \texttt{AthleticsDept} 类的 \texttt{generate\_report()} 成员函数。
+\item \emph{多重职责}——除了生成报告，类 \texttt{AthleticsDept} 还必须创建 \texttt{Sport} 对象。
+\end{itemize}
+
+\subsection{9.1.3 使用工厂方法设计模式之后}
+
+工厂方法设计模式有助于缓解这些以及其他缺陷。它在一个具体的架构模式中运用了工厂原则（7.4 节）。我们希望封装 \texttt{Sport} 对象的创建，并把这一职责从类 \texttt{AthleticsDept} 中移除。按照该模式，我们把 \texttt{AthleticsDept} 设为抽象类，并派生出两个子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept}（图 9.2）。它有一个纯虚函数 \texttt{create\_sport()} 和一个指向 \texttt{Sport} 对象的私有成员变量 \texttt{sport}。这两个子类各自充当一个工厂类。子类 \texttt{VarsityDept} 实现 \texttt{create\_sport()}，它创建并返回一个校队的 \texttt{Sport} 对象。子类 \texttt{IntramuralDept} 实现 \texttt{create\_sport(),}，它创建并返回一个校内的 \texttt{Sport} 对象。因此，每个 \texttt{create\_sport()} 都是一个工厂函数，也称为\emph{工厂方法}。
+
+\begin{mySidebar}{工厂方法设计模式}
+
+“定义一个用于创建对象的接口，但让子类决定实例化哪个类。工厂方法让一个类把实例化推迟到子类。”（GoF 107）
+\end{mySidebar}
+
+\myGraphic{0.980}{images/CH09_F02_Mak.png}{图 9.2 这一版本的应用依据工厂方法设计模式建模。超类 \texttt{AthleticsDept} 把创建 \texttt{Sport} 对象的工作委托给它的子类。子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 是工厂类。每个子类都实现工厂函数 \texttt{create\_sport()}，它创建并返回一个相应的校队或校内 \texttt{Sport} 对象。图中灰色部分在逻辑上与图 9.1 相比没有变化。}
+
+图 9.2 展示了这一改进后架构的一些优势：
+
+\begin{itemize}
+\item \emph{封装变化}——它使添加新类别（如俱乐部运动）更为容易。这就是“封装变化之处”设计原则（2.3.2 节）。
+\item \emph{开闭原则}——类 \texttt{AthleticsDept} 保持稳定（2.3.3 节）。我们可以通过添加更多子部门（如俱乐部运动）来扩展该类，但该类对进一步的修改是关闭的。
+\item \emph{使用工厂类}——子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 分别是处理校队和校内运动类别的工厂。类 \texttt{AthleticsDept} 遵循委托原则（2.3.2 节），把创建 \texttt{Sport} 对象的工作委托给这些子类。这样，更改这两个类别的运动项目会更加容易。
+\item \emph{内聚的类}——\texttt{AthleticsDept} 的每个子类都遵循单一职责原则（2.3 节），只负责创建自己的运动对象。这也消除了对嵌套 \texttt{switch} 语句的需要。
+\item \emph{松耦合的类}——\texttt{AthleticsDept} 的各子类不再依赖 \texttt{Sport} 子类的实现。这就是最少知识原则（2.3.2 节）。
+\end{itemize}
+
+\myGraphic{0.823}{images/CH09_F02_UN03_Mak.png}{}
+
+抽象类 \texttt{AthleticsDept} 有两个具体子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept}，它们都是工厂类。每个子类都实现虚成员函数 \texttt{create\_sport()}（即工厂方法），分别创建并返回一个校队或校内的 \texttt{Sport} 对象。成员变量 \texttt{sport} 记录已创建的那个 \texttt{Sport} 对象。
+
+\begin{codeboxt}{代码清单 9.7（程序 9.2 Provisions-FactoryDP）：\texttt{AthleticDept.h}}
+#include <string>
+#include "Sport.h"
+
+using namespace std;
+
+class AthleticsDept
+{
+public:
+    virtual ~AthleticsDept() { delete sport; }
+
+    void generate_report(const Type& type);
+
+private:
+    Sport *sport;                ①
+
+    virtual Sport *create_sport(const Type& type) = 0;
+};
+
+class VarsityDept : public AthleticsDept
+{
+private:
+    Sport *create_sport(const Type& type) override;
+};
+
+class IntramuralDept : public AthleticsDept
+{
+private:
+    Sport *create_sport(const Type& type) override;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 已创建的 Sport 对象}\par
+
+下面的代码清单展示了类 \texttt{AthleticsDept} 及其子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 的实现。每个子类都创建并返回一个相应的 \texttt{Sport} 对象。因此，超类 \texttt{AthleticsDept} 把创建 \texttt{Sport} 对象的工作委托给它的子类。当它的成员函数 \texttt{generate\_report()} 在运行时调用工厂方法 \texttt{create\_sport()} 时，创建哪个运动对象取决于 \texttt{generate\_report()} 是在 \texttt{VarsityDept} 对象上调用还是在 \texttt{IntramuralDept} 对象上调用。
+
+\begin{codeboxt}{代码清单 9.8（程序 9.2 Provisions-FactoryDP）：\texttt{AthleticsDept.cpp}}
+#include <iostream>
+#include "Sport.h"
+#include "Sports.h"
+#include "AthleticsDept.h"
+
+void AthleticsDept::generate_report(const Type& type)  ①
+{
+    sport = create_sport(type);                        ②
+
+    cout << sport->get_category() << " "
+         << sport->get_type() << endl;
+    cout << "  players: " << sport->recruit_players() << endl;
+    cout << "    venue: " << sport->reserve_venue()   << endl;
+    cout << endl;
+}
+
+Sport *VarsityDept::create_sport(const Type& type)    ③
+{
+    switch (type)
+    {
+        case Type::BASEBALL:   return new VarsityBaseball();
+        case Type::FOOTBALL:   return new VarsityFootball();
+        case Type::VOLLEYBALL: return nullptr;
+
+        default: return nullptr;
+    }
+}
+
+Sport *IntramuralDept::create_sport(const Type& type) ④
+{
+    switch (type)
+    {
+        case Type::BASEBALL:   return new IntramuralBaseball();
+        case Type::FOOTBALL:   return new IntramuralFootball();
+        case Type::VOLLEYBALL: return new IntramuralVolleyball();
+
+        default: return nullptr;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 针对由工厂子类创建的那个 Sport 对象生成报告。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 把创建 Sport 对象的工作委托给 AthleticsDept 子类中的工厂方法。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 创建并返回一个校队 Sport 对象的工厂方法}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 创建并返回一个校内 Sport 对象的工厂方法}\par
+
+\myGraphic{0.799}{images/CH09_F02_UN04_Mak.png}{}
+
+这一版本应用的测试程序在 \texttt{VarsityDept} 对象或 \texttt{IntramuralDept} 对象上调用成员函数 \texttt{generate\_report()}。如果是 \texttt{VarsityDept} 对象，\texttt{generate\_report()} 就调用工厂方法 \texttt{create\_sport(),}，它利用多态创建一个校队的 \texttt{Sport} 对象。但如果是 \texttt{IntramuralDept} 对象，工厂方法就利用多态创建一个校内的 \texttt{Sport} 对象。
+
+\begin{codeboxt}{代码清单 9.9（程序 9.2 Provisions-FactoryDP）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Sport.h"
+#include "Sports.h"
+#include "AthleticsDept.h"
+
+using namespace std;
+
+int main()
+{
+    VarsityDept varsity;
+
+    varsity.generate_report(Type::BASEBALL);
+    varsity.generate_report(Type::FOOTBALL);
+
+    IntramuralDept intramural;
+
+    intramural.generate_report(Type::BASEBALL);
+    intramural.generate_report(Type::FOOTBALL);
+    intramural.generate_report(Type::VOLLEYBALL);
+
+    return 0;
+}
+\end{codeboxt}
+
+输出与上一版本的应用相同。
+
+\subsection{9.1.4 工厂方法的通用模型}
+
+图 9.3 展示了工厂方法设计模式的通用模型。回想一下，正是依据设计模式的通用模型，我们才能针对某个架构问题打造量身定制的解决方案（8.1.3 节）。
+
+\myGraphic{0.980}{images/CH09_F03_Mak.png}{图 9.3 工厂方法设计模式的通用模型（可与图 9.2 对比）}
+
+表 9.1 展示了示例应用如何采用该模式。
+
+\begin{center}
+{\bfseries 表 9.1 示例应用对工厂方法设计模式的采用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的采用 \\
+\midrule
+类 \texttt{Product} & 超类 \texttt{Sport} \\
+类 \texttt{ConcreteProduct} & \texttt{Sport} 的子类 \texttt{VarsityBaseball}、\texttt{VarsityFootball}、\texttt{IntramuralBaseball}、\texttt{IntramuralFootball} 和 \texttt{IntramuralVolleyball} \\
+类 \texttt{Creator} & 超类 \texttt{AthleticsDept} \\
+类 \texttt{ConcreteCreator} & 子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} \\
+\texttt{factory\_method()} & 成员函数 \texttt{VarsityDept::\allowbreak{}create\_\allowbreak{}sport(\allowbreak{})\allowbreak{}} 和 \texttt{IntramuralDept::\allowbreak{}create\_\allowbreak{}sport(\allowbreak{})\allowbreak{}} \\
+\texttt{operate\_on\_product()} & 成员函数 \texttt{A}\texttt{thleticsDept::\allowbreak{}generate\_\allowbreak{}report(\allowbreak{})\allowbreak{}} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{抽象工厂设计模式创建对象族}
+
+让我们回想一下汽车发动机制造商那个例子，想一想一台发动机是如何由许多零件构成的；因此，制造商是发动机零件族的创建者。福特发动机由一族零件构成，通用发动机由另一族零件构成。有些零件是通用的，同属两族。但制造商既不能在通用发动机中混入福特专属零件，也不能在福特发动机中混入通用专属零件。如果我们的发动机制造应用必须包含对象族这一概念，抽象工厂设计模式就为解决这类架构问题提供了模型。
+
+\subsection{9.2.1 使用抽象工厂设计模式之前}
+
+在上一版本的体育应用中我们看到，子类 \texttt{VarsityDept} 和子类 \texttt{IntramuralDept} 是工厂类，为其超类 \texttt{AthleticsDept} 创建 \texttt{Sport} 对象。但从逻辑上讲，我们无法阻止自己犯下把工厂所创建对象弄混的编码错误。校队棒球队不想到露天场地上比赛，把橄榄球球员放进排球队也不明智。我们能否进一步改进应用，以帮助防止这类逻辑错误？
+
+如果我们重新审视图 9.2，可以把校队运动的球员和场地视为一个对象族，把校内运动的球员和场地视为另一个对象族。我们不想把两族混在一起——对一项校队运动来说，校队的球员对象和场地对象应归属在一起；对一项校内运动来说，校内的球员对象和场地对象应归属在一起。
+
+\subsection{9.2.2 使用抽象工厂设计模式之后}
+
+抽象工厂设计模式为创建对象族的架构设计提供了模型（图 9.4）。我们在上一版本应用的基础上，以增量方式引入了对该模式的使用。
+
+抽象的 \texttt{ProvisionsFactory} 类是各工厂子类的超类。工厂子类 \texttt{VarsityFactory} 创建来自校队族的球员对象和场地对象，工厂子类 \texttt{IntramuralFactory} 创建来自校内族的球员对象和场地对象。超类 \texttt{AthleticsDept} 的子类 \texttt{VarsityDept} 需要校队族的 \texttt{Sport} 对象，因此它必须使用 \texttt{VarsityFactory}。与此类似，子类 \texttt{IntramuralDept} 需要校内族的 \texttt{Sport} 对象，因此它必须使用 \texttt{IntramuralFactory}。这两个抽象工厂类免除了 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 创建相应族内对象的职责，而这两个子类都无需知道工厂是如何完成任务的。
+
+\begin{mySidebar}{抽象工厂设计模式}
+
+“提供一个创建相关或相互依赖的对象族的接口，而无需指定它们的具体类。”（GoF 87）
+\end{mySidebar}
+
+一切都围绕“族”展开：策略设计模式为管理一族算法的软件架构建模，而抽象工厂设计模式为创建对象族的软件架构建模。
+
+\myGraphic{0.980}{images/CH09_F04_Mak.png}{图 9.4 这一版本的应用依据抽象工厂设计模式建模。接口 \texttt{ProvisionsFactory} 就是抽象工厂。实现类 \texttt{VarsityFactory} 创建校队族的球员对象和场地对象，因此 \texttt{VarsityDept} 使用 \texttt{VarsityFactory}。实现类 \texttt{IntramuralFactory} 创建校内族的球员对象和场地对象，因此 \texttt{IntramuralDept} 使用 \texttt{IntramuralFactory}。图中灰色部分在逻辑上与图 9.2 相比没有变化。}
+
+这是如何工作的呢？和之前一样，\texttt{AthleticsDept} 的子类 \texttt{VarsityDept} 创建校队的 \texttt{Sport} 对象。在这一版本的应用中，成员函数 \texttt{create\_sport()} 把一个 \texttt{VarsityFactory} 对象传给 \texttt{Sport} 构造函数。\texttt{Sport} 构造函数随后使用该 \texttt{VarsityFactory} 对象创建来自校队族的相应球员对象和场地对象。与此类似，\texttt{AthleticsDept} 的子类 \texttt{IntramuralDept} 创建校内的 \texttt{Sport} 对象。它的成员函数 \texttt{create\_sport()} 把一个 \texttt{IntramuralFactory} 对象传给 \texttt{Sport} 构造函数。后者随后使用该 \texttt{IntramuralFactory} 对象创建来自校内族的相应球员对象和场地对象。
+
+图 9.4 展示了使用抽象工厂模式的一些好处。
+
+\begin{itemize}
+\item \emph{族保持在一起}——每个工厂子类都保证它创建的对象来自同一个族。
+\item \emph{可灵活选择哪个族}——硬编码更少，这使得可以在运行时决定创建校队族还是校内族的对象。
+\item \emph{封装对象创建}——对象创建被封装在工厂子类中。这就是“封装变化之处”原则（2.3.2 节）。每个 \texttt{Sport} 对象都把球员对象和场地对象的创建委托给校队工厂或校内工厂。
+\item \emph{内聚的类}——子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 各自只负责创建 \texttt{Sport} 对象。它们分别把 \texttt{VarsityFactory} 或 \texttt{IntramuralFactory} 对象传给 \texttt{Sport} 构造函数，从而把创建相应族中球员对象和场地对象的工作委托出去。这就是单一职责原则（2.3 节）。
+\item \emph{松耦合的类}——子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 不依赖各对象族是如何创建的。这就是最少知识原则（2.3.2 节）。
+\end{itemize}
+
+\myGraphic{0.865}{images/CH09_F04_UN05_Mak.png}{}
+
+下面的代码清单给出了抽象工厂类 \texttt{ProvisionsFactory} 以及实现该接口的类 \texttt{VarsityFactory} 和 \texttt{IntramuralFactory}。这些类必须实现成员函数 \texttt{make\_players()} 和 \texttt{make\_venue()}，分别在每个族内创建球员对象和场地对象。
+
+\begin{codeboxt}{代码清单 9.10（程序 9.3 Provisions-AbsFactoryDP）：\texttt{ProvisionsFactory.h}}
+#include <string>
+#include "PlayerStrategy.h"
+#include "VenueStrategy.h"
+
+using namespace std;
+
+class ProvisionsFactory                                         ①
+{
+public:
+    virtual ~ProvisionsFactory() {}
+
+    virtual PlayerStrategy *make_players(const Type& type) = 0; ②
+    virtual VenueStrategy  *make_venue() = 0;                   ②
+};
+
+class VarsityFactory : public ProvisionsFactory                 ③
+{
+public:
+    PlayerStrategy *make_players(const Type& type) override
+    {
+        switch (type)
+        {
+            case Type::BASEBALL:
+                return new VarsityBaseballPlayers();
+            case Type::FOOTBALL:
+                return new VarsityFootballPlayers();
+            case Type::VOLLEYBALL:
+                return nullptr;
+
+            default: return nullptr;
+        }
+    }
+
+    VenueStrategy *make_venue() override
+    {
+        return new Stadium();
+    }
+};
+
+class IntramuralFactory : public ProvisionsFactory              ④
+{
+public:
+    PlayerStrategy *make_players(const Type& type) override
+    {
+        switch (type)
+        {
+            case Type::BASEBALL:
+                return new IntramuralBaseballPlayers();
+            case Type::FOOTBALL:
+                return new IntramuralFootballPlayers();
+            case Type::VOLLEYBALL:
+                return new IntramuralVolleyballPlayers();
+
+            default: return nullptr;
+        }
+    }
+
+    VenueStrategy *make_venue() override
+    {
+        return new OpenField();
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 抽象工厂类}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 由工厂子类实现的工厂函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 创建并返回校队族的对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 创建并返回校内族的对象。}\par
+
+每个 \texttt{Sport} 子类都把创建该运动所属族的球员对象和场地对象的工作委托给传给其构造函数的 \texttt{ProvisionsFactory} 对象。
+
+\begin{codeboxt}{代码清单 9.11（程序 9.3 Provisions-AbsFactoryDP）：\texttt{Sports.h}}
+#include "Sport.h"
+#include "PlayerStrategy.h"
+#include "VenueStrategy.h"
+#include "ProvisionsFactory.h"
+
+using namespace std;
+
+class VarsityBaseball : public Sport
+{
+public:
+    VarsityBaseball(ProvisionsFactory& factory)
+        : Sport(Type::BASEBALL, Category::VARSITY,
+                factory.make_players(get_type()),
+                factory.make_venue()) {}
+};
+
+class VarsityFootball : public Sport
+{
+public:
+    VarsityFootball(ProvisionsFactory& factory)
+        : Sport(Type::FOOTBALL, Category::VARSITY,
+                factory.make_players(get_type()),
+                factory.make_venue()) {}
+};
+
+class IntramuralBaseball : public Sport
+{
+public:
+    IntramuralBaseball(ProvisionsFactory& factory)
+        : Sport(Type::BASEBALL, Category::INTRAMURAL,
+                factory.make_players(get_type()),
+                factory.make_venue()) {}
+};
+
+class IntramuralFootball : public Sport
+{
+public:
+    IntramuralFootball(ProvisionsFactory& factory)
+        : Sport(Type::FOOTBALL, Category::INTRAMURAL,
+                factory.make_players(get_type()),
+                factory.make_venue()) {}
+};
+
+class IntramuralVolleyball : public Sport
+{
+public:
+    IntramuralVolleyball(ProvisionsFactory& factory)
+        : Sport(Type::VOLLEYBALL,Dept::INTRAMURAL,
+                factory.make_players(get_type()),
+                factory.make_venue()) {}
+};
+\end{codeboxt}
+
+在 \texttt{AthleticsDept} 的每个子类 \texttt{VarsityDept} 和 \texttt{IntramuralDept} 中，成员函数 \texttt{create\_sport()} 把相应的工厂传给 \texttt{Sport} 子类的构造函数。
+
+\begin{codeboxt}{代码清单 9.12（程序 9.3 Provisions-AbsFactoryDP）：\texttt{AthleticsDept.cpp}}
+#include <iostream>
+#include "Sport.h"
+#include "Sports.h"
+#include "AthleticsDept.h"
+#include "ProvisionsFactory.h"
+
+void AthleticsDept::generate_report(const Type& type) ...
+
+Sport *VarsityDept::create_sport(const Type& type)
+{
+    VarsityFactory varsity_factory;              ①
+
+    switch (type)
+    {
+        case Type::BASEBALL:
+            return new VarsityBaseball(varsity_factory);
+        case Type::FOOTBALL:
+            return new VarsityFootball(varsity_factory);
+        case Type::VOLLEYBALL:
+            return nullptr;
+
+        default: return nullptr;
+    }
+}
+
+Sport *IntramuralDept::create_sport(const Type& type)
+{
+    IntramuralFactory intramural_factory;        ②
+
+    switch (type)
+    {
+        case Type::BASEBALL:
+            return new IntramuralBaseball(intramural_factory);
+        case Type::FOOTBALL:
+            return new IntramuralFootball(intramural_factory);
+        case Type::VOLLEYBALL:
+            return new IntramuralVolleyball(intramural_factory);
+
+        default: return nullptr;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 用于校队族的球员对象和场地对象}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 用于校内族的球员对象和场地对象}\par
+
+在这一版本的应用中，测试程序没有变化，输出也保持不变：
+
+\begin{codebox}
+varsity baseball
+  players: varsity baseball players
+    venue: sports stadium
+
+varsity football
+  players: varsity baseball players
+    venue: sports stadium
+
+intramural baseball
+  players: intramural baseball players
+    venue: open field
+
+intramural football
+  players: intramural baseball players
+    venue: open field
+
+intramural volleyball
+  players: intramural baseball players
+    venue: open field
+\end{codebox}
+
+\subsection{9.2.3 抽象工厂的通用模型}
+
+图 9.5 展示了抽象工厂设计模式的通用模型。回想一下，正是依据设计模式的通用模型，我们才能针对某个架构问题打造量身定制的解决方案（8.1.3 节）。
+
+\myGraphic{0.743}{images/CH09_F05_Mak.png}{图 9.5 抽象工厂设计模式的通用模型（可与图 9.4 对比）}
+
+\myGraphic{0.754}{images/CH09_F05_UN06_Mak.png}{}
+
+表 9.2 展示了示例应用如何采用该模式。
+
+\begin{center}
+{\bfseries 表 9.2 示例应用对抽象工厂设计模式的采用}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+设计模式 & 示例应用中的采用 \\
+\midrule
+客户 & 超类 \texttt{AthleticsDept} \\
+超类 \texttt{AbstractFactory} & 接口 \texttt{ProvisionsFactory} \\
+工厂子类 \texttt{Factory\_A, FactoryB} 等。 & 工厂类 \texttt{VarsityFactory} \texttt{和} \texttt{IntramuralFactory} \\
+成员函数 \texttt{create\_product\_1()}、\texttt{create\_product\_2}\texttt{()} 等。 & 成员函数 \texttt{VarsityFactory::\allowbreak{}make\_\allowbreak{}players(\allowbreak{})\allowbreak{}}、\texttt{VarsityFactory::\allowbreak{}make\_\allowbreak{}venue(\allowbreak{})\allowbreak{},\allowbreak{} IntramuralFactory::\allowbreak{}make\_\allowbreak{}players(\allowbreak{})\allowbreak{}} 和 \texttt{I}\texttt{ntramuralFactory::\allowbreak{}make\_\allowbreak{}venue(\allowbreak{})\allowbreak{}} \\
+类 \texttt{AbstractProduct\_1}、\texttt{AbstractProduct\_2} 等。 & 接口 \texttt{PlayerStrategy} 和 \texttt{VenueStrategy} \\
+子类 \texttt{Product\_A1}、\texttt{Product\_B1}、\texttt{Product\_A2}、\texttt{Product\_B2} 等 & 类 \texttt{VarsityBaseballPlayers}、\texttt{VarsityFootballPlayers,} \texttt{IntramuralBaseballPlayers}、\texttt{IntramuralFootballPlayers}、\texttt{IntramuralVolleyballPlayers,\allowbreak{}} \texttt{Stadium} 和 \texttt{OpenField} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\myGraphic{0.898}{images/CH09_F05_UN07_Mak.png}{}
+
+\section*{小结}
+
+\begin{itemize}
+\item 工厂设计模式定义了一个创建对象的接口，但把“创建哪个对象”的决定委托给子类。
+\item 抽象工厂设计模式提供了一个创建相关对象族的接口。它有助于防止把不同族中的对象弄混的编码错误。
+\end{itemize}

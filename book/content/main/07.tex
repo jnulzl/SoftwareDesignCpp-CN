@@ -1,0 +1,1177 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 何时使用函数重写与重载
+\item 里氏替换原则
+\item 用 is-a 和 has-a 关系正确设计类与子类
+\item 优先使用组合而非继承原则
+\item 工厂类
+\item 设计子类时正确运用契约式编程
+\end{itemize}
+\end{myChapterIntro}
+
+正如 1.8 节所述，继承是面向对象编程的主要概念之一。当我们创建包含超类与子类的类层次结构的应用时，必须正确设计子类，才能得到设计良好的应用。
+
+\myGraphic{0.893}{images/CH07_00_UN01_Mak.png}{}
+
+我们应当清楚何时使用函数重写、何时使用重载。有若干设计原则可供我们使用。里氏替换原则指出，我们应当能够用某个子类对象替换超类对象，它还提供了额外的规则来帮助确保我们正确地设计了子类。优先使用组合而非继承原则涉及在类之间的 \emph{is-a} 关系与 \emph{has-a} 关系之间做出设计权衡，以避免在源代码中硬编码对象行为，转而提供在运行时做出行为决策的灵活性。通过使用工厂类，我们可以进一步提高代码的灵活性。如果在子类中使用契约式编程（在 6.3 节引入），我们必须正确设置任何重写成员函数的前置条件和后置条件。
+
+\section{何时使用函数重写或重载}
+
+本节介绍函数重写与重载，本章及前几章的示例程序都用到了这两个概念。良好的类设计可以同时使用这两个概念，因此我们在设计类时应当懂得如何正确使用它们。
+
+\subsection{7.1.1 重写超类成员函数以获得子类行为}
+
+函数重写涉及超类及其子类。如果两个函数的签名相同，那么子类的某个成员函数就重写了超类的某个成员函数。函数的\emph{签名}由函数名以及参数的数量、数据类型和顺序构成。参数名与返回值的数据类型不属于签名的一部分。
+
+当我们希望子类对象具有与超类对象相似但并非完全相同的行为时，就应当使用函数重写。子类的重写成员函数实现了所需的子类行为。
+
+在代码中，我们可以直接在子类对象上调用子类的重写函数。但更常见的情况是，我们会运用面向接口编程原则（2.3.3 节）。此时，多态会在运行时决定程序调用的是超类中被重写的函数，还是子类中的重写函数。这取决于我们调用该函数所针对的对象分别来自超类还是子类。
+
+图 7.1 给出一个函数重写的例子。在 \texttt{GeneralTax} 对象上调用 \texttt{amount\_owed()} 会调用超类 \texttt{GeneralTax} 中的成员函数。该函数使用私有常量 \texttt{GENERAL\_RATE} 的值和参数 \texttt{income} 的值来计算并返回所欠税额。子类 \texttt{LocalTax} 中的成员函数 \texttt{amount\_owed()} 与超类 \texttt{Tax} 中对应的成员函数具有相同的签名；因此，子类函数重写了超类函数。在 \texttt{LocalTax} 对象上调用该函数会调用子类的成员函数。子类函数使用私有常量 \texttt{LOCAL\_RATE} 的值和参数 \texttt{earnings} 的值来计算并返回所欠税额。
+
+\myGraphic{0.862}{images/CH07_F01_Mak.png}{图 7.1 子类 \texttt{LocalTax} 中的成员函数 \texttt{amount\_owed()} 重写了超类 \texttt{GeneralTax} 中的成员函数 \texttt{amount\_owed()}。尽管参数名不同（\texttt{income} 和 \texttt{earnings}），这两个函数仍具有相同的签名。要让多态生效，这些函数必须是虚函数。}
+
+要让多态生效，函数 \texttt{amount\_owed()} 必须是虚函数。假设我们声明了一个变量 \texttt{a\_tax}，它是指向 \texttt{GeneralTax} 对象的指针，然后我们有表达式 \texttt{a\_\allowbreak{}tax>amount\_\allowbreak{}owed(\allowbreak{}10000.\allowbreak{}00)\allowbreak{}}。多态会在运行时决定调用超类函数还是子类函数，取决于 \texttt{a\_tax} 当前分别指向 \texttt{GeneralTax} 对象还是 \texttt{LocalTax} 对象。
+
+下面的代码清单展示了超类 \texttt{GeneralTax,}、它的子类 \texttt{LocalTax}，以及另一个子类 \texttt{MaxTax}。每个子类都重写了超类的虚成员函数 \texttt{amount\_owed()}。
+
+\begin{codeboxt}{代码清单 7.1（程序 7.1 Taxes）：\texttt{Taxes.h}}
+class GeneralTax
+{
+public:
+    virtual ~GeneralTax() {}
+
+    virtual double amount_owed(const double income) const           ①
+    {
+        return GENERAL_RATE*income;
+    }
+
+private:
+    const double GENERAL_RATE = 0.10;
+};
+class LocalTax : public GeneralTax
+{
+public:
+    double amount_owed(const double earnings) const override        ②
+    {
+        return LOCAL_RATE*earnings;
+    }
+
+private:
+    const double LOCAL_RATE = 0.5;
+};
+class MaxTax : public GeneralTax
+{
+public:
+    double amount_owed(const double amount) const override          ②
+    {
+        return LOCAL_RATE*amount + GeneralTax::amount_owed(amount); ③
+    }
+
+private:
+    const double LOCAL_RATE = 0.5;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 超类 Tax 中的虚成员函数 amount\_owed()}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 子类 LocalTax 与 MaxTax 中的重写成员函数 amount\_owed()}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 调用被重写的超类成员函数 GeneralTax::amount\_owed()。}\par
+
+\begin{mySidebar}{关键字 override}
+
+在每个重写成员函数头部的末尾加上可选关键字 \texttt{override}，就是告诉 C++ 编译器我们本意是让该成员函数重写超类中的虚成员函数。编译器会检查超类中的函数确实是虚函数，并且被重写函数与重写函数的签名相同。若非如此，编译器会发出错误信息。被重写的函数必须是虚函数，才能启用多态。
+\end{mySidebar}
+
+我们可以在子类 \texttt{LocalTax} 和 \texttt{MaxTax} 中每个重写成员函数 \texttt{amount\_owed()} 头部的末尾加上可选关键字 \texttt{override}，以此告诉 C++ 编译器我们的意图。函数参数名 \texttt{income}、\texttt{earnings} 和 \texttt{amount} 都不被视为函数签名的组成部分。
+
+子类 \texttt{MaxTax} 中的重写成员函数 \texttt{amount\_owed()} 演示了可以借助作用域解析运算符 \texttt{::} 加上超类名来调用超类中被重写的成员函数。
+
+下面的代码清单是一个测试程序，用于演示函数重写的结果。
+
+\begin{codeboxt}{代码清单 7.2（程序 7.1 Taxes）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Taxes.h"
+
+using namespace std;
+
+int main()
+{
+    GeneralTax *tax1 = new GeneralTax();
+    cout << "General taxes owed = $"
+         << tax->amount_owed(10000.00) << endl;     ①
+
+    GeneralTax *tax2 = new LocalTax();
+    cout << "  Local taxes owed = $"
+         << tax2->amount_owed(10000.00) << endl;    ②
+
+    GeneralTax *tax3 = new MaxTax();
+    cout << "    Max taxes owed = $"
+         << tax3->amount_owed(10000.00) << endl;    ③
+
+    delete tax1;
+    delete tax2;
+    delete tax3;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 调用超类成员函数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 依靠多态调用子类 LocalTax 的重写成员函数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 依靠多态调用子类 MaxTax 的重写成员函数。}\par
+
+输出为
+
+\begin{codebox}
+General taxes owed = $1000
+  Local taxes owed = $5000          ①
+    Max taxes owed = $6000          ①
+\end{codebox}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由多态产生的输出}\par
+
+把超类成员函数声明为虚函数即可启用多态，测试程序中的 \texttt{tax2} 和 \texttt{tax3} 变量以及输出的最后两行就是证明。我们把变量 \texttt{tax2} 声明为指向 \texttt{GeneralTax} 对象的指针，但在运行时它指向的是一个 \texttt{LocalTax} 对象。有了多态，程序会调用类 \texttt{LocalTax} 的重写成员函数 \texttt{amount\_owed()}。类似地，变量 \texttt{tax3} 在运行时指向一个 \texttt{MaxTax} 对象，程序会调用类 \texttt{MaxTax} 的重写成员函数 \texttt{amount\_owed()}。
+
+\subsection{7.1.2 重载行为相似或等价的函数}
+
+当同一作用域内有两个或更多函数名称相同但签名不同时，就发生了函数重载。当一组函数关系极为紧密，以至于为每个函数另取一个名字毫无道理时，我们就应当重载它们。我们可以重载类的成员函数，也可以重载独立函数。C++ 编译器会根据调用时传入的实参来确定调用哪个重载函数。
+
+\begin{mySidebar}{函数重载非常常见}
+
+函数重载在 C++ 程序中非常常见。例如，如果把 \texttt{+} 运算符看成一个函数，那么我们就有了运算符重载。如果它的两个参数是整数或实数，该运算符会执行算术加法并返回两者之和。然而，如果两个参数是字符串，该运算符会执行字符串拼接，返回一个等于把第二个字符串的值追加到第一个字符串的值末尾所得的字符串。
+
+标准数学库中的平方根函数 \texttt{sqrt()} 就是重载的。我们可以向它传入 \texttt{double}、\texttt{float} 或 \texttt{long double} 类型的参数值，它会计算并以 \texttt{double} 返回该参数的平方根。
+\end{mySidebar}
+
+在以下情形中，我们可以为设计良好的应用使用函数重载：
+
+\begin{itemize}
+\item 这些函数执行概念上相似的操作。例如， void print(Textfile f); // 打印到标准输出 void print(Textfile f, PDF p); // 打印到 PDF
+\item 这些函数执行相同的操作并产生完全相同的结果。例如， void draw\_circle(int x, int y, double radius); void draw\_circle(Point p, double radius); 在这个例子中，第二个函数可以调用第一个函数，如下所示 draw\_circle(p.x, p.y, radius);
+\item 这些函数执行等价的操恀。例如， vector<Book *> search(Genre g, int year, string title); vector<Book *> search(Region r, string title);
+\end{itemize}
+
+C++ 也允许重载运算符。常见的可重载运算符包括算术运算符和输出运算符 \texttt{<<}。运算符 << 已经被重载，以便能够输出不同数据类型的值，如 \texttt{int}、\texttt{double} 和 \texttt{string}。我们还可以进一步重载它。例如，在代码清单 2.18 中，我们重载了运算符 << 来打印 \texttt{Kind} 值：
+
+\begin{codebox}
+enum class Kind
+{
+    FICTION, COOKBOOK, HOWTO
+};
+
+inline ostream& operator <<(ostream& ostr, const Kind& k)
+{
+    switch (k)
+    {
+        case Kind::FICTION:  ostr << "fiction";  break;
+        case Kind::COOKBOOK: ostr << "cookbook"; break;
+        case Kind::HOWTO:    ostr << "howto";    break;
+    }
+    return ostr;
+}
+\end{codebox}
+
+然后，我们可以使用 \texttt{<<} 运算符把 \texttt{Kind} 变量 \texttt{k} 的值输出到 \texttt{cout}：
+
+\begin{codebox}
+cout << k << endl;
+\end{codebox}
+
+根据 \texttt{k} 的值，输出将是字符串“\texttt{fiction}”“\texttt{cookbook}”或“\texttt{howto}”。
+
+\section{里氏替换原则与正确的子类}
+
+继承是面向对象编程的主要概念之一（1.8 节）。当我们创建包含超类及其子类的类层次结构的应用时，必须正确设计子类，才能得到设计良好的应用。里氏替换原则有助于确保我们为超类设计了正确的子类。
+
+\begin{mySidebar}{里氏替换原则}
+
+程序中凡是出现超类对象的地方，我们都应当能够用它的某个子类的对象来替换。换句话说，我们应当能够把源代码中每一处出现的超类对象都替换成它的某个子类的对象。这种替换之所以应当可行，是因为一个属于某个子类的实例对象同时也是该超类的实例。
+
+里氏替换原则指出，如果我们正确地设计了子类，那么在做出这种替换之后，程序应当能运行而不出现逻辑错误或运行时错误，尽管它可能产生不同但有意义的结果。违反这条设计原则的子类属于设计不当。
+
+这条原则以面向对象编程先驱、麻省理工学院（MIT）教授芭芭拉·利斯科夫（Barbara Liskov）的名字命名。
+\end{mySidebar}
+
+在代码清单 7.2 的测试程序中，我们能够在第二条输出语句中用一个子类 \texttt{LocalTax} 对象（变量 \texttt{tax2}）替换超类 \texttt{GeneralTax} 对象（变量 \texttt{tax1}），程序依然正常运行，只是输出不同：
+
+\begin{codebox}
+    GeneralTax *tax1 = new Tax();
+    cout << "Taxes owed = $"
+         << tax1->amount_owed(50000.00) << endl;
+
+    GeneralTax *tax2 = new LocalTax();
+    cout << "Local taxes owed = $"
+         << tax2->amount_owed(50000.00) << endl;
+\end{codebox}
+
+超类 \texttt{GeneralTax} 及其子类 \texttt{LocalTax} 和 \texttt{MaxTax} 遵循里氏替换原则。
+
+下一个例子展示如果我们忽视这条原则，程序会如何失败。在 \texttt{CircularBuffer} 类的另一个版本中（6.3 节），我们会把该缓冲区实现为一个 vector——稍后就能看到这是个非常糟糕的主意，但我们这样做是为了说明一个要点——于是 \texttt{CircularBuffer} 就成了 \texttt{vector<int> (}代码清单 7.3\texttt{)} 的子类。
+
+\myGraphic{0.855}{images/CH07_F01_UN02_Mak.png}{}
+
+与该类的前一个版本一样，公有成员函数 \texttt{add()} 在缓冲区尾部加入一个整数元素，公有成员函数 \texttt{remove()} 从缓冲区头部移除一个整数元素。成员变量 \texttt{head} 和 \texttt{tail} 分别是头部元素和尾部元素的下标。成员变量 \texttt{count} 记录缓冲区中当前有多少个元素。
+
+\begin{codeboxt}{代码清单 7.3（程序 7.2 CircularBuffer-2）：\texttt{CircularBuffer.h}（设计不良）}
+#include <vector>
+
+using namespace std;
+
+class CircularBuffer : public vector<int>        ①
+{
+public:
+    CircularBuffer(const int cap);
+
+    void add(const int value);
+    int remove();
+
+    friend ostream& operator <<(ostream& ostr,
+                                CircularBuffer& buffer);
+
+private:
+    int capacity;
+    int head, tail;
+    int count;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 把环形缓冲区实现为 vector（糟糕的设计！）}\par
+
+与类 \texttt{CircularBuffer} 的前一个版本一样，成员函数 \texttt{add()} 在向缓冲区加入一个新值之后会递增成员变量 \texttt{tail}（代码清单 7.4）。当变量 \texttt{tail} 的值超过缓冲区容量时，它会回绕到缓冲区的另一端。成员函数 \texttt{remove()} 在从缓冲区移除一个值之后会递增成员变量 \texttt{head}。当变量 \texttt{head} 的值超过缓冲区容量时，它也会回绕到缓冲区的另一端。为了让这个版本的类保持简短，我们省略前置条件和后置条件以及类不变式。重载的 \texttt{<<} 运算符按从头部到尾部的顺序打印缓冲区的内容。
+
+\begin{codeboxt}{代码清单 7.4（程序 7.2 CircularBuffer-2）：\texttt{CircularBuffer.cpp}}
+#include <iostream>
+#include "CircularBuffer.h"
+
+using namespace std;
+
+CircularBuffer::CircularBuffer(const int cap)
+    : capacity(cap), head(0), tail(0), count(0)
+{
+    reserve(capacity);
+    for (int i = 0; i < capacity; i++) push_back(0);
+}
+
+void CircularBuffer::add(const int value)
+{
+    at(tail) = value;
+    tail = (tail + 1)%capacity;              ①
+    count++;
+}
+
+int CircularBuffer::remove()
+{
+    int value = at(head);
+    head = (head + 1)%capacity;              ②
+    count--;
+
+    return value;
+}
+
+ostream& operator <<(ostream& ostr, CircularBuffer& buffer)
+{
+    int i = buffer.head;
+    int c = buffer.count;
+
+    cout << "Contents: ";
+
+    while (c > 0)                            ③
+    {                                        ③
+        cout << buffer.at(i) << " ";         ③
+        i = (i + 1)%buffer.capacity;         ③
+        c--;                                 ③
+    }                                        ③
+
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 递增 tail，若其值达到缓冲区容量则回绕到另一端。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 递增 head，若其值达到缓冲区容量则回绕到另一端。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 按从头部到尾部的顺序打印缓冲区内容。}\par
+
+下面的代码清单是一个测试程序。由于我们违反了里氏替换原则，它执行了两个非法操作。
+
+\begin{codeboxt}{代码清单 7.5（程序 7.2 CircularBuffer-2）：\texttt{tester.cpp}}
+#include <iostream>
+#include "CircularBuffer.h"
+
+using namespace std;
+
+const int SIZE = 5;
+
+int main()
+{
+    CircularBuffer buffer(SIZE);
+    for (int value = 10; value <= 50; value+=10)
+    {
+        buffer.add(value);
+    }
+    cout << buffer << endl;
+
+    buffer.at(1) = 99;  //非法！！！                ①
+    cout << buffer << endl;
+
+    cout << "Remove " << buffer.remove() << endl;
+    cout << "Remove " << buffer.remove() << endl;
+    cout << buffer << endl;
+
+    buffer.erase(buffer.begin() + 1);  //非法！！！ ②
+    cout << buffer << endl;
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 对缓冲区中某个值进行非法修改}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 从缓冲区中非法移除某个值}\par
+
+程序的输出为
+
+\begin{codebox}
+Contents: 10 20 30 40 50 
+Contents: 10 99 30 40 50 
+Remove 10
+Remove 99
+Contents: 30 40 50 
+Contents: 40 50 libc++abi.dylib: terminating with uncaught exception 
+↪of type std::out_of_range: vector
+\end{codebox}
+
+从逻辑上说，环形缓冲区并不是一个 vector。我们不应该用 vector 操作、通过 vector 的 \texttt{at()} 成员函数去修改缓冲区中的某个值，也不应该用 vector 的 \texttt{erase()} 成员函数移除某个值。这些操作会破坏环形缓冲区，导致运行时逻辑错误，使程序崩溃。程序之所以失败，是因为子类 \texttt{CircularBuffer} 违反了里氏替换原则——我们不能用一个子类 \texttt{CircularBuffer} 对象去替换超类 \texttt{vector<int>} 对象，因为无法对环形缓冲区使用 vector 操作。
+
+我们可以通过不让 \texttt{CircularBuffer} 成为 \texttt{vector<int>} 的子类来修复该程序，改为让 \texttt{CircularBuffer} 类拥有一个类型为 \texttt{vector<int>} 的成员变量。换句话说，类 \texttt{CircularBuffer} 拥有一个 vector。这就是 is-a（继承）关系与 has-a（聚合）关系的区别。里氏替换原则可以帮助我们决定该使用哪一种。我们可以把 \texttt{CircularBuffer} 改写成独立的类，它拥有一个聚合了 \texttt{vector<int>} 的私有成员变量 \texttt{buffer}。
+
+\begin{codeboxt}{代码清单 7.6（程序 7.3 CircularBuffer-3）：\texttt{CircularBuffer.h}}
+#include <vector>
+
+using namespace std;
+
+class CircularBuffer           ①
+{
+
+public:
+    CircularBuffer(const int cap);
+
+    void add(const int value);
+    int remove();
+
+    friend ostream& operator <<(ostream& ostr,
+                                CircularBuffer& buffer);
+
+private:
+    int capacity;
+    int head, tail;
+    int count;
+
+    vector<int> buffer;      ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 不是 vector 的子类}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 聚合的 vector}\par
+
+类 \texttt{CircularBuffer} 隐藏了它聚合的 vector。公有成员\texttt{函数} \texttt{add()} 和 \texttt{remove()} 控制对 vector 的访问，而该类不允许对 vector 进行其他行为。
+
+\begin{codeboxt}{代码清单 7.7（程序 7.3 CircularBuffer-3）：\texttt{CircularBuffer.cpp}}
+#include <iostream>
+#include "CircularBuffer.h"
+
+using namespace std;
+
+CircularBuffer::CircularBuffer(const int cap)
+    : capacity(cap), head(0), tail(0), count(0)
+{
+    buffer.reserve(capacity);                               ①
+    for (int i = 0; i < capacity; i++) buffer.push_back(0); ①
+}
+
+void CircularBuffer::add(const int value)
+{
+    buffer.at(tail) = value;                                ①
+    tail = (tail + 1)%capacity;
+    count++;
+}
+
+int CircularBuffer::remove()
+{
+    int value = buffer.at(head);                            ①
+    head = (head + 1)%capacity;
+    count--;
+
+    return value;
+}
+
+ostream& operator <<(ostream& ostr, CircularBuffer& cb)
+{
+    int i = cb.head;
+    int c = cb.count;
+    cout << "Contents: ";
+
+    while (c > 0)
+    {
+        cout << cb.buffer.at(i) << " ";                     ②
+        i = (i + 1)%cb.capacity;
+        c--;
+    }
+    return ostr;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 对私有的聚合 vector 进行操作。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 对私有的聚合 vector 进行操作。}\par
+
+如以下代码清单所示，测试程序无法对环形缓冲区执行 vector 操作。
+
+\begin{codeboxt}{代码清单 7.8（程序 7.3 CircularBuffer-3）：\texttt{tester.cpp}}
+#include <iostream>
+#include "CircularBuffer.h"
+
+using namespace std;
+
+const int SIZE = 5;
+
+int main()
+{
+    CircularBuffer cb(SIZE);
+
+    for (int value = 10; value <= 50; value+=10)
+    {
+        cb.add(value);
+    }
+    cout << cb << endl;
+
+    cout << "Remove " << cb.remove() << endl;
+    cout << "Remove " << cb.remove() << endl;
+    cout << cb << endl;
+
+    return 0;
+}
+\end{codeboxt}
+
+程序不再崩溃，能够正常运行。其输出为
+
+\begin{codebox}
+Contents: 10 20 30 40 50 
+Remove 10
+Remove 20
+Contents: 30 40 50 
+\end{codebox}
+
+\section{选择 is-a 与 has-a 关系}
+
+面向对象的应用往往包含多个超类及其子类，以及带有指向其他类的指针成员变量的类。因此，要设计好这样一个应用，就需要在 is-a（继承）关系与 has-a（聚合）关系之间做出选择，或者把两者好好地结合起来使用。
+
+考虑一个涉及儿童玩具的应用。该应用包含几种不同的玩具：玩具汽车、模型飞机和火车套装。对每种玩具，我们都想为其玩耍动作行为（在地板上滚动它，或在空中飞行它）和声音行为（引擎声或呜呜声）建模。我们的应用架构第一版主要涉及抽象超类 \texttt{Toy} 与其子类之间的 is-a 关系（图 7.2）。\texttt{Toy} 子类可以有不同的行为，但每个子类都实现 \texttt{what()}、\texttt{play()} 和 \texttt{sound()} 成员函数。
+
+\myGraphic{0.751}{images/CH07_F02_Mak.png}{图 7.2 这个版本的应用在 \texttt{Toy} 子类与其超类之间使用 is-a 关系。两个设计缺陷是重复的代码（违反了不要重复自己原则）以及每种玩具玩耍动作和声音行为的硬编码。}
+
+我们可以想象，在一个真实的应用中，每种玩具可能会有更多的行为，而且每个行为都不只是简单地返回一个字符串，如下面的代码清单所示。
+
+\begin{codeboxt}{代码清单 7.9（程序 7.4 Toys-1）：\texttt{Toy.h}（设计不良）}
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Toy
+{
+public:
+    virtual ~Toy() {}
+    virtual string what()  const = 0;        ①
+    virtual string play()  const = 0;        ①
+    virtual string sound() const = 0;        ①
+
+    virtual void print() const
+    {
+        cout << endl;
+        cout << what() << endl;
+        cout << "   play: " << play() << endl;
+        cout << "  sound: " << sound() << endl;
+    }
+};
+
+class ToyCar : public Toy
+{
+public:
+    string what()  const override { return "TOY CAR"; }
+    string play()  const override { return "roll it"; }
+    string sound() const override { return "RRrr RRrr"; }
+};
+
+class ModelAirplane : public Toy
+{
+public:
+    string what()  const override { return "MODEL AIRPLANE"; }
+    string play()  const override { return "fly it"; }
+    string sound() const override { return "RRrr RRrr"; }
+
+    string power() const { return "wind up"; }
+
+    void print() const override
+    {
+        Toy::print();
+        cout << "  power: " << power() << endl;
+    }
+};
+
+class TrainSet : public Toy
+{
+public:
+    string what()  const override { return "TRAIN SET"; }
+    string play()  const override { return "roll it"; }
+    string sound() const override { return "choo choo"; }
+
+    string setup() const { return "lay down track"; }
+    string power() const { return "insert batteries"; }
+
+    void print() const override
+    {
+        Toy::print();
+        cout << "  setup: " << setup() << endl;
+        cout << "  power: " << power() << endl;
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由每个子类实现的共同行为}\par
+
+正如 图 7.2 清楚展示的，这个版本的应用使用 is-a 关系。例如，\texttt{TrainSet} 是一个 \texttt{Toy}。
+
+这个设计的一个严重缺陷是子类之间的重复代码，它违反了不要重复自己原则（2.3.3 节）。例如，\texttt{ToyCar} 和 \texttt{TrainSet} 都拥有实现各自 \texttt{play()} 成员函数的相同代码，而 \texttt{ToyCar} 和 \texttt{ModelAirplane} 都拥有实现各自 \texttt{sound()} 成员函数的相同代码。如果实现每个成员函数的代码做得更多，或者我们添加更多子类和行为，这个问题会更加严重。
+
+另一个缺陷是，每种玩具的玩耍动作和声音行为都被硬编码在每个 \texttt{Toy} 子类的源代码中。例如，实现类 \texttt{TrainSet} 的源代码硬编码了火车套装是通过滚动来玩耍的，并且它会发出呜呜声。下面的测试程序演练了这些行为。
+
+\begin{codeboxt}{代码清单 7.10（程序 7.4 Toys-1）：\texttt{tester.cpp}}
+#include "Toy.h"
+
+using namespace std;
+
+int main()
+{
+    ToyCar car;
+    car.print();
+
+    ModelAirplane plane;
+    plane.print();
+
+    TrainSet train;
+    train.print();
+
+    return 0;
+}
+\end{codeboxt}
+
+输出为
+
+\begin{codebox}
+TOY CAR
+   play: roll it
+  sound: RRrr RRrr
+
+MODEL AIRPLANE
+   play: fly it
+  sound: RRrr RRrr
+  power: wind up
+
+TRAIN SET
+   play: roll it
+  sound: choo choo
+  setup: lay down track
+  power: insert batteries
+\end{codebox}
+
+要避免 \texttt{Toy} 子类的成员函数之间出现重复代码，一种做法是把每种独特的玩耍动作和声音行为都做成单独的类。然后，我们可以让 \texttt{Toy} 子类继承这些行为类，从而共享它们（图 7.3）。
+
+\myGraphic{0.980}{images/CH07_F03_Mak.png}{图 7.3 玩耍动作和声音行为各自是一个单独的类。每个 \texttt{Toy} 子类与 \texttt{Toy} 超类之间具有 is-a 关系，并与玩耍动作类和声音类之间具有 is-a 关系。通过共享这些类，我们消除了一些代码重复，但每种玩具的行为依然是硬编码的。}
+
+图中显示，\texttt{ToyCar} 和 \texttt{TrainSet} 两个子类都继承并共享 \texttt{Roll} 玩耍动作类，\texttt{ToyCar} 和 \texttt{ModelAirplane} 两个子类都继承并共享 \texttt{Engine} 声音类。\texttt{ModelAirplane} 还继承了 \texttt{Fly} 玩耍动作类，\texttt{TrainSet} 还继承了 \texttt{ChooChoo} 声音类。
+
+\myGraphic{0.644}{images/CH07_F03_UN03_Mak.png}{}
+
+下面的代码清单把玩耍动作展示为单独的类。
+
+\begin{codeboxt}{代码清单 7.11（程序 7.5 Toys-2）：\texttt{PlayAction.h}}
+#include <string>
+
+using namespace std;
+
+class Fly
+{
+public:
+    string play() const { return "fly it"; }
+};
+class Roll
+{
+public:
+    string play() const { return "roll it"; }
+};
+\end{codeboxt}
+
+下面的代码清单把声音展示为单独的类。
+
+\begin{codeboxt}{代码清单 7.12（程序 7.5 Toys-2）：\texttt{Sound.h}}
+#include <string>
+
+using namespace std;
+
+class Engine
+{
+public:
+    string sound() const { return "RRrr RRrr"; }
+};
+class ChooChoo
+{
+public:
+    string sound() const { return "choo choo"; }
+};
+\end{codeboxt}
+
+采用这种设计，每种玩具都可以继承自己的玩耍动作行为和声音行为（图 7.3）。因为每个 \texttt{Toy} 子类已经继承了超类 \texttt{Toy}，所以我们必须使用多重继承，如下面的代码清单所示。作用域解析运算符让我们能够从所继承的行为类中显式调用成员函数 \texttt{Roll::play()}、\texttt{Fly::play()}、\texttt{Engine::sound()} 和 \texttt{ChooChoo::sound()}。
+
+\begin{codeboxt}{代码清单 7.13（程序 7.5 Toys-2）：\texttt{Toy.h}（设计不良）}
+#include <iostream>
+#include <string>
+#include "PlayAction.h"
+#include "Sound.h"
+
+using namespace std;
+
+class Toy
+{
+    ...
+};
+
+class ToyCar : public Toy, public Roll, public Engine           ①
+{
+public:
+    string what()  const override { return "TOY CAR"; }
+    string play()  const override { return Roll::play(); }      ②
+    string sound() const override { return Engine::sound(); }   ②
+};
+
+class ModelAirplane : public Toy, public Fly, public Engine     ③
+{
+public:
+    string what()  const override { return "MODEL AIRPLANE"; }
+    string play()  const override { return Fly::play(); }       ④
+    string sound() const override { return Engine::sound(); }   ④
+
+    ...
+};
+
+class TrainSet : public Toy, public Roll, public ChooChoo       ⑤
+{
+public:
+    string what()  const override { return "TRAIN SET"; }
+    string play()  const override { return Roll::play(); }      ⑥
+    string sound() const override { return ChooChoo::sound(); } ⑥
+
+    ...
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 多重继承}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 使用作用域解析运算符调用相应的行为。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 多重继承}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 使用作用域解析运算符调用相应的行为。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 多重继承}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 使用作用域解析运算符调用相应的行为。}\par
+
+同一个测试程序（代码清单 7.10）生成的输出与之前相同。
+
+对于 \texttt{Toy} 的每个子类，我们应用的第二版除了保留它此前与 \texttt{Toy} 超类之间的 is-a 关系外，还添加了与玩耍动作类和声音类之间的 is-a 关系。例如，\texttt{ModelAirplane} 是一个 \texttt{Toy}，同时它也是一个 \texttt{Fly} 玩耍动作和一个 \texttt{Engine} 声音。这个版本解决了代码重复问题，因为每种玩耍动作和每种声音都只有一份可共享的副本。然而，每种玩具子类的源代码依然硬编码了该玩具的行为，只不过这次用的是多重继承。
+
+为了让玩具的行为方式更加灵活，我们希望避免在子类的源代码中硬编码每种玩具的玩耍行为和声音行为，转而能够在运行时确定每种玩具的行为。为此，玩具应用的最终版本把玩具与其行为之间的 is-a 关系替换为 has-a 关系。图 7.4 用图展示了该应用最终版本的 is-a 关系和 has-a 关系。
+
+\myGraphic{0.904}{images/CH07_F04_Mak.png}{图 7.4 每个 \texttt{Toy} 子类与 \texttt{Toy} 超类之间具有 is-a 关系。\texttt{Toy} 超类与 \texttt{PlayAction} 和 \texttt{Sound} 行为之间具有 has-a 关系，这使得 \texttt{Toy} 子类能够访问并共享玩耍动作行为和声音行为。这种设计更加灵活，且玩具与其玩耍动作、声音行为之间是松耦合的。玩具行为不再硬编码在源代码中，而是可以在运行时创建玩具对象时随时指定。还可以在运行时通过调用设值函数 \texttt{set\_play()} 和 \texttt{set\_sound()} 来修改玩具的行为。}
+
+首先，我们让每种玩耍动作都实现接口 \texttt{PlayAction}。每个 \texttt{PlayAction} 类都必须以适合该子类的方式实现成员函数 \texttt{play()}。
+
+\begin{codeboxt}{代码清单 7.14（程序 7.6 Toys-3）：\texttt{PlayAction.h}}
+#include <string>
+
+using namespace std;
+
+class PlayAction                     ①
+{
+public:
+    virtual ~PlayAction() {}
+ 
+    virtual string play() const = 0; ②
+};
+
+class Fly : public PlayAction
+{
+public:
+    string play() const override { return "fly it"; }
+};
+
+class Roll : public PlayAction
+{
+public:
+    string play() const override { return "roll it"; }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① PlayAction 超类}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 由每个子类实现的玩耍行为}\par
+
+类似地，我们让每种声音都实现接口 \texttt{Sound}。每个 \texttt{Sound} 类都必须以适合该子类的方式实现成员函数 \texttt{sound()}。
+
+\begin{codeboxt}{代码清单 7.15（程序 7.6 Toys-3）：\texttt{Sound.h}}
+#include <string>
+
+using namespace std;
+
+class Sound                           ①
+{
+public:
+    virtual ~Sound() {}
+
+    virtual string sound() const = 0; ②
+};
+
+class ChooChoo : public Sound
+{
+public:
+    string sound() const override { return "choo choo"; }
+};
+
+class Engine : public Sound
+{
+public:
+    string sound() const override { return "RRrr RRrr"; }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① Sound 超类}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 由每个子类实现的声音行为}\par
+
+我们把开闭原则（2.3.3 节和 5.8 节）应用到接口 \texttt{PlayAction} 和 \texttt{Sound} 上。我们可以在不改变这两个接口的情况下添加新的玩耍动作行为和声音行为。
+
+超类 \texttt{Toy} 通过其私有成员变量 \texttt{play\_behavior} 和 \texttt{sound\_behavior} 维持与玩耍动作和声音行为之间的 has-a 关系。我们在构造函数中初始化这些成员变量。
+
+\begin{codeboxt}{代码清单 7.16（程序 7.6 Toys-3）：\texttt{Toy.h}}
+#include <iostream>
+#include <string>
+#include "PlayAction.h"
+#include "Sound.h"
+
+using namespace std;
+
+class Toy
+{
+public:
+    Toy(PlayAction * const p, Sound * const s)
+        : play_behavior(p), sound_behavior(s) {}                   ①
+
+    virtual ~Toy()
+    {
+        delete play_behavior;
+        delete sound_behavior;
+    }
+
+    virtual string what() const = 0;
+
+    void set_play(PlayAction * const p) { play_behavior  = p; }
+    void set_sound(Sound * const s)     { sound_behavior = s; }
+
+    string play()  const { return play_behavior->play(); }         ②
+    string sound() const { return sound_behavior->sound();}        ③
+
+    virtual void print() const
+    {
+        cout << endl;
+        cout << what() << endl;
+        cout << "   play: " << play() << endl;
+        cout << "  sound: " << sound() << endl;
+    }
+
+private:
+    PlayAction *play_behavior;                                     ④
+    Sound      *sound_behavior;                                    ④
+};
+
+class ToyCar : public Toy
+{
+public:
+    ToyCar(PlayAction * const p, Sound * const s) : Toy(p, s) {}   ⑤
+    ...
+};
+
+class ModelAirplane : public Toy
+{
+public:
+    ModelAirplane(PlayAction * const p, Sound * const s)
+        : Toy(p, s) {}                                             ⑤
+
+    ...
+};
+
+class TrainSet : public Toy
+{
+public:
+    TrainSet(PlayAction * const p, Sound * const s) : Toy(p, s) {} ⑤
+
+    ...
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 初始化玩耍动作和声音行为。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 把玩耍动作行为委托给一个在运行时确定的 PlayAction 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 把声音行为委托给一个在运行时确定的 Sound 对象。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 实现与玩耍动作和声音之间的 has-a 关系。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 把 PlayAction 和 Sound 对象传递给超类 Toy 的构造函数。}\par
+
+在这个版本的应用中，类 \texttt{Toy} 遵循委托原则（2.3.2 节），把玩耍动作行为和声音行为委托给 \texttt{PlayAction} 和 \texttt{Sound} 类。\texttt{Toy} 的子类都没有硬编码这些行为。相反，当在运行时创建 \texttt{Toy} 对象时，表示这些行为的 \texttt{PlayAction} 和 \texttt{Sound} 对象会被传递给每个 \texttt{Toy} 子类的构造函数。
+
+\myGraphic{0.792}{images/CH07_F04_UN04_Mak.png}{}
+
+下面代码清单中的测试程序创建每个 \texttt{Toy} 对象，并创建相应的 \texttt{PlayAction} 和 \texttt{Sound} 对象传递给构造函数。为了进一步展示行为的灵活性，测试程序使用 \texttt{Toy} 类的设值函数 \texttt{set\_sound()} 在运行时改变 \texttt{TrainSet} 对象的声音行为。
+
+\begin{codeboxt}{代码清单 7.17（程序 7.6 Toys-3）：\texttt{tester.cpp}}
+#include <iostream>
+#include <vector>
+#include "Toy.h"
+
+int main()
+{
+    Toy *car   = new ToyCar(new Roll(), new Engine());        ①
+    Toy *plane = new ModelAirplane(new Fly(), new Engine());  ①
+    Toy *train = new TrainSet(new Roll(), new ChooChoo());    ①
+
+    car->print();
+    plane->print();
+
+    train->print();
+    train->set_sound(new Engine());                           ②
+    train->print();
+
+    delete car;
+    delete plane;
+    delete train;
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 在构造玩具对象时确定每种玩具的行为。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 修改某个玩具的声音行为。}\par
+
+该应用最终版本的输出为
+
+\begin{codebox}
+TOY CAR
+   play: roll it
+  sound: RRrr RRrr
+
+MODEL AIRPLANE
+   play: fly it
+  sound: RRrr RRrr
+  power: wind up
+
+TRAIN SET
+   play: roll it
+  sound: choo choo
+  setup: lay down track
+  power: insert batteries
+
+TRAIN SET
+   play: roll it
+  sound: RRrr RRrr
+  setup: lay down track
+  power: insert batteries
+\end{codebox}
+
+在玩具与其玩耍动作和声音行为之间使用 has-a 关系而非 is-a 关系，是优先使用组合而非继承原则的一个例子。
+
+\begin{mySidebar}{优先使用组合而非继承原则}
+
+使用组合（类聚合其他类的 has-a 关系）的设计往往比继承（子类与超类之间的 is-a 关系）更好。继承是由源代码决定的，因此它把行为硬编码了。在运行时组合行为要灵活得多。组合也让共享代码和减少重复变得更加容易。
+
+由于 has-a 关系常常涉及委托，这条原则也被称为优先使用委托而非继承原则。
+\end{mySidebar}
+
+使用这条设计原则能带来诸多好处：
+
+\begin{itemize}
+\item \emph{灵活性}——行为不硬编码在源代码中，可以在运行时被赋予和修改。
+\item \emph{代码共享}——行为被共享，从而减少代码重复。
+\item \emph{委托}——行为被委托给 \texttt{PlayAction} 和 \texttt{Sound} 子类。
+\item \emph{松耦合}——类 \texttt{Toy} 及其子类不了解 \texttt{PlayAction} 和 \texttt{Sound} 子类的实现。\texttt{PlayAction} 和 \texttt{Sound} 子类也不依赖 \texttt{Toy} 子类。
+\item \emph{封装}——将来我们可以添加和修改玩具行为，而无需更改 \texttt{Toy} 超类或其任何子类。
+\item \emph{降低复杂度}——类层次结构得以简化。不再需要多重继承。
+\end{itemize}
+
+\myGraphic{0.893}{images/CH07_F04_UN05_Mak.png}{}
+
+\section{将工厂函数与面向接口编程原则结合使用}
+
+像这样的代码
+
+\begin{codebox}
+TrainSet *toy = new TrainSet(new Roll(), new ChooChoo());
+\end{codebox}
+
+本质上是不灵活的，因为变量 \texttt{toy} 被硬编码为只能指向一个 \texttt{TrainSet} 对象。一种解决办法是运用面向接口编程原则（2.3.3 节），这里的接口就是超类 \texttt{Toy}：
+
+\begin{codebox}
+Toy *toy = new TrainSet(new Roll(), new ChooChoo());
+\end{codebox}
+
+现在，变量 \texttt{toy} 稍后可以指向另一个 \texttt{Toy} 对象。
+
+然而，这段代码仍然没有那么灵活。如果在应用的另一次运行中，我们需要把变量 \texttt{toy} 初始化为另一个 \texttt{Toy} 对象，该怎么办？为了获得更大的灵活性，让我们尽量少硬编码、尽量多在运行时确定，我们可以使用一个封装了对 \texttt{new} 的调用的工厂函数。工厂函数的用途是封装创建并返回超类的不同子类对象的过程。一个参数值决定要创建并返回哪个子类对象。工厂函数通常是工厂类的静态成员。我们的 \texttt{ToyFactory} 类在工厂函数 \texttt{make()} 中封装了创建并返回 \texttt{Toy} 对象的过程。
+
+\begin{codeboxt}{代码清单 7.18（程序 7.7 Toys-4）\texttt{ToyFactory.h}}
+#include "Toy.h"
+
+enum class Kind { CAR, AIRPLANE, TRAIN };  ①
+
+class ToyFactory                           ②
+{
+public:
+    static Toy *make(const Kind kind)      ③
+    {
+        switch (kind)                      ④
+        {
+            case Kind::CAR:
+                return new ToyCar(new Roll(), new Engine());
+
+            case Kind::AIRPLANE:
+                return new ModelAirplane(new Fly(), new Engine());
+
+            case Kind::TRAIN:
+                return new TrainSet(new Roll(), new ChooChoo());
+
+            default: return nullptr;
+        }
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 玩具的种类}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 工厂类}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 静态工厂函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 根据参数 kind 的值创建并返回一个玩具对象。}\par
+
+\begin{mySidebar}{工厂原则}
+
+如果程序在运行时创建不同的对象，我们可以在工厂函数中封装对 \texttt{new} 的调用。传给工厂函数的参数值决定要创建并返回哪个对象。工厂函数能够创建的对象通常来自某个公共超类型的子类。使用工厂函数让我们能够在运行时灵活确定要创建什么类型的对象。
+
+我们可以把工厂函数实现为与该超类型相关的某个工厂类的函数，工厂函数也可以只是该超类型自身的函数。工厂函数可以是静态的。
+\end{mySidebar}
+
+下面代码清单中的测试程序表明，现在我们能够根据变量 \texttt{kind} 的值，在运行时灵活确定要创建哪个 \texttt{Toy} 对象。
+
+\begin{codeboxt}{代码清单 7.19（程序 7.7 Toys-4）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Toy.h"
+#include "ToyFactory.h"
+
+using namespace std;
+
+int main()
+{
+    Kind kind = Kind::AIRPLANE;
+
+    Toy *toy = ToyFactory::make(kind);      ①
+    toy->print();
+
+    delete toy;
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 在运行时确定要创建哪个 Toy 对象。}\par
+
+这个程序的输出只有
+
+\begin{codebox}
+MODEL AIRPLANE
+   play: fly it
+  sound: Rrrr RRrr
+  power: wind up
+\end{codebox}
+
+\myGraphic{0.833}{images/CH07_F04_UN06_Mak.png}{}
+
+\section{子类与契约式编程 [可选]}
+
+如果我们使用契约式编程（6.3 节），就需要对子类格外小心，尤其是在遵循面向接口编程原则（7.4 节）时。如果某个子类重写了其超类的成员函数，并且被重写的超类成员函数带有前置条件和后置条件，那么对于子类的成员函数来说，什么样的前置条件和后置条件才是合适的呢？
+
+考虑类 \texttt{Shipment} 及其子类 \texttt{Expedited} 和 \texttt{International}（代码清单 7.20）。类 \texttt{Shipment}（用于通过普通邮件寄送包裹）有两个成员函数。设值函数 \texttt{set\_cost()} 设置运费。它的前置条件很简单，就是运费大于 0。成员函数 \texttt{calculate\_days()} 计算包裹到达目的地需要多少天。在实际应用中，该函数会利用运输方式和其他因素来进行这一计算。它的后置条件是天数必须介于 0 和 14 之间。在本例中，我们干脆把天数硬编码为 5，这满足后置条件。
+
+子类 \texttt{Expedited}（用于加急运输）的成员函数 \texttt{set\_cost()} 有这样一个前置条件：运费大于 5。它的成员函数 \texttt{calculate\_days()} 有这样一个后置条件：天数为 1 或 2，并在返回前进行检查。在本例中，它被硬编码为 2 天，这满足后置条件。这两个函数重写了超类 \texttt{Shipment} 中对应的函数。
+
+子类 \texttt{International}（用于国际运输）的成员函数 \texttt{set\_cost()} 有这样一个前置条件：运费大于 0。它的成员函数 \texttt{calculate\_days()} 有这样一个后置条件：天数大于 12，并在返回前进行检查。在本例中，它被硬编码为 20 天，这满足后置条件。这两个函数重写了超类 \texttt{Shipment} 中对应的函数。
+
+\begin{codeboxt}{代码清单 7.20（程序 7.8 ContractShipment）：\texttt{Shipment.h}（设计不良）}
+#include <string>
+
+using namespace std;
+
+class Shipment
+{
+public:
+    virtual ~Shipment() {}
+
+    virtual string get_type() const { return "REGULAR"; } ①
+    virtual double get_cost() const { return cost; }      ①
+    virtual int    get_days() const { return days; }      ①
+
+    /**
+     * @precondition c > 0
+     */
+    virtual void set_cost(const double c)
+    {
+        if (!(c > 0)) throw c;
+        cost = c;
+    }
+
+    /**
+     * @postcondition (days > 0) && (days < 14)
+     */
+    virtual int calculate_days()
+    {
+        days = 5;
+
+        if (!((days > 0) && (days < 14))) throw days;
+        return days;
+    }
+
+protected:
+    double cost;
+    int days;
+};
+
+class Expedited : public Shipment
+{
+public:
+    string get_type() const override { return "EXPEDITED"; }
+
+    /**
+     * @precondition (c > 5)  INVALID!                     ②
+     */
+    void set_cost(const double c) override
+    {
+        if (!(c > 5)) throw c;
+        cost = c;
+    }
+
+    /**
+     * @postcondition (days == 1) || (days == 2)
+     */
+    int calculate_days() override
+    {
+        days = 2;
+        if (!((days == 1) || (days == 2))) throw days;
+        return days;
+    }
+};
+
+class International : public Shipment
+{
+public:
+    string get_type() const override { return "INTERNATIONAL"; }
+
+    /**
+     * @precondition c > 0
+     */
+    void set_cost(const double c) override
+    {
+        if (!(c > 0)) throw c;
+        cost = c;
+    }
+
+    /**
+     * @postcondition days > 12  INVALID!                  ③
+     */
+    int calculate_days() override
+    {
+        days = 20;
+        return days;
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 可被子类重写的虚函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 无效的前置条件}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 无效的后置条件}\par
+
+回想一下，调用方有责任在调用函数之前确保该函数的前置条件得到满足，而函数在被调用后，即使前置条件为假，也可以采取任何方便的做法。在这个例子中，如果前置条件被违反，我们让每个 \texttt{set\_cost()} 成员函数抛出异常。（抛出异常并不是由函数头声明的，因此它不属于契约的一部分。）另外，回想一下，函数有责任在返回前满足其后置条件，因此每个 \texttt{calculate\_days()} 成员函数中硬编码的天数都满足它的后置条件\texttt{.}
+
+测试程序（代码清单 7.21）创建 \texttt{Shipment}、\texttt{Expedited} 和 \texttt{International} 对象，并依次把每个对象传给函数 \texttt{ship\_it()}。该函数以指向 \texttt{Shipment} 对象的指针形式接收其实参。它以实参值 2.00 调用该对象上的 \texttt{set\_cost()}，这满足 \texttt{Shipment} 成员函数的前置条件 \texttt{c > 0}。在调用 \texttt{Shipment} 对象上的 \texttt{calculate\_days()} 返回之后，出于防御式编程，它会核实 \texttt{Shipment} 成员函数的后置条件 \texttt{(\allowbreak{}days > 0)\allowbreak{} \&\& (\allowbreak{}days < 14)\allowbreak{}} 得到了满足。成员函数 \texttt{set\_cost()} 和 \texttt{calculate\_days()} 都是虚函数，所以多态会决定调用哪个类的成员函数。
+
+\begin{codeboxt}{代码清单 7.21（程序 7.8 ContractShipment）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Shipment.h"
+
+using namespace std;
+
+void ship_it(Shipment * const s);
+
+int main()
+{
+    Shipment *shipment      = new Shipment();
+    Shipment *expedited     = new Expedited();
+    Shipment *international = new International();
+    ship_it(shipment);
+    ship_it(expedited);
+    ship_it(international);
+    delete shipment;
+    delete expedited;
+    delete international;
+    return 0;
+}
+
+void ship_it(Shipment * const s)
+{
+    try
+    {
+        cout << endl << "Shipping " << s->get_type();
+
+        s->set_cost(2.00);                            ①
+
+        s->calculate_days();                          ②
+        int days = s->get_days();                     ②
+        if (!((days > 0) && (days < 14))) throw days; ②
+    }
+
+    catch (double cost)
+    {
+        cout << " *** Invalid cost: " << cost;
+    }
+    catch (int days)
+    {
+        cout << " *** Invalid days: " << days;
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 实参值 2.00 满足在 Shipment 对象上调用 set\_cost() 的前置条件。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 核实对 Shipment 对象调用 calculate\_days() 之后后置条件得到满足。}\par
+
+程序的输出为
+
+\begin{codebox}
+Shipping REGULAR
+Shipping EXPEDITED *** Invalid cost: 2
+Shipping INTERNATIONAL *** Invalid days: 20
+\end{codebox}
+
+普通运输没有问题。然而，加急运输违反了 \texttt{set\_cost()} 成员函数的前置条件，而国际运输显然违反了 \texttt{calculate\_days()} 成员函数的后置条件。哪里出错了？
+
+函数 \texttt{ship\_it()} 使用的是 \texttt{Shipping} 对象的前置条件和后置条件。但由于 \texttt{ship\_it()} 的实参是指向 \texttt{Shipping} 对象的指针，我们无法保证在运行时调用方不会传入指向 \texttt{Expedited} 对象的指针或指向 \texttt{International} 对象的指针，而这可能会违反前置条件或后置条件。
+
+以下是设计子类以及使用契约式编程时的一些指导原则：
+
+\begin{itemize}
+\item 子类重写成员函数的前置条件所允许的取值范围，必须包含被重写的超类成员函数的前置条件所允许的取值范围。在这个例子中，子类 \texttt{Expedited} 中成员函数 \texttt{set\_cost()} 的前置条件 \texttt{cost > 5} 并未包含超类 \texttt{Shipment} 中成员函数 \texttt{set\_cost()} 的 cost > 0 这一范围。因此，当超类 \texttt{Shipment} 把运费设为 2 时，就违反了子类 \texttt{Expedited} 的前置条件（图 7.5）。
+\end{itemize}
+
+\myGraphic{0.429}{images/CH07_F05_Mak.png}{图 7.5 运费 2 满足超类的前置条件，却不满足子类的前置条件。子类前置条件的范围必须包含超类前置条件的范围。}
+
+\begin{itemize}
+\item 超类被重写成员函数的后置条件所允许的取值范围，必须包含重写它的子类成员函数的后置条件所允许的取值范围。在这个例子中，超类 \texttt{Shipping} 中成员函数 \texttt{calculate\_days()} 的后置条件 \texttt{(\allowbreak{}days > 0)\allowbreak{} \&\& (\allowbreak{}days < 14)\allowbreak{}} 并未包含子类 \texttt{International} 中成员函数 \texttt{calculate\_days()} 的 \texttt{days > 12} 这一范围。因此，当子类 \texttt{International} 把天数设为 20 时，就违反了超类 \texttt{Shipping} 的后置条件（图 7.6）。
+\end{itemize}
+
+\myGraphic{0.885}{images/CH07_F06_Mak.png}{图 7.6 天数 20 满足子类的后置条件，却不满足超类的后置条件。超类后置条件的范围必须包含子类后置条件的范围。}
+
+\myGraphic{0.772}{images/CH07_F06_UN07_Mak.png}{}
+
+\section*{小结}
+
+\begin{itemize}
+\item 设计良好的应用应当只包含支持良好设计原则的设计良好的子类。
+\item 函数的签名由函数名以及参数的数量、数据类型和顺序构成。它不包括参数名，也不包括返回值的数据类型。
+\item 子类的成员函数重写其超类中具有相同签名的成员函数。在运行时，如果对象是从子类实例化而来的，我们希望调用重写后的函数。
+\item 重载函数名称相同，但在其他方面签名不同。在一个设计良好的应用中，一组重载函数所执行的操作在概念上相似、相同或等价。
+\item 理解何时在类之间使用 is-a（继承）关系和 has-a（聚合）关系非常重要。
+\item 里氏替换原则指出，如果子类以 is-a 关系被正确设计，那么子类对象就可以在代码中替换超类对象。程序在逻辑上仍将正确并继续运行。违反这条原则的子类可能导致程序运行出现逻辑错误或崩溃。
+\item 优先使用组合而非继承原则指出，在某些软件设计情形中，使用 has-a 关系而非 is-a 关系会使类和子类更灵活、对变化有更好的封装、复杂度更低、耦合更松。
+\item has-a 关系可以避免在类的源代码中硬编码行为。它提供了灵活性，让我们能在运行时创建对象时设置对象行为，并在之后修改这些行为。
+\item 工厂函数封装了对象的创建。它通过赋予我们在运行时确定创建哪些对象的灵活性，避免了硬编码。
+\item 子类重写成员函数的前置条件所允许的取值范围，必须包含被重写的超类成员函数的前置条件所允许的取值范围。超类被重写成员函数的后置条件所允许的取值范围，必须包含重写它的子类成员函数的后置条件所允许的取值范围。
+\end{itemize}

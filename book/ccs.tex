@@ -1,0 +1,727 @@
+% =============================================================================
+%  book/ccs.tex  ——  全书导言区（版式 / 字体 / 自定义命令与环境）
+%  《Object-Oriented Software Design in C++》（Ronald Mak, Manning）中文版
+%  文件结构沿用 latex_source_v2 模板：
+%      main.tex  →  book/ccs.tex（导言区）  →  book/index.tex（封面 + 目录 + 章节索引）
+%      正文章节：book/content/<类别>/<编号>.tex，由 book/index.tex 中的 \myChapter 等命令加载
+%  版式参数（页幅 531×666bp、版心 375bp、章首装饰坐标等）按原书 PDF 实测重定。
+% =============================================================================
+
+\documentclass[12bp,openany,oneside,UTF8]{book}
+\interfootnotelinepenalty=10000
+
+% -----------------------------------------------------------------------------
+%  基础宏包
+% -----------------------------------------------------------------------------
+\usepackage{textcomp}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{ifthen}
+\usepackage{pgffor}
+\usepackage{xspace}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{indentfirst}
+\usepackage{subfiles}
+\usepackage{caption}
+\usepackage{xcolor}
+
+% 在导言区（Preamble）添加：
+\usepackage[export]{adjustbox} % 注意必须加上 [export] 参数
+
+% 页面尺寸：与原书实测一致 —— 531.36bp × 628.83bp（7.380in × 8.734in）
+% 版心宽 375bp；左右边距取原书奇偶页实测平均值（原书有 ±4.5bp 的奇偶偏移）
+% 若想换成模板默认的 A4，把下面这行替换为：\usepackage[a4paper,left=2.5cm,right=2cm,top=2.54cm,bottom=2.54cm]{geometry}
+%
+% -----------------------------------------------------------------------------
+%  ★ 想改页边距，只动下面 geometry 这一段（单位一律用 bp = 1/72in，与 PDF 同单位）
+%  ── 左右边距 ──
+%    left / right 就是「纸张左/右边缘 → 版心边缘」的距离。
+%    版心宽 = paperwidth − left − right（现 531.36 − 97.5 − 58.86 = 375bp）
+%    改左右不改变页面尺寸，但版心宽一变，换行与全书分页都会重排（需连跑两遍）。
+%    ⚠ 三处按固定值排版的元素会跟着出问题：
+%      · 页眉章名的「整页居中」补偿量 —— 已自动跟随 left/right（见 \headcenterfix），无需管；
+%      · 章首钢蓝横线右缘钉在 x=474.18、米色盒左缘突出 19.93bp、图注左缘突出 36bp；
+%        所以 right 改到 <56.9bp 时正文会压过横线，left 改到 <21bp 时米色盒会出纸。
+%  ── 上下边距 ──
+%    top    → 正文首行基线 y = top + 9.96bp（9.96bp 即 \topskip 的 10pt）
+%    bottom → 正文末行基线 y ≈ paperheight − bottom（实测 628.83 − 25.83 = 603.00 正好吻合）
+%    headsep→ 页眉基线 y = top − headsep − 3.6bp（实测）
+%             想只改 top 而不动页眉，就令 headsep = top − 36.90bp
+%             （现在 50.64 − 36.90 = 13.74，页眉恰好钉在原书的 y=33.30）
+%    改 top / bottom 会改变每页行数（版心高 = paperheight − top − bottom，现 552.34bp，
+%    13bp/行），因此全书分页重排。
+%  ── 整页尺寸 ──
+%    paperwidth / paperheight 是全部绝对坐标的参照系：章首横线与巨型章号、章首页页码的
+%    xshift/yshift 都按纸边定位，改纸张尺寸必须把这些数字重新量一遍。
+% -----------------------------------------------------------------------------
+\usepackage[
+  paperwidth=531bp, paperheight=666bp,   % 原书实测 7.375in × 9.25in
+  left=65bp, right=55bp,                % 版心宽 = 531 − 102 − 54 = 375bp（原书实测）
+  top=45bp, bottom=45bp,                 % 正文首/末行基线 ≈ y=60 / y=602
+  headheight=15bp, headsep=13.74bp,
+  footskip=12bp]{geometry}
+
+% -----------------------------------------------------------------------------
+%  ★★★ 字体设置：想要换字体、改字号，只改这一段 ★★★
+% -----------------------------------------------------------------------------
+\usepackage{fontspec}
+\usepackage[fontset=none]{ctex}          % 只借用 ctex 的中文标题名与 \zihao 字号，字体由下面手工指定
+\usepackage[fontsize=10bp]{fontsize}     % 正文字号（与原书一致：原书正文实测 10bp）
+\linespread{1.1667}                      % 正文行距 13bp（原书实测 10bp/13bp）1.0833(13bp)/1.1250(13.5bp)/1.1667(14bp)
+
+% 中文字体（本机未装思源宋体，用华文宋体/微软雅黑代替；都是 TrueType，可正常嵌入 PDF）
+% 备选：Source Han Serif / SourceHanSerifSC-SemiBold（模板默认）、Noto Serif CJK SC、SimSun
+\setCJKmainfont[AutoFakeBold=true,AutoFakeSlant=true]{STSong}            % 中文正文（衬线）
+\setCJKsansfont[AutoFakeBold=true,AutoFakeSlant=true]{Microsoft YaHei}   % 中文标题（无衬线）
+\setCJKmonofont[AutoFakeBold=true,AutoFakeSlant=true]{Microsoft YaHei}   % 代码块中的中文注释
+% 拉丁字体：原书正文 New Baskerville（商用字体）以 Cambria 代替 ——
+%   关键原因是原书数字为「等高数字」（lining figures），Georgia 是旧式数字
+%   （数字会降到基线以下），实测 Cambria 的数字宽高比与原书最接近
+%   （0.496/0.671 em vs 原书 0.484/0.667 em）
+\setmainfont{Cambria}[BoldFont=*-Bold, ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]
+\setsansfont[BoldFont={Franklin Gothic Medium}]{Franklin Gothic Medium}   % 拉丁标题
+% 代码字体：与原书一致的 JetBrains Mono NL（无连字版），随项目放在 fonts/ 目录
+\setmonofont{JetBrainsMonoNL}[
+  Path=fonts/, Extension=.ttf,
+  UprightFont=*-Regular, BoldFont=*-Bold,
+  ItalicFont=*-Italic, BoldItalicFont=*-BoldItalic]
+\newfontfamily\codehan{Microsoft YaHei}  % 备用的中英文混排字体
+% -----------------------------------------------------------------------------
+
+% -----------------------------------------------------------------------------
+%  版面与段落
+% -----------------------------------------------------------------------------
+\definecolor{ink}{HTML}{231F20}          % 正文墨色（原书实测，非纯黑）
+\definecolor{chapterblue}{HTML}{476B85}  % 标题钢蓝（原书实测）
+\definecolor{listingbar}{HTML}{679CC3}   % 代码清单标题条蓝（原书实测）
+\definecolor{chapgray}{HTML}{D1D3D4}     % 章首巨型数字的浅灰（原书实测）
+\definecolor{partband}{HTML}{E6E7E8}     % 部分页「第 N 部分」底带浅灰（原书实测 0.903/0.907/0.910）
+\definecolor{cream}{HTML}{F7F4E9}        % 概念盒米色底（原书实测）
+\definecolor{codeframe}{HTML}{C8CDD4}    % （保留给旧样式引用）
+\definecolor{codeback}{HTML}{F5F8FC}
+\definecolor{codebacktitle}{HTML}{E6EBF2}
+
+\setlength{\parindent}{2em}                      % 中文书籍惯例：首行缩进两字
+\setlength{\parskip}{0bp plus 0bp minus 0bp}     % 原书段落之间无额外间距
+\raggedbottom
+
+% 全书正文墨色（标题、链接等会各自覆盖）
+\AtBeginDocument{\color{ink}}
+
+\setlist[itemize,enumerate,description]{nosep, topsep=4bp, partopsep=0bp, parsep=0bp, leftmargin=2em}
+
+% -----------------------------------------------------------------------------
+%  代码高亮：minted（需要 Pygments + xelatex -shell-escape）
+%  原书代码块无外框、无底色、无行号，8bp 等宽、行距 10.11bp，左缘与正文对齐；
+%  清单标题条为蓝底 #679CC3 + 白字 9bp Franklin Gothic。
+% -----------------------------------------------------------------------------
+\usepackage[cache=true]{minted}
+\newcommand{\codefont}{\fontsize{8bp}{10.11bp}\selectfont}
+\setminted{obeytabs, tabsize=2, breaklines=true, breakanywhere=true,
+           fontsize=\codefont, autogobble=true}
+% -----------------------------------------------------------------------------
+%  【关键】minted v3 在 Windows 下的缓存目录必须是绝对路径
+% -----------------------------------------------------------------------------
+%  latexminted 写任何文件前都要过 latexrestricted 的安全校验
+%  （_restricted_pathlib.py 的 writable_dir()）：
+%      elif self.is_absolute() and not any(self.is_relative_to(p)
+%                                          for p in self.tex_texmfoutput_roots()):
+%          -> 拒绝
+%  也就是说：
+%    * 绝对路径  → 必须落在 tex_texmfoutput_roots()（由 TEXMFOUTPUT /
+%      TEXMF_OUTPUT_DIRECTORY 环境变量填充，且是绝对路径）之内；
+%    * 相对路径  → 直接判负（is_absolute() 为假，短路进不了任何放行分支）。
+%  而 minted 默认 \minted@cachedir = "_minted"，生成的文件名是
+%      "_minted/<md5>.highlight.minted"、"<md5>.style.minted"、"<md5>.pygtex" …
+%  全是【相对路径】——于是 465 处代码块全部写入失败。
+%  更坑的是 latexminted 把真实原因吞进 _<md5>.message.minted，
+%  只在 LaTeX 侧留下极具误导性的一句：
+%      Cannot write file "_xxx.index.minted" outside working directory,
+%      TEXMFOUTPUT, and TEXMF_OUTPUT_DIRECTORY.
+%  （看到这句先别去查工作目录，几乎一定是相对/绝对路径判定问题）
+%
+%  实测（latexminted 0.7.0 + latexrestricted 0.6.2）：
+%      cachedir="_minted"（默认）        → 写入被拒
+%      cachedir=""                       → 写入被拒（仍是相对路径）
+%      cachedir="<项目根绝对路径>"        → 正常 ← 唯一可行
+%
+%  修法：把 \minted@cachedir 设成【项目根目录的绝对路径】。
+%  连带效果：\minted@cachepath 变成 "<绝对路径>/"，于是 latexminted 拿到的
+%  所有待写路径都是绝对路径，全部落在项目根目录内、校验通过。
+%
+%  项目根目录怎么求？——读 TEXMF_OUTPUT_DIRECTORY / TEXMFOUTPUT 环境变量
+%  （由 build.bat 用 %~dp0 设成项目根的绝对路径）。
+%  ⚠ 不要用 `kpsewhich --var-value PWD`！PWD 是 bash 专有的环境变量，
+%    在 cmd.exe / PowerShell 下并不存在，kpsewhich 会返回【空】，
+%    于是 \minted@cachedir 变成空串 → 仍旧全灭。这个坑很隐蔽：
+%    在 git-bash 里测试全部通过，一双击 build.bat 就挂。
+%  读回来后必须：
+%    1) 判空 —— 若两个变量都没设，宁可保持 minted 默认值并给出警告，
+%       也不要把它设成空串（空串会连带炸出 \pydatawritekeyedefvalue 等一堆错误）；
+%    2) 剥掉 CRLF 残留（Windows 下 kpsewhich 输出带 \r）。
+%  注意：必须直接改 \minted@cachedir 宏本身，不能用 \setminted{cachedir=}，
+%  因为 minted 只为 cachedir 注册了带 .estore 的描述子，空值会被 pgfkeys 拒绝。
+\makeatletter
+% 1) 依次尝试两个环境变量，取第一个非空者
+\CatchFileDef{\mintedProjectRoot}{|"kpsewhich --var-value TEXMF_OUTPUT_DIRECTORY"}%
+  {\minted@standardcatcodes\endlinechar=-1}%
+\def\minted@stripcr#1\r{#1}%
+\edef\mintedProjectRoot{\expandafter\minted@stripcr\mintedProjectRoot\r}%
+\ifx\mintedProjectRoot\@empty
+  \CatchFileDef{\mintedProjectRoot}{|"kpsewhich --var-value TEXMFOUTPUT"}%
+    {\minted@standardcatcodes\endlinechar=-1}%
+  \edef\mintedProjectRoot{\expandafter\minted@stripcr\mintedProjectRoot\r}%
+\fi
+% 2) 只在非空时才覆盖 minted 的默认值；为空则保留 "_minted" 并明确报警
+\ifx\mintedProjectRoot\@empty
+  \PackageWarning{minted-cn}{%
+    Cannot determine project root: neither TEXMF_OUTPUT_DIRECTORY nor
+    TEXMFOUTPUT is set. Code blocks will FAIL to highlight.^^J%
+    Please build via build.bat, or set TEXMF_OUTPUT_DIRECTORY to the^^J%
+    absolute path of the project root before running xelatex.}%
+\else
+  \edef\minted@cachedir{\mintedProjectRoot}%
+  \typeout{minted-cn: cachedir = \minted@cachedir}%
+\fi
+\makeatother
+
+% 注册原书配色：先把它读进 \minted@styledef@manning，minted 就不会再去找 Python 样式。
+% 注意：minted 只有在 \minted@defstyle@load 里才会调 \minted@detectconfig 初始化缓存路径，
+% 我们绕过了那条路，所以这里必须显式补一次。
+\makeatletter
+\CatchFileDef{\minted@styledef@manning}{book/manning-pygments-style.tex}%
+  {\minted@standardcatcodes\endlinechar=-1}%
+\minted@detectconfig
+\makeatother
+\setminted{style=manning}
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{breakable, minted, skins}
+
+% 代码块仍用 tcblisting（verbatim 环境无法包在自定义环境里，且它支持跨页）。
+% 只是把外观改成与原书一致：无外框、无底色、无行号，代码左缘与正文对齐。
+% 注意：tcolorbox 的 minted 库默认强制 fontsize=\small，必须显式覆盖。
+\newtcblisting{codebox}{
+  listing engine=minted, minted language=cpp, listing only,
+  size=minimal, arc=0bp, breakable, enhanced jigsaw,
+  colframe=white, colback=white, boxrule=0bp,
+  left=0bp, right=0bp, top=1.5bp, bottom=1.5bp, boxsep=0bp,
+  before skip=7bp, after skip=7bp,
+  minted options={fontsize=\codefont, tabsize=2, obeytabs=true,
+                  breaklines=true, breakanywhere=true, autogobble=true},
+}
+% 带标题代码块（调用方式：\begin{codeboxt}{代码清单 3.1 提取答案框}）
+% 标题条与原书一致：钢蓝底 #679CC3 + 白字 9bp，条高 15bp，左内缩 12bp
+\newtcblisting{codeboxt}[1]{
+  listing engine=minted, minted language=cpp, listing only,
+  size=title, arc=0bp, breakable, enhanced jigsaw,
+  colframe=white, colback=white, boxrule=0bp,
+  left=0bp, right=0bp, top=1.5bp, bottom=1.5bp, boxsep=0bp,
+  lefttitle=12bp, righttitle=2bp, toptitle=2bp, bottomtitle=2bp,
+  title={#1},
+  colbacktitle=listingbar, coltitle=white,
+  fonttitle=\sffamily\fontsize{9bp}{11bp}\selectfont,
+  before skip=7bp, after skip=7bp,
+  minted options={fontsize=\codefont, tabsize=2, obeytabs=true,
+                  breaklines=true, breakanywhere=true, autogobble=true},
+}
+
+% -----------------------------------------------------------------------------
+%  【补丁】minted v3 × tcolorbox × subfiles 路径冲突
+% -----------------------------------------------------------------------------
+%  现象（TeX Live 2026 更新 minted 3.8 / tcolorbox 6.10 之后出现）：
+%      ! Package minted Error: Cannot locate file
+%        "book/content/main/main.listing" (kpsewhich failed).
+%      ! FancyVerb Error: No verbatim file book/content/main/main.listing
+%      → 所有代码块（465 处）全部编译失败，退化为报错而不是高亮。
+%
+%  原因：tcolorbox 的 tcblisting 会把代码正文写到输出目录下的临时文件
+%      （默认 \kvtcb@listingfile = \jobname.listing，即 ./main.listing），
+%      然后调用 \inputminted{...}{main.listing}。
+%      而 minted 的 \minted@define@inputfilepath 会无条件地把当前
+%      \import@path（subfiles/import 设为当前子文件所在目录
+%      "book/content/main/"）前缀到该文件名上，于是去找
+%      "book/content/main/main.listing" —— 这个文件根本不存在。
+%
+%  修法：保留 minted「优先按子文件目录解析」的原意，只在
+%      \import@path + 文件名 确实不存在时，退回按输出目录（当前目录）解析。
+%      对 \inputminted 的常规用法无影响。
+\makeatletter
+\def\minted@define@inputfilepath#1{%
+  \IfPackageLoadedTF{import}%
+   {\IfFileExists{\import@path#1}%
+     {\edef\minted@inputfilepath{\import@path#1}}%
+     {\edef\minted@inputfilepath{#1}}}%
+   {\edef\minted@inputfilepath{#1}}}
+\makeatother
+
+% -----------------------------------------------------------------------------
+%  图表
+% -----------------------------------------------------------------------------
+% 图注左缘的悬挂量：
+%   0bp  = 与【正文】左缘对齐（当前设置，正文左缘 x=97.5bp）
+%   36bp = 悬挂到页边距，与节标题的悬挂编号左缘齐平（Manning 原书版式，
+%          若要还原成原书样子就改回 36bp；那会让图注左缘落在 x=61.5bp）
+% 无论取值多少，图注右缘始终与正文右缘（x=472.5bp）对齐，通栏两端对齐。
+\newcommand{\myGraphicCapHang}{0bp}
+% 图注（caption）的对齐方式：
+%   \myGraphicCapCentertrue  = 逐行居中（图注中心 = 版心中线 = 图片中心）
+%   \myGraphicCapCenterfalse = 通栏两端对齐，左缘与正文左缘（x=97.5bp）齐平（当前设置）
+% 居中模式下图注盒宽恒为 \textwidth；因此悬挂量 \myGraphicCapHang 只在两端对齐
+% 模式下生效（居中模式会忽略它，否则图注盒跟着左移、居中点就跑偏了）。
+\newif\ifmyGraphicCapCenter
+\myGraphicCapCenterfalse
+% 图注字形：
+%   \myGraphicCapBoldtrue  = 加粗（当前设置）
+%   \myGraphicCapBoldfalse = 常规字重
+% 中文走 STSong 的 AutoFakeBold 合成粗体，拉丁走 Cambria Bold。
+\newif\ifmyGraphicCapBold
+\myGraphicCapBoldtrue
+\ExplSyntaxOn
+% 插图（不浮动，紧跟正文； caption 为图注文字）
+% 图注：8bp
+\NewDocumentCommand { \myGraphic } { mmm }
+{
+  \par\medskip\noindent
+  \begin{center}
+    \includegraphics[width=#1\textwidth,height=0.86\textheight,keepaspectratio]{#2}
+  \end{center}
+  \nopagebreak\vspace{3bp}\noindent
+  {\fontsize{8bp}{10.5bp}\selectfont
+   \ifmyGraphicCapBold\bfseries\fi
+   \ifmyGraphicCapCenter
+     \parbox{\textwidth}{\centering #3}%
+   \else
+     \hspace*{-\myGraphicCapHang}\parbox{\dimexpr\textwidth+\myGraphicCapHang\relax}{#3}%
+   \fi}\par
+  \medskip
+}
+\ExplSyntaxOff
+
+\captionsetup[figure]{labelformat=empty}
+\captionsetup[table]{labelformat=empty}
+
+% -----------------------------------------------------------------------------
+%  提示框 / 侧栏（对齐原书版式）
+%  · 原书的 NOTE/TIP 是「无框缩进段落 + 钢蓝 8.5bp 小标签」，不是盒子
+%  · 原书的概念/侧栏盒是米色 #F7F4E9 满版心底、无描边，蓝标题 10.5bp，正文 9.5bp
+% -----------------------------------------------------------------------------
+\ExplSyntaxOn
+% NOTE / TIP / WARNING：无框，整段左缩进 12bp，标签用钢蓝小号无衬线
+\NewDocumentEnvironment { myNotic } { m }
+{ \par\medskip\begingroup
+    \setlength{\leftskip}{12bp}\setlength{\parindent}{0bp}%
+    {\color{chapterblue}\sffamily\fontsize{8.5bp}{11bp}\selectfont #1}%
+    \hspace{0.9em}\ignorespaces }
+{ \par\endgroup\medskip }
+
+\NewDocumentEnvironment { myTip } { m }
+{ \par\medskip\begingroup
+    \setlength{\leftskip}{12bp}\setlength{\parindent}{0bp}%
+    {\color{chapterblue}\sffamily\fontsize{8.5bp}{11bp}\selectfont #1}%
+    \hspace{0.9em}\ignorespaces }
+{ \par\endgroup\medskip }
+
+\NewDocumentEnvironment { myWarning } { m }
+{ \par\medskip\begingroup
+    \setlength{\leftskip}{12bp}\setlength{\parindent}{0bp}%
+    {\color{chapterblue}\sffamily\fontsize{8.5bp}{11bp}\selectfont #1}%
+    \hspace{0.9em}\ignorespaces }
+{ \par\endgroup\medskip }
+
+% 概念 / 侧栏盒：米色满版心底 + 钢蓝标题
+\NewDocumentEnvironment { mySidebar } { m }
+{ \par\medskip\noindent
+  \begin{tcolorbox}[enhanced~jigsaw, breakable, colback=cream, colframe=cream,
+      boxrule=0bp, arc=0bp, left=16bp, right=16bp, top=8bp, bottom=9bp,
+      boxsep=0bp, before~skip=0bp, after~skip=0bp]
+    {\color{chapterblue}\sffamily\fontsize{10.5bp}{13bp}\selectfont #1}%
+    \par\nopagebreak\vspace{5bp}%
+    \fontsize{9.5bp}{12.5bp}\selectfont
+}
+{ \end{tcolorbox}\par\medskip }
+
+% 没有小标题的侧栏
+\NewDocumentEnvironment { mySidebarBox } { }
+{ \par\medskip\noindent
+  \begin{tcolorbox}[enhanced~jigsaw, breakable, colback=cream, colframe=cream,
+      boxrule=0bp, arc=0bp, left=16bp, right=16bp, top=8bp, bottom=9bp,
+      boxsep=0bp, before~skip=0bp, after~skip=0bp]
+    \fontsize{9.5bp}{12.5bp}\selectfont
+}
+{ \end{tcolorbox}\par\medskip }
+
+% 章首「本章内容」盒：原书为 251.43bp 宽的窄米色盒，左缘突出到 x=77.57（版心左 97.5）
+% 注意 tcolorbox 的 grow to left by 会「加宽」盒子，故 width = 251.43 - 19.93
+\NewDocumentEnvironment { myChapterIntro } { m }
+{ \par\vspace*{116.0bp}\noindent
+  \begin{tcolorbox}[enhanced~jigsaw, breakable, colback=cream, colframe=cream,
+      boxrule=0bp, arc=0bp, width=226.8bp, grow~to~left~by=24.6bp,
+      left=19.83bp, right=14bp, top=9bp, bottom=10bp, boxsep=0bp,
+      before~skip=0bp, after~skip=0bp]
+    {\color{chapterblue}\sffamily\fontsize{12bp}{15bp}\selectfont #1}%
+    \par\nopagebreak\vspace{6bp}%
+    \fontsize{9.8bp}{13.5bp}\selectfont
+}
+{ \end{tcolorbox}\par\vspace{29.2bp} }
+
+% 章节内部的无编号小标题（不进目录）：钢蓝无衬线 10.5bp，同原书盒标题
+\NewDocumentCommand { \mySamllsectionNoContent } { m }
+{ \par\vspace{0.9em}\noindent
+  {\color{chapterblue}\sffamily\fontsize{10.5bp}{13bp}\selectfont #1}%
+  \par\vspace{0.35em}\nopagebreak[4] }
+\NewDocumentCommand { \mySmallsection } { m }
+{ \mySamllsectionNoContent { #1 } }
+\ExplSyntaxOff
+
+% -----------------------------------------------------------------------------
+%  标题样式（对齐原书：Franklin Gothic 系、钢蓝 #476B85、节号悬挂在左页边距）
+%  原书只有两级正文标题：节 12.5bp（带编号，编号悬挂）与小节 10.5bp（无编号）
+% -----------------------------------------------------------------------------
+\usepackage{titlesec}
+% ---------------------------------------------------------------------------
+%  章首装饰（原书实测，坐标均以「页面右上角」为原点，单位为 bp）
+%    巨型章号：225bp 斜体 #D1D3D4，基线 y=217.88、右缘 x=474.18（距右纸边 57.18）
+%    钢蓝横线：0.5bp #476B85，y=193.80、右缘 x=474.18、长 300bp
+%  章号变量特意不含 @：它在 \ExplSyntaxOn 段里被赋值、在 \makeatletter 段里被读取，
+%  若名字带 @ 会因两处的 catcode 不同而变成两个不同的宏（曾导致数字一直画不出来）。
+% ---------------------------------------------------------------------------
+\newcommand{\mychaptergiant}{}
+\newcommand{\mychapterset}[1]{\gdef\mychaptergiant{#1}}
+\newcommand{\mychapterclear}{\gdef\mychaptergiant{}}
+% ---------------------------------------------------------------------------
+%  章标题的「上间距」（= titlesec 的 before-skip，即标题块距版心顶的距离）
+%  ★ 想调整 \myFront（前言/致谢/索引…）标题的高低，只改 \myFrontTopSkip 这一个值 ★
+%    换算关系（实测 1:1）：标题末行基线 y = 181.55 + (本值 − 10.89) bp
+%      · 每 +1bp，标题下移 1bp；每 −1bp，标题上移 1bp
+%      · 想直接落在 y = Y：写 Y − 170.66 bp（允许负值；上移别越过页眉基线 33.30）
+%    默认 10.89bp → 基线 181.55，与章首页标题完全对齐。
+%  注意 \myChapter / \myAppendix / \myFront / 目录 共用同一个 numberless 章格式，
+%  而 \myFront 用「局部覆盖 + 用完还原」的方式单独取值，所以改 \myFrontTopSkip
+%  不会影响章首页与附录。
+%  ⚠ \myChapterTopSkip 若改动，章首页的钢蓝横线（y=193.80）与巨型章号（基线
+%    217.88）是绝对坐标 overlay，不会跟着动，必须同步改 \chapterdecor 里的 yshift。
+%  ── 改了值却「没反应」的三种常见原因 ──
+%   1. 看错页：**目录页不吃 \myFrontTopSkip**（\tableofcontents 走的是 \myChapterTopSkip），
+%      章首页、附录同理。\myFrontTopSkip 只作用于 index.tex 里的 \myFront 调用：
+%      献词 / 前言 / 致谢 / 关于本书 / 关于作者 / 关于封面插图 / 索引。
+%   2. 改得太少：换算 1:1，10.89→15 只差 4bp（约 1.4mm），肉眼基本看不出。
+%      要验证请一次跨 30–50bp，或用下面 \myFront 里的 \typeout 到 main.log 里核对实际取值。
+%   3. 没编译到：请确认改的是 latex_source_v2/book/ccs.tex，且编译根文件是本目录的 main.tex。
+% ---------------------------------------------------------------------------
+\newcommand{\myChapterTopSkip}{-6.63bp}   % 章标题末行基线落在原书实测的 y=163.39
+\newcommand{\myFrontTopSkip}{19.03bp}   % ★ 想调整 \myFront（前言/致谢/索引…）标题高低，改这个值
+\newcommand{\chapterdecor}{%
+  \typeout{[chapterdecor] giant=[\mychaptergiant]}%
+  \ifx\mychaptergiant\empty\else      % 与 \empty 比较「含义」，无需展开，空则整块不画
+    \begin{tikzpicture}[remember picture,overlay]
+      \node[anchor=base east, inner sep=0bp, outer sep=0bp]
+        at ([xshift=-46.21bp,yshift=-217.88bp]current page.north east)
+        {\fontsize{225bp}{225bp}\selectfont\itshape\color{chapgray}\mychaptergiant};
+      \draw[chapterblue, line width=0.5bp]
+        ([xshift=-57bp,yshift=-175.60bp]current page.north east) -- ++(-300bp,0);
+    \end{tikzpicture}%
+  \fi}
+\makeatletter
+% 注意：titlesec 只有在该命令「带编号」的格式也被定义时才会接管 chapter 机制，
+%      否则 name=\chapter,numberless 完全不生效（\chapter* 仍走 book.cls 默认 head）。
+\titleformat{\chapter}[display]
+  {\fontsize{30bp}{32bp}\selectfont\itshape\color{chapterblue}\raggedleft}
+  {\thechapter}{10bp}{}
+\titlespacing*{\chapter}{0bp}{\myChapterTopSkip}{0bp}
+% 章名块固定高 64bp（= 2 行）且底部对齐：这样无论标题占 1 行还是 2 行，
+% 末行基线都恒定在原书的 y=181.55，章名下的钢蓝横线也就恒定在 y=193.80。
+\titleformat{name=\chapter,numberless}[display]
+  {\fontsize{30bp}{32bp}\selectfont\itshape\color{chapterblue}\raggedleft}
+  {}{0bp}{\chapterdecor\vbox to 64bp\bgroup\vfil}
+  [\egroup]
+\makeatother
+\titlespacing*{name=\chapter,numberless}{0bp}{\myChapterTopSkip}{2.6em}
+% 节：12.5bp，编号悬挂在版心左侧、右缘距标题 15.5bp（原书实测）
+\titleformat{\section}
+  {\fontsize{12.5bp}{15bp}\selectfont\color{chapterblue}\sffamily}
+  {\makebox[0bp][r]{\thesection\hspace{15.5bp}}}{0bp}{}
+\titleformat{name=\section,numberless}
+  {\fontsize{12.5bp}{15bp}\selectfont\color{chapterblue}\sffamily}{}{0bp}{}
+\titlespacing*{\section}{0bp}{1.7em}{0.55em}
+% 小节：10.5bp，无编号，整体左缩进 7.8bp（原书奇偶平均）
+\titleformat{\subsection}
+  {\fontsize{10.5bp}{13bp}\selectfont\color{chapterblue}\sffamily}{}{0bp}{\hspace*{7.8bp}}
+\titleformat{name=\subsection,numberless}
+  {\fontsize{10.5bp}{13bp}\selectfont\color{chapterblue}\sffamily}{}{0bp}{\hspace*{7.8bp}}
+\titlespacing*{\subsection}{0bp}{1.15em}{0.35em}
+\titleformat{\subsubsection}
+  {\fontsize{10bp}{13bp}\selectfont\color{chapterblue}\sffamily}{}{0bp}{\hspace*{7.8bp}}
+\titlespacing*{\subsubsection}{0bp}{1em}{0.3em}
+
+\setcounter{secnumdepth}{1}     % 只给「节」编号，小节不编号（对齐原书）
+\setcounter{tocdepth}{1}        % 目录与书签只到节（原书如此）
+
+% -----------------------------------------------------------------------------
+%  目录 / 书签 / 超链接
+% -----------------------------------------------------------------------------
+\usepackage{url}
+\usepackage[depth=3]{bookmark}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  filecolor=black!35!blue,
+  urlcolor=black!35!blue,
+  breaklinks=true,
+  pdfstartview=Fit,
+  pdftitle={面向对象软件设计：C++ 实践},
+  pdfauthor={Ronald Mak},
+  pdfsubject={Object-Oriented Software Design in C++ 中文版},
+  pdfkeywords={C++, 面向对象, 软件设计, 设计模式, UML},
+}
+\renewcommand{\contentsname}{目录}
+
+% 目录里的章条目也补上引导点（默认章条目是空白的，只有节条目有点）
+% 其余与 book.cls 原定义一致：加粗、段前空 0.8em、页码右对齐
+\makeatletter
+\renewcommand*\l@chapter[2]{%
+  \ifnum \c@tocdepth >\m@ne
+    \addpenalty{-\@highpenalty}%
+    \vskip 0.8em \@plus\p@
+    \begingroup
+      \parindent \z@ \rightskip \@pnumwidth
+      \parfillskip -\@pnumwidth
+      \leavevmode \bfseries
+      #1\nobreak
+      \leaders\hbox{$\m@th\mkern\@dotsep mu\hbox{.}\mkern\@dotsep mu$}\hfill
+      \nobreak\hb@xt@\@pnumwidth{\hss #2}\par
+      \penalty\@highpenalty
+    \endgroup
+  \fi}
+% 页眉里的节号去掉 book.cls 自带的句点（"2.5." → "2.5"），与目录、正文一致
+% 注：某些宏包会在导言区尾声重新定义 \sectionmark，所以这里延到 \begin{document} 时再 \let 一次
+\newcommand{\my@sectionmark}[1]{\markright{\ifnum\c@secnumdepth>\z@\thesection\quad\fi #1}}
+\let\sectionmark\my@sectionmark
+\AtBeginDocument{\let\sectionmark\my@sectionmark}
+\makeatother
+
+% -----------------------------------------------------------------------------
+%  页眉页脚（对齐原书）：正文页 = 页码在外侧 + 居中章名，无页脚、无横线；
+%  章首页 = 无页眉，页码居中于页脚
+% -----------------------------------------------------------------------------
+\usepackage{fancyhdr}
+\setlength{\headheight}{15bp}
+\pagestyle{fancy}
+\fancyhf{}
+% 原书页眉：章名居中于「整页」而非版心（版心中心 285bp vs 页面中心 265.68bp，差 19.32bp）
+% makebox[0pt][c] + 右侧等量留空 = 把居中点整体左移 19.32bp
+% 补偿量恒等于「左边距 − 右边距」（现 97.5 − 58.86 = 38.64bp），这里按 geometry 的结果自动算，
+% 于是以后改 left/right 页眉仍然居中在整页，不必再手工同步这个数字。
+\newlength{\headcenterfix}
+\setlength{\headcenterfix}{2\oddsidemargin}%   2×(\oddsidemargin + 1in)
+\addtolength{\headcenterfix}{2in}
+\addtolength{\headcenterfix}{\textwidth}%      + 版心宽  → 2×版心中心
+\addtolength{\headcenterfix}{-\paperwidth}%    − 纸宽    → 2×(版心中心 − 页面中心)
+\typeout{[layout] textwidth=\the\textwidth\space headcenterfix=\the\headcenterfix
+         \space (1bp=0.99624pt; 375bp=376.41pt, 38.64bp=38.79pt)}
+\fancyhead[C]{\makebox[0bp][c]{\color{ink}\sffamily\fontsize{9bp}{11bp}\selectfont
+  \leftmark\hspace*{\headcenterfix}}}
+\fancyhead[R]{\color{ink}\fontsize{9bp}{11bp}\selectfont\bfseries\thepage}
+\renewcommand{\headrulewidth}{0bp}
+\renewcommand{\footrulewidth}{0bp}
+% 章首页页码：原书基线 y=605.94、水平中心 x=276.18（用绝对 overlay，避免页脚盒高度影响基线）
+\fancypagestyle{plain}{\fancyhf{}%
+  \fancyfoot[C]{\begin{tikzpicture}[remember picture,overlay]%
+      \node[anchor=base, inner sep=0bp, outer sep=0bp]
+        at ([xshift=276.18bp, yshift=-605.94bp]current page.north west)
+        {\makebox[0bp][c]{\color{ink}\fontsize{9bp}{11bp}\selectfont\bfseries\thepage}};%
+    \end{tikzpicture}}%
+  \renewcommand{\headrulewidth}{0bp}}
+% 章名写入页眉标记（\chapter* 不触发 \chaptermark，必须在 \myChapter 里显式写标记）
+\newcommand{\chapmark}[1]{\markboth{#1}{#1}}
+
+% -----------------------------------------------------------------------------
+%  Unicode 符号兜底（原书里的数学/箭头符号，当前字体缺字形时映射到等价写法）
+% -----------------------------------------------------------------------------
+\usepackage{newunicodechar}
+\newunicodechar{→}{\(\to\)}
+\newunicodechar{✓}{\(\checkmark\)}
+\newunicodechar{♾}{\(\infty\)}
+\newunicodechar{ϵ}{\(\epsilon\)}
+\newunicodechar{𝜇}{\(\mu\)}
+\newunicodechar{ᵢ}{\(_\mathrm{i}\)}
+\newunicodechar{ⱼ}{\(_\mathrm{j}\)}
+\newunicodechar{ₙ}{\(_\mathrm{n}\)}
+\newunicodechar{▕}{\(\vert\)}
+\newunicodechar{▏}{\(\vert\)}
+\newunicodechar{⧄}{\(\square\)}
+\newunicodechar{️}{}
+\newunicodechar{𝐴}{\(A\)}
+\newunicodechar{𝐿}{\(L\)}
+\newunicodechar{𝑇}{\(T\)}
+\newunicodechar{𝑒}{\(e\)}
+\newunicodechar{𝑓}{\(f\)}
+\newunicodechar{𝑔}{\(g\)}
+\newunicodechar{𝑖}{\(i\)}
+\newunicodechar{𝑙}{\(l\)}
+\newunicodechar{𝑜}{\(o\)}
+\newunicodechar{𝑟}{\(r\)}
+\newunicodechar{𝑡}{\(t\)}
+\newunicodechar{𝑥}{\(x\)}
+\newunicodechar{𝑦}{\(y\)}
+% ---------------------------------------------------------------------------
+%  ★ 本项目补充：带圈数字 ①–⑳（U+2460–U+24FF）与 ㉑–㉟（U+3251–U+325F）
+%    代码清单里的 ① 是行标记，等宽字体 JetBrainsMonoNL 没有这些字形。
+%    把这些区间声明成 CJK 字符类后：正文走宋体（STSong 有 ①–⑳），
+%    代码里走 CJKmonofont（微软雅黑，①–⑳ 与 ㉑–㉟ 都有）。
+%    正文中偶现的 ㉑–㉚ 用 \newCJKfontfamily 显式切到雅黑。
+% ---------------------------------------------------------------------------
+\xeCJKDeclareCharClass{CJK}{"2460 -> "24FF, "3251 -> "325F}
+\newCJKfontfamily\cjkcompat{Microsoft YaHei}
+% ①–⑩ 宋体/雅黑都有；⑪–⑳ 两者都没有，回退到蒙古文 Baiti（含完整 ⑪–⑳）
+\newCJKfontfamily\cjknum{monbaiti.ttf}[Path=C:/Windows/Fonts/]
+\newunicodechar{⑪}{{\cjknum ⑪}}
+\newunicodechar{⑫}{{\cjknum ⑫}}
+\newunicodechar{⑬}{{\cjknum ⑬}}
+\newunicodechar{⑭}{{\cjknum ⑭}}
+\newunicodechar{⑮}{{\cjknum ⑮}}
+\newunicodechar{⑯}{{\cjknum ⑯}}
+\newunicodechar{⑰}{{\cjknum ⑰}}
+\newunicodechar{⑱}{{\cjknum ⑱}}
+\newunicodechar{⑲}{{\cjknum ⑲}}
+\newunicodechar{⑳}{{\cjknum ⑳}}
+\newunicodechar{㉑}{{\cjkcompat ㉑}}
+\newunicodechar{㉒}{{\cjkcompat ㉒}}
+\newunicodechar{㉓}{{\cjkcompat ㉓}}
+\newunicodechar{㉔}{{\cjkcompat ㉔}}
+\newunicodechar{㉕}{{\cjkcompat ㉕}}
+\newunicodechar{㉖}{{\cjkcompat ㉖}}
+\newunicodechar{㉗}{{\cjkcompat ㉗}}
+\newunicodechar{㉘}{{\cjkcompat ㉘}}
+\newunicodechar{㉙}{{\cjkcompat ㉙}}
+\newunicodechar{㉚}{{\cjkcompat ㉚}}
+% ➥ 在正文里也回退成 ↪（等宽字体里没有 ➥）
+\newunicodechar{➥}{↪}
+
+% -----------------------------------------------------------------------------
+%  章节命令（对应模板的 \myChapter / \myPart；本书没有「部分」，并增加前言/附录两类）
+% -----------------------------------------------------------------------------
+\ExplSyntaxOn
+% 编号正文章节：\myChapter{章号}{标题}{文件} —— 章首有巨型浅灰数字与钢蓝横线
+% 标题里可用 \\ 手工断行（避免长章名折出「孤字」）；断行符在目录与页眉里会被替换成空格
+\tl_new:N \l__my_toctitle_tl
+\NewDocumentCommand { \myChapter } { mmm }
+{
+  \setcounter{chapter}{#1}
+  \setcounter{section}{0}
+  \mychapterset{#1}%
+  \tl_set:Nn \l__my_toctitle_tl { #2 }
+  \tl_replace_all:Nnn \l__my_toctitle_tl { \\ } { \space }
+  \chapmark{第~#1~章\quad \l__my_toctitle_tl}%  \chapter* 不触发 \chaptermark，必须自己写标记
+  \chapter*{#2}
+  \mychapterclear
+  \addcontentsline{toc}{chapter}{第~#1~章\quad \l__my_toctitle_tl}
+  \subfile{#3}
+}
+% 附录：\myAppendix{序号 1..7}{标题}{文件}（自动显示为「附录 A/B/C…」）
+\NewDocumentCommand { \myAppendix } { mmm }
+{
+  \setcounter{chapter}{#1}
+  \setcounter{section}{0}
+  \mychapterclear
+  \chapter*{附录~\Alph{chapter}\quad #2}
+  \addcontentsline{toc}{chapter}{附录~\Alph{chapter}\quad #2}
+  \chapmark{附录~\Alph{chapter}\quad #2}
+  \subfile{#3}
+}
+% 前言类：进目录但无编号
+% 标题上间距用 \myFrontTopSkip 单独指定（想调高低只改那个值），
+% 用完立刻还原成章标题默认值，避免影响其后的 \myChapter / \myAppendix。
+\NewDocumentCommand { \myFront } { mm }
+{
+  \mychapterclear
+  \typeout{[myFront]TopSkip=\myFrontTopSkip}%   ← 诊断：该值会打进 main.log
+                                               %   改完在 main.log 里搜 "myFront]TopSkip" 即可确认是否生效
+  \titlespacing*{name=\chapter,numberless}{0bp}{\myFrontTopSkip}{2.6em}
+  \chapter*{#1}
+  \titlespacing*{name=\chapter,numberless}{0bp}{\myChapterTopSkip}{2.6em}
+  \addcontentsline{toc}{chapter}{#1}
+  \chapmark{#1}
+  \subfile{#2}
+}
+% 扉页/版权类：不进目录
+\NewDocumentCommand { \myFrontNoToc } { m }
+{
+  \clearpage
+  \markboth{}{}
+  \subfile{#1}
+}
+
+% ---------------------------------------------------------------------------
+\ExplSyntaxOff % —— \myChapter 用到 \tl_ 函数需要 ExplSyntax；\myPart 起恢复正常空格 catcode
+
+%  部分（Part）首页：\myPart{序号}{标题}{文件}
+%  原书实测：页幅 531×666；「Part N」30bp 斜体右对齐、基线 y=112.80；
+%            部分标题 30bp 斜体右对齐、基线 y=174.81；正文左缩进 24bp。
+% ---------------------------------------------------------------------------
+\NewDocumentCommand { \myPart } { mmm }
+{
+  \clearpage
+  \mychapterclear
+  \markboth{}{}
+  \thispagestyle{plain}
+  \addcontentsline{toc}{chapter}{第~#1~部分\quad #2}
+  \chapmark{第~#1~部分\quad #2}
+  \vspace*{18.14bp}%
+  {\raggedleft\fontsize{30bp}{32bp}\selectfont\itshape\color{chapterblue}\phantom{第~#1~部分}%
+  % 「第 N 部分」浅灰底带：原书实测 x 289→480、y 83→125（右上角锚定）；overlay 不占版面
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north east, fill=partband, minimum width=191bp, minimum height=42bp, inner sep=0bp]
+      at ([xshift=-51bp, yshift=-83bp]current page.north east)
+    { \makebox[191bp][r]{\fontsize{30bp}{32bp}\selectfont\itshape\color{chapterblue}第~#1~部分\hspace{4bp}} };
+  \end{tikzpicture}\par}%
+  \vspace{27.4bp}%
+  {\raggedleft\fontsize{30bp}{32bp}\selectfont\itshape\color{chapterblue}#2\par}%
+  \vspace{53.0bp}%
+  % 导语左缩进 24bp：用 list 环境保证跨段落稳定（\leftskip 会在段间失效）
+  \begin{list}{}{%
+    \setlength{\leftmargin}{24bp}%
+    \setlength{\rightmargin}{0bp}%
+    \setlength{\parindent}{20bp}%
+    \setlength{\listparindent}{20bp}%
+    \setlength{\parsep}{0bp}\setlength{\itemsep}{0bp}\setlength{\topsep}{0bp}}%
+  \item[] \subfile{#3}%
+  \end{list}%
+}
+
+% 部分页首字下沉用的「大号首字」（原书首字顶着左边距，故取消首行缩进）
+\NewDocumentCommand { \myInitialCap } { m }
+{ \noindent{\sffamily\fontsize{48bp}{48bp}\selectfont #1} }
+
+% ---------------------------------------------------------------------------
+%  索引：\myIndexGroup{分组字母} / \myIndex{层级}{条目}
+%  条目正文里已含页码（由 HTML 转换而来），层级 0/1/2 逐级缩进。
+% ---------------------------------------------------------------------------
+\NewDocumentCommand { \myIndexGroup } { m }
+{ \par\addvspace{0.85em}\noindent
+  {\color{chapterblue}\sffamily\fontsize{10.5bp}{13bp}\selectfont #1}\par
+  \nobreak\addvspace{0.15em} }
+
+\NewDocumentCommand { \myIndex } { mm }
+{ \par\begingroup
+  \fontsize{9bp}{11.5bp}\selectfont
+  \ifnum#1=0 \parindent=0bp\relax   \hangindent=1.2em\relax \fi
+  \ifnum#1=1 \parindent=1.2em\relax \hangindent=2.4em\relax \fi
+  \ifnum#1=2 \parindent=2.4em\relax \hangindent=3.6em\relax \fi
+  \hangafter=1\relax
+  \leavevmode #2\par
+  \endgroup }
+\ExplSyntaxOff
+
+% LaTeX 原文中零散出现的换行：保持语义，但不额外增加段间距
+\newcommand{\keeplinebreak}{}  % 预留钩子（如需全局处理 \newline 可在此重定向）

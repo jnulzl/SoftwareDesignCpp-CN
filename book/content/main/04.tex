@@ -1,0 +1,671 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 设计在应用开发流程中的位置
+\item 如何做好类的设计
+\item 辅助类设计的 UML 图
+\item 设计规格说明
+\end{itemize}
+\end{myChapterIntro}
+
+在第 3 章，我们与客户一起处理功能性需求和非功能性需求，以确保构建\emph{正确的}应用。简单的文本分析得出了我们的初始类集合。在本章，我们开始把类设计好，以确保把应用构建\emph{正确}。
+
+在第 1 章，我们了解到设计是一种有条理的工程方法，用于为问题创建解决方案。对软件开发而言，这意味着应用良好的软件设计技术，找到通往一个满足需求的、设计良好的应用的最佳开发路径。在第 2 章，我们看到这条开发路径需要迭代，而且很可能需要回溯。
+
+\myGraphic{0.980}{images/CH04_00_UN01_Mak.png}{}
+
+本章讨论应用设计在整个开发流程中所处的位置。它涵盖一些关于良好类设计的基本准则。由于大多数应用都由多个类组成，我们还会考察这些类之间可以如何关联。第 3 章介绍了 UML（统一建模语言）用例图。为了记录我们的类设计，我们会用到更多这类行业标准图。最后，设计规格说明把某个应用的全部设计文档汇总在一起。
+
+\section{我们何时进行应用设计？}
+
+一个大型应用通常由若干名软件开发者作为团队协作创建，各项活动在时间上相互重叠。本章讨论图 4.1 中带粗边框的设计活动。
+
+应用设计几乎贯穿整个项目。正如第 3 章所述，我们必须先获取应用的需求。创建用例和原型有助于引出需求。功能规格说明记录需求与用例。我们可以根据需求选择应用的初始类。有些原型可能衍生出更多类。此后，大部分应用设计发生在开发迭代期间，我们在那里扩展并完善初始的类集合。本章讨论如何记录我们的类设计，既为我们自己所用，也用于设计规格说明。
+
+\myGraphic{0.891}{images/CH04_F01_Mak.png}{图 4.1 创建应用涉及许多活动。该图展示了各项活动相互之间的开始先后以及它们在时间上如何重叠，但不展示它们的相对时长。主要项目里程碑列在底部。大部分应用设计发生在开发迭代期间。设计规格说明记录我们的设计。该图用粗边框表示这些活动，它们的虚线时间段表明其冻结日期必须保持灵活。}
+
+外部黑盒测试（在第 3 章描述）和内部测试（在本章后文描述）都与开发迭代并行进行。
+
+该图底部展示了项目进度表所维护的里程碑日期，例如“项目启动”“需求冻结”“特性冻结”等等。这些是项目团队为按时部署应用而应达成的目标。然而，许多项目都会错过其冻结里程碑。例如，项目经理可能认为新需求足够重要，值得在需求冻结里程碑之后仍纳入项目。如果我们允许项目大幅滞后于某个里程碑的冻结日期，就会大大增加无法按时完成项目的风险。
+
+\section{良好类设计的两个重要目标}
+
+在第 3 章，我们看到对需求进行文本分析如何为确定应用的类提供了良好的起点。但我们如何确信把成员变量和成员函数放到了正确的类中？设计类时有两个重要目标：内聚和松耦合。
+
+\subsection{4.2.1 内聚与单一职责原则}
+
+如果一个类遵循单一职责原则（2.3.1 节），它就是内聚的。设计良好的类应当只有一项主要职责。来看一个例子。假设在一个关于汽车的应用中，我们有一个类 \texttt{AutomobileApp}。
+
+\begin{codeboxt}{代码清单 4.1（程序 4.1 Automobile-1）：\texttt{AutomobileApp.h}（非内聚）}
+class AutomobileApp
+{
+public:
+    void accelerate();            ①
+    void adjust_headlights();     ①
+    void apply_brakes();          ①
+    void change_oil();            ①
+    void change_tires();          ①
+    void check_brakes();          ①
+    void check_tires();           ①
+    void rotate_tires();          ①
+    void shut_off_engine();       ①
+    void start_engine();          ①
+    void tuneup_engine();         ①
+    void turn_left();             ①
+    void turn_right();            ①
+    void vacuum_car();            ①
+    void wash_car();              ①
+    void wax_car();               ①
+
+private:
+    Brake brakes[4];              ②
+    Engine engine;                ②
+    Oil engine_oil;               ②
+    Direction heading;            ②
+    Headlight headlights[4];      ②
+    int speed;                    ②
+    Soap soap;                    ②
+    Tire tires[4];                ②
+    Vacuum vacuum_cleaner;        ②
+    CarWax wax;                   ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 行为}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 状态信息}\par
+
+这个类不内聚，因为它承担了过多的状态和行为职责：
+
+\begin{itemize}
+\item \texttt{汽车操作} \emph{状态}\texttt{—brakes}, \texttt{engine}, \texttt{heading}, \texttt{speed} \emph{行为}\textbf{—}\texttt{accelerate()}, \texttt{apply\_brakes()}, \texttt{shut\_off\_engine()}, \texttt{start\_engine()}, \texttt{turn\_left()}, \texttt{turn\_right()}
+\item \texttt{汽车维护} \emph{状态}\texttt{—engine\_oil}, \texttt{headlights}, \texttt{tires} \emph{行为}\texttt{—adjust\_headlights()}, \texttt{change\_oil()}, \texttt{change\_tires()}, \texttt{check\_brakes()}, \texttt{check\_tires()}, \texttt{rotate\_tires()}, \texttt{tuneup\_engine()}
+\item \texttt{汽车} \texttt{清洁} \emph{状态}\texttt{—soap}, \texttt{vacuum\_cleaner}, \texttt{wax} \emph{行为}\textbf{—} \texttt{vacuum\_car(}), \texttt{wash\_car()}, \texttt{wax\_car()}
+\end{itemize}
+
+我们需要把类 \texttt{AutomobileApp} 拆分成更小的类，每个类只承担一项主要职责。
+
+\begin{codeboxt}{代码清单 4.2（程序 4.2 Automobile-2）：\texttt{Automobile.h}（内聚）}
+class Automobile
+{
+public:
+    void accelerate();                   ①
+    void apply_brakes();                 ①
+    void shut_off_engine();              ①
+    void start_engine();                 ①
+    void turn_left();                    ①
+    void turn_right();                   ①
+
+private:
+    Brake brakes[4];
+    Direction heading;
+    Headlight headlights[4];
+    int speed;
+    Tire tires[4];
+};
+
+class Garage
+{
+public:
+    Garage(Automobile *c) : car(c) {}
+    void adjust_headlights();             ②
+    void change_oil();                    ②
+    void change_tires();                  ②
+    void check_brakes();                  ②
+    void check_tires();                   ②
+    void rotate_tires();                  ②
+    void tuneup_engine();                 ②
+
+private:
+    Automobile *car;
+
+    Oil new_oil;
+    vector<Tire> new_tires;
+};
+
+class CarWash
+{
+public:
+    CarWash(Automobile *c) : car(c) {}
+
+    void vacuum_car();                    ③
+    void wash_car();                      ③
+    void wax_car();                       ③
+
+private:
+    Automobile *car;
+
+    Soap soap;
+    Vacuum vacuum_cleaner;
+    CarWax wax;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 汽车操作行为}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 车库维护行为}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 洗车清洁行为}\par
+
+这些类每一个都是内聚的，只承担一项主要职责。类 \texttt{Automobile} 负责汽车操作。类 \texttt{Garage} 负责汽车维护。类 \texttt{CarWash} 负责汽车清洁。后两个类各有一个指向 \texttt{Automobile} 对象的指针。单一职责原则对良好的类设计很重要。如果必须修改，一个内聚的类应当只有一个修改的理由。
+
+\myGraphic{0.893}{images/CH04_F01_UN02_Mak.png}{}
+
+\subsection{4.2.2 松耦合与最少知识原则}
+
+松耦合的类相互之间的依赖极小。如果类 \texttt{A} 持有对类 \texttt{B} 的引用，那么类 \texttt{A} 就依赖于类 \texttt{B}。例如，类 \texttt{Garage} 依赖于类 \texttt{Automobile}，因为它的成员变量 \texttt{car} 指向一个 \texttt{Automobile} 对象。
+
+松耦合的类遵循最少知识原则（2.3.2 节），该原则支持封装。类 \texttt{A} 对类 \texttt{B} 内部实现细节了解得越少，对类 \texttt{B} 的修改就越不可能影响到类 \texttt{A}。
+
+\myGraphic{0.893}{images/CH04_F01_UN03_Mak.png}{}
+
+我们在第 2 章见过一个最少知识原则的例子。类 \texttt{Catalogue}（在代码清单 4.3 中部分重现）对类 \texttt{Attributes} 的依赖仅通过指向 \texttt{Attributes} 对象的指针和引用来实现，因此类 \texttt{Catalogue} 并不了解类 \texttt{Attributes} 是如何实现图书属性的。
+
+\begin{codeboxt}{代码清单 4.3（程序 2.4 Books-4）：\texttt{Catalogue.h}}
+class Catalogue
+{
+public:
+    void add(Attributes * const attrs);                            ①
+
+    vector<Book *> find(const Attributes& target_attrs) const;     ②
+
+private:
+    vector<Book *> booklist;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 指向 Attributes 对象的指针}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 指向 Attributes 对象的引用}\par
+
+类 \texttt{Attributes}（在代码清单 4.4 中部分重现）对类 \texttt{Catalogue} 完全没有任何依赖。它没有指向或引用 \texttt{Catalogue} 对象的成员变量、函数参数，也没有含此类局部变量的成员函数。因此，\texttt{Attributes} 对象不知道自己最终被存储在一个 \texttt{Catalogue} 对象中。尽管类 \texttt{Catalogue} 通过调用类 \texttt{Attributes} 的布尔型 \texttt{is\_match()} 成员函数把属性匹配委托给它，但类 \texttt{Attributes} 并不知道是谁在调用该函数。
+
+\begin{codeboxt}{代码清单 4.4（程序 2.4 Books-4）：\texttt{Attributes.h}}
+class Attributes
+{
+public:
+    Attributes(AttributeMap *const pairs);
+    ~Attributes() { delete attribute_map; }
+    bool is_match(const Attributes& target_attrs) const;
+    friend ostream& operator <<(ostream& ostr,
+                                const Attributes& attrs);
+private:
+    AttributeMap *attribute_map;
+    bool is_matching_pair(const Key& target_key,
+                          const AttributeValue& target_value) const;
+    static bool equal_ignore_case(const string string1,
+                                  const string string2) ...
+};
+\end{codeboxt}
+
+类 \texttt{Catalogue} 和 \texttt{Attributes} 是松耦合的。我们看到了松耦合如何封装类 \texttt{Attributes} 中的任何改动，使其不影响类 \texttt{Catalogue}。松耦合与最少知识原则对良好的类设计很重要。
+
+\myGraphic{0.893}{images/CH04_F01_UN04_Mak.png}{}
+
+\section{用 UML 类图记录类设计}
+
+我们在第 3 章见过 UML 用例图。UML 类图用于记录类设计。一张类图至少包含类的名称。它还可以选择性地包含类成员变量的名称和数据类型，以及成员函数的\emph{签名}。函数的签名由函数名、每个参数的名称和数据类型，以及返回值的数据类型组成。
+
+\begin{myWarning}{注意}
+在 Google 上搜索“UML drawing tools”即可找到绘制这些图的工具。其中一些工具是免费的。
+\end{myWarning}
+
+图 4.2 展示了类 \texttt{Catalogue}（代码清单 4.3）可能采用的四种 UML 类图。第一张图只显示类名。第二张图包含成员变量，但不包含成员函数。第三张图在底部区段包含成员函数，但中间区段为空，不包含成员变量。第四张图同时包含成员变量（中间区段）和成员函数（底部区段）。选择哪张图取决于我们需要展示该类多少细节。应用高层描述中的图可以比低层描述中的图展示得更少。
+
+\myGraphic{0.980}{images/CH04_F02_Mak.png}{图 4.2 类 \texttt{Catalogue} 可能采用的 UML 类图，它们包含不同数量的信息。加号（\texttt{+}）表示 public，减号（\texttt{-}）表示 private。类图中包含多少信息取决于该图属于应用的高层设计文档还是低层设计文档。}
+
+名称前面的减号（\texttt{-}）表示该成员为 private，加号（\texttt{+}）表示该成员为 public。我们也可以用井号（\texttt{\#}）表示 protected 成员，这类成员只能由类的子类访问。成员变量的数据类型写在名称之后，用冒号隔开。每个成员函数的签名不必包含关于参数的全部细节，我们只显示它们的数据类型。除非有必要展示，我们不须指明某个数据类型是指针还是引用。类的构造函数和析构函数不一定要包含进来。如果函数返回值，就在签名之后加一个冒号，再接返回值的数据类型。除非有必要展示，我们可以省略取值函数和设值函数。图 4.3 是类 \texttt{Attributes}（代码清单 4.4）可能采用的一张 UML 类图。
+
+\myGraphic{0.556}{images/CH04_F03_Mak.png}{图 4.3 类 \texttt{Attributes} 的一张 UML 类图，包含全部三个部分：类名、成员变量和成员函数。私有成员 \texttt{function equal\_\allowbreak{}ignore\_\allowbreak{}case(\allowbreak{})\allowbreak{}} 带下划线，表示它是静态的。这张图适合用于详细设计文档。}
+
+\section{类关系决定运行时交互}
+
+大多数应用由多个类组成，如果这些是设计良好、内聚的类就更是如此。两个类之间的关系决定了它们的对象在运行时可以如何交互。因此，在类设计期间把关系确定正确很重要。
+
+一张包含应用各个类的类图还应当用线把这些图连接起来，以表示它们之间的关系。第 2 章的图 2.5（也在图 4.4 中重现）就是这样的图。
+
+\myGraphic{0.980}{images/CH04_F04_Mak.png}{图 4.4 一张 UML 类图，展示一个应用的多个类及其关系。两个类之间的关系决定了由它们实例化出的对象在运行时可以如何交互。}
+
+4.4.4 节末尾的表 4.1 将总结用类图表示不同关系的方式。
+
+\subsection{4.4.1 依赖：最基本的关系}
+
+连接两个类的一条线（例如图 4.4 中 \texttt{Book} 和 \texttt{Attributes} 之间那条）表示一种依赖关系。正如我们可以为每个类选择显示多少信息，我们也可以为每种关系选择显示多少信息。两个类之间一条简单的线表示未指明的依赖关系，这给出的关系信息最少。箭头可以说明谁依赖谁。在图 4.5 中，类 \texttt{Catalogue} 依赖类 \texttt{Book}，但类 \texttt{Book} 不依赖类 \texttt{Catalogue}。
+
+\myGraphic{0.378}{images/CH04_F05_Mak.png}{图 4.5 一张 UML 图，展示（从左到右）类 \texttt{Catalogue}、一条关系线，以及类 \texttt{Book}。从类 \texttt{Catalogue} 指向类 \texttt{Book} 的依赖关系箭头表明，类 \texttt{Catalogue} 依赖类 \texttt{Book}。但类 \texttt{Book} 不依赖类 \texttt{Catalogue}。}
+
+如果我们想包含更多关于两个类之间关系的信息，可以给依赖箭头加上标注（图 4.6）。例如，类 \texttt{Catalogue} 的成员变量 \texttt{booklist} 是一个指向 \texttt{Book} 对象的指针 vector（代码清单 4.3）。当我们用成员变量名给关系箭头加标注时，就不再在类图的中间区段列出该名称。图 4.6 还标出了多重性：一个 \texttt{Catalogue} 对象中的单个（1）\texttt{booklist} 将包含零个或多个（\texttt{*}）\texttt{Book} 对象。加号（\texttt{+}）表示一个或多个。在合适的时候，我们可以用具体的数字替换 \texttt{*} 或 \texttt{+}。在关系的两端，我们甚至可以标出像 \texttt{2..5} 这样的数字范围。
+
+\myGraphic{0.980}{images/CH04_F06_Mak.png}{图 4.6 展示更多设计细节的图。类 \texttt{Catalogue} 通过其私有成员变量 \texttt{booklist} 依赖类 \texttt{Book}。多重性标记表明，单个（1）\texttt{Catalogue} 对象可以包含零个或多个 \texttt{(*) Book} 对象。}
+
+如果类 \texttt{A} 有一个成员函数 \texttt{f}，其参数或局部变量引用了类 \texttt{B}，那么这种依赖关系就是\emph{瞬态的}。但类 \texttt{A} 并不含引用类 \texttt{B} 的成员变量。这种关系之所以是瞬态的，是因为它只在调用函数 \texttt{f} 期间存在。在类 \texttt{Catalogue}（代码清单 4.3）中，\texttt{add()} 成员函数接收一个指向 \texttt{Attributes} 对象的指针，\texttt{find()} 成员函数被传入一个指向 \texttt{Attributes} 对象的引用。但类 \texttt{Catalogue} 并没有 \texttt{Attributes} 成员变量。因此，对类 \texttt{Attributes} 的依赖只在调用 \texttt{add()} 或 \texttt{find()} 期间存在。图 4.7 用虚线箭头展示这种瞬态依赖关系。
+
+\myGraphic{0.378}{images/CH04_F07_Mak.png}{图 4.7 类 \texttt{Catalogue} 对类 \texttt{Attributes} 存在瞬态依赖关系，如虚线依赖箭头所示。类 \texttt{Catalogue} 的 \texttt{add()} 成员函数接收一个指向 \texttt{Attributes} 对象的指针，\texttt{find()} 成员函数被传入一个指向 \texttt{Attributes} 对象的引用。这种依赖只在调用这些函数期间存在。}
+
+\subsection{4.4.2 聚合与组合：包含其他对象的对象}
+
+UML 类图可以更精确地表达依赖的性质。当一个类聚合（包含）另一个类时，比如通过设有一个指向另一个类的成员变量，我们可以使用聚合箭头：箭头尾端靠近容器类的图一侧带有一个空心菱形（没有箭头）。图 4.8 明确表示类 \texttt{Catalogue} 聚合了类 \texttt{Book}。每个 \texttt{Catalogue} 对象包含零个或多个 \texttt{Book} 对象。在这个例子中，我们选择包含 \texttt{booklist} 是 \texttt{Book} 对象 vector 这一信息。
+
+\myGraphic{0.980}{images/CH04_F08_Mak.png}{图 4.8 类 \texttt{Catalogue} 聚合类 \texttt{Book}。每个 \texttt{Catalogue} 对象在一个名为 \texttt{booklist} 的 vector 成员变量中包含零个或多个 \texttt{Book} 对象。依赖箭头尾端的空心菱形紧挨着容器类 \texttt{Catalogue} 的图。}
+
+我们还可以更精确地表达聚合关系。UML 类图用箭头尾端的实心菱形来表示组合这一类型的聚合（图 4.9）。
+
+组合是聚合的一种更强形式。如果按照应用的逻辑，作为组合一部分的对象不能脱离其容器而存在，我们就可以选择指明组合。在图 4.9 中，一个 \texttt{Attributes} 对象不能脱离其 \texttt{Book} 对象而存在。\texttt{Book} 对象的析构函数应当删除它所指向的任何 \texttt{Attributes} 对象，这样当我们删除一个 \texttt{Book} 对象时，它的 \texttt{Attributes} 对象也会同时被删除：
+
+\begin{codebox}
+    virtual ~Book() { delete attrs; }
+\end{codebox}
+
+相比之下，在 \texttt{Catalogue}-\texttt{Book} 这种聚合中，一个 \texttt{Book} 对象可以脱离 \texttt{Catalogue} 对象而存在。
+
+\myGraphic{0.980}{images/CH04_F09_Mak.png}{图 4.9 类 \texttt{Book} 由类 \texttt{Attributes} 组合而成。每个 \texttt{Book} 对象有一个 \texttt{Attributes} 对象。按照应用的逻辑，一个 \texttt{Attributes} 对象如果不作为一个 \texttt{Book} 对象的一部分，就不能存在。\texttt{Book} 对象的析构函数应当删除它所指向的任何 \texttt{Attributes} 对象。}
+
+图 4.10 同时展示了一种聚合关系和一种组合关系，以说明它们的区别。按照一个假设应用的逻辑，\texttt{Book} 对象被 \texttt{Bookshelf} 对象包含，但 \texttt{Book} 对象可以脱离 \texttt{Bookshelf} 对象而存在。一个 \texttt{Bookcase} 对象由 \texttt{Bookshelf} 对象组合而成，但一个 \texttt{Bookshelf} 对象如果不作为一个 \texttt{Bookcase} 对象的一部分，就不能存在。
+
+\myGraphic{0.784}{images/CH04_F10_Mak.png}{图 4.10 聚合与组合的区别。在这张图中，每个 \texttt{Bookshelf} 对象可以包含 0 到 25 个 \texttt{Book} 对象，且 \texttt{Book} 对象可以脱离 \texttt{Bookshelf} 对象而存在。每个 \texttt{Bookcase} 对象由 1 到 5 个 \texttt{Bookshelf} 对象组合而成，但一个 \texttt{Bookshelf} 对象如果不作为一个 \texttt{Bookcase} 对象的一部分，就不能存在。}
+
+\subsection{4.4.3 泛化：超类及其子类}
+
+泛化关系涉及超类、子类和继承。一般的那个类是超类。
+
+在第 2 章的图书目录应用经过三次开发迭代后，我们设计出了（事后看来，设计得并不好）一个 \texttt{Book} 超类，以及 \texttt{Fiction}、\texttt{Cookbook} 和 \texttt{Howto} 子类。UML 图用一条从子类指向超类的箭头来表示超类—子类关系，箭头是紧靠超类的一个空心三角形。图 4.11 还用另一种画箭头的方式展示了超类 \texttt{Attributes} 及其子类 \texttt{FictionAttrs}、\texttt{CookbookAttrs} 和 \texttt{HowtoAttrs}。我们可以视哪张图看起来最好来选择画箭头的方式。
+
+\myGraphic{0.980}{images/CH04_F11_Mak.png}{图 4.11 超类 \texttt{Book} 有子类 \texttt{Fiction, Cookbook,} 和 \texttt{Howto}。此外，超类 \texttt{Attributes} 有子类 \texttt{FictionAttrs,\allowbreak{} CookbookAttrs} 和 \texttt{HowtoAttrs}。本图展示了画泛化图的两种方式。}
+
+\subsection{4.4.4 抽象类与接口：子类必须实现什么}
+
+如果一个 C++ 类含有至少一个抽象（纯虚）成员函数，它就是抽象类。代码清单 4.5 展示了抽象类 \texttt{MotorVehicle}，它有两个抽象成员函数 \texttt{start\_engine()} 和 \texttt{stop\_engine()}。我们随后必须在子类（例如 \texttt{Car} 和 \texttt{Truck}）中实现这两个函数。类 \texttt{MotorVehicle} 为成员函数 \texttt{accelerate()}、\texttt{turn\_left()}、\texttt{turn\_right()}、\texttt{apply\_brakes()} 和 \texttt{drive()} 提供了默认实现，子类可以选择是否重写它们。
+
+\begin{codeboxt}{代码清单 4.5（程序 4.3 VehicleAbstract）：\texttt{MotorVehicle.h}}
+#include <iostream>
+
+using namespace std;
+
+typedef int Brake;
+typedef int Direction;
+typedef int Engine;
+
+class MotorVehicle
+{
+public:
+    virtual ~MotorVehicle() {}
+
+    virtual void start_engine() = 0;     ①
+    virtual void stop_engine() = 0;      ①
+
+    virtual void accelerate()
+    {
+        cout << "vehicle accelerates" << endl;
+    }
+
+    virtual void turn_left()
+    {
+        cout << "vehicle turns left" << endl;
+    }
+
+    virtual void turn_right()
+    {
+        cout << "vehicle turns right" << endl;
+    }
+
+    virtual void apply_brakes()
+    {
+        cout << "vehicle applies brakes" << endl;
+    }
+
+    virtual void drive()
+    {
+        start_engine();
+        accelerate();
+        turn_left();
+        turn_right();
+        apply_brakes();
+        stop_engine();
+
+        cout << endl;
+    }
+
+private:
+    Brake brakes[4];
+    Engine engine;
+    Direction heading;
+    int speed;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 抽象成员函数}\par
+
+子类 \texttt{Car} 以私有方式实现成员函数 \texttt{start\_engine()} 和 \texttt{stop\_engine()}，并从其超类 \texttt{MotorVehicle} 继承其余的成员函数。
+
+\begin{codeboxt}{代码清单 4.6（程序 4.3 VehicleAbstract）：\texttt{Car.h}}
+#include <iostream>
+#include "MotorVehicle.h"
+
+using namespace std;
+
+class Car : public MotorVehicle
+{
+public:
+    virtual ~Car() {}
+
+private:
+    virtual void start_engine() override
+    {
+        cout << "car starts engine" << endl;
+    }
+
+    virtual void stop_engine() override
+    {
+        cout << "car stops engine" << endl;
+    }
+};
+\end{codeboxt}
+
+子类 \texttt{Truck} 以私有方式实现成员函数 \texttt{start\_engine()} 和 \texttt{stop\_engine()}。它还会以私有方式重写超类中成员函数 \texttt{turn\_left()} 和 \texttt{turn\_right()} 的实现。
+
+\begin{codeboxt}{代码清单 4.7（程序 4.3 VehicleAbstract）：\texttt{Truck.h}}
+#include <iostream>
+#include "MotorVehicle.h"
+
+using namespace std;
+
+class Truck : public MotorVehicle
+{
+public:
+    virtual ~Truck() {}
+
+private:
+    virtual void start_engine() override
+    {
+        cout << "truck starts engine" << endl;
+    }
+
+    virtual void stop_engine() override
+    {
+        cout << "truck stops engine" << endl;
+    }
+
+    virtual void turn_left() override
+    {
+        cout << "truck turns left" << endl;
+    }
+
+    virtual void turn_right() override
+    {
+        cout << "truck turns right" << endl;
+    }
+};
+\end{codeboxt}
+
+图 4.12 表明，在这个示例程序的 UML 类图中，我们用斜体或倾斜字体打印类名来表示一个类是抽象类。我们也用斜体或倾斜字体打印抽象函数的名称。
+
+\myGraphic{0.455}{images/CH04_F12_Mak.png}{图 4.12 类 \texttt{MotorVehicle} 是抽象类，因此其名称用倾斜字体。它的成员函数 \texttt{start\_\allowbreak{}engine(\allowbreak{})\allowbreak{} and shut\_\allowbreak{}off\_\allowbreak{}engine(\allowbreak{})\allowbreak{}} 是抽象的（纯虚函数），因此也用倾斜字体。子类 \texttt{Car} 和 \texttt{Truck} 必须实现这些抽象成员函数。带空心三角形的关系箭头指向超类。}
+
+测试程序创建 \texttt{Car} 和 \texttt{Truck} 对象，并分别调用它们继承来的 \texttt{drive()} 成员函数。
+
+\begin{codeboxt}{代码清单 4.8（程序 4.3 VehicleAbstract）：\texttt{tester.cpp}}
+#include "Car.h"
+#include "Truck.h"
+
+int main()
+{
+    Car car;
+    car.drive();
+    Truck truck;
+    truck.drive();
+    return 0;
+}
+The output from the program is
+
+car starts engine
+vehicle accelerates
+vehicle turns left
+vehicle turns right
+vehicle applies brakes
+car stops engine
+
+truck starts engine
+vehicle accelerates
+truck turns left
+truck turns right
+vehicle applies brakes
+truck stops engine
+\end{codeboxt}
+
+C++ 接口类是一种只含有抽象（纯虚）成员函数的抽象类。它不含任何成员变量，但可以包含常量。抽象成员函数规定了任何实现该接口的类必须具备的行为，但要由各个类为这些成员函数提供代码来实现这些行为。接口类与抽象类的区别在于它不提供任何默认的成员函数实现。示例中的 \texttt{MotorVehicalInterface} 就是一个接口类。
+
+\begin{codeboxt}{代码清单 4.9（程序 4.4 VehicleInterface）：\texttt{MotorVehicleInterface.h}}
+typedef int Brake;
+typedef int Direction;
+typedef int Engine;
+
+class MotorVehicleInterface
+{
+public:
+    virtual ~MotorVehicleInterface();
+    virtual void start_engine() = 0;     ①
+    virtual void stop_engine() = 0;      ①
+    virtual void accelerate() = 0;       ①
+    virtual void apply_brakes() = 0;     ①
+    virtual void turn_left() = 0;        ①
+    virtual void turn_right() = 0;       ①
+
+    virtual void drive() = 0;            ①
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 只有纯虚成员函数}\par
+
+在这个版本中，类 \texttt{Car} 必须实现接口中的所有虚成员函数。
+
+\begin{codeboxt}{代码清单 4.10（程序 4.4 VehicleInterface）：\texttt{Car.h}}
+#include <iostream>
+#include "MotorVehicleInterface.h"
+
+using namespace std;
+
+class Car : public MotorVehicleInterface
+{
+public:
+    virtual ~Car() {}
+
+    virtual void drive() override
+    {
+        start_engine();
+        accelerate();
+        turn_left();
+        turn_right();
+        apply_brakes();
+        stop_engine();
+
+        cout << endl;
+    }
+
+private:
+    virtual void start_engine() override
+    {
+        cout << "car starts engine" << endl;
+    }
+
+    virtual void stop_engine() override
+    {
+        cout << "car stops engine" << endl;
+    }
+
+    virtual void accelerate() override
+    {
+        cout << "car accelerates" << endl;
+    }
+
+    virtual void turn_left() override
+    {
+        cout << "car turns left" << endl;
+    }
+
+    virtual void turn_right() override
+    {
+        cout << "car turns right" << endl;
+    }
+
+    virtual void apply_brakes() override
+    {
+        cout << "car turns applies brakes" << endl;
+    }
+
+    Brake brakes[4];
+    Engine engine;
+    Direction heading;
+    int speed;
+};
+\end{codeboxt}
+
+类似地，类 \texttt{Truck} 必须实现所有成员函数。
+
+\begin{codeboxt}{代码清单 4.11（程序 4.4 VehicleInterface）：\texttt{Truck.h}}
+#include <iostream>
+#include "MotorVehicleInterface.h"
+
+using namespace std;
+
+class Truck : public MotorVehicleInterface
+{
+public:
+    virtual ~Truck() {}
+    virtual void drive() override
+    {
+        start_engine();
+        accelerate();
+        turn_left();
+        turn_right();
+        apply_brakes();
+        stop_engine();
+
+        cout << endl;
+    }
+
+private:
+    virtual void start_engine() override
+    {
+        cout << "truck starts engine" << endl;
+    }
+
+    virtual void stop_engine() override
+    {
+        cout << "truck stops engine" << endl;
+    }
+
+    virtual void accelerate() override
+    {
+        cout << "truck accelerates" << endl;
+    }
+
+    virtual void turn_left() override
+    {
+        cout << "truck turns left" << endl;
+    }
+
+    virtual void turn_right() override
+    {
+        cout << "truck turns right" << endl;
+    }
+
+    virtual void apply_brakes() override
+    {
+        cout << "truck turns applies brakes" << endl;
+    }
+
+    Brake brakes[4];
+    Engine engine;
+    Direction heading;
+    int speed;
+};
+\end{codeboxt}
+
+图 4.13 表明，在其 UML 类图中，标签 \texttt{«interface»} 出现在接口名 \texttt{MotorVehicleInterface} 的上方。虚线关系箭头表示类 \texttt{Car} 和 \texttt{Truck} 实现了该接口。在接口的类图中，不需要使用斜体或倾斜字体。
+
+\myGraphic{0.600}{images/CH04_F13_Mak.png}{图 4.13 标签 \texttt{«interface»} 出现在接口 \texttt{MotorVehicleInterface} 的名称上方。它的所有成员函数都是抽象的，且不含任何成员变量。带空心三角形的虚线关系箭头表示子类 \texttt{Car} 和 \texttt{Truck} 实现了该接口，因此它们必须为接口的所有成员函数提供代码。}
+
+使用同一个测试程序，输出变为
+
+\begin{codebox}
+car starts engine
+car accelerates
+car turns left
+car turns right
+car turns applies brakes
+car stops engine
+
+truck starts engine
+truck accelerates
+truck turns left
+truck turns right
+truck turns applies brakes
+truck stops engine
+\end{codebox}
+
+表 4.1 总结了 UML 类图中的关系线和箭头。
+
+\begin{center}
+{\bfseries 表 4.1 UML 类图中的关系线和箭头}\par\vspace{3bp}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+图 & 关系 \\
+\midrule
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak.png} & 类 A 和 B 之间\emph{未指明的依赖}。 \\
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak1.png} & 类 A \emph{依赖}类 B。 \\
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak2.png} & 类 A 对类 B 有\emph{瞬态依赖}。 \\
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak3.png} & 类 A \emph{聚合}（包含）类 B。 \\
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak4.png} & 类 A 由类 B \emph{组合}而成。 \\
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak5.png} & 类 A 是超类 B 的\emph{子类}。 \\
+\includegraphics[width=0.235\linewidth]{images/CH04_UN05_Mak6.png} & 类 A \emph{实现}接口类 B。 \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section{UML 状态图：对象如何改变状态}
+
+UML 类图记录了我们的类以及我们设计它们的方式。然而，这些图是静态的——它们不展示由这些类实例化出的对象在运行时如何相互交互。
+
+UML 状态图提供动态的运行时信息。它聚焦于单个对象，以及该对象在运行时如何响应由其行为定义的事件而改变状态。回想一下，对象的运行时状态由其成员变量的具体取值决定，而它的行为由其成员函数实现。状态图让我们直观地看到某个特定对象在运行期间发生了什么，并有助于确保我们用正确的成员变量和成员函数设计了该类。
+
+图 4.14 是图 4.13 中一个 \texttt{Car} 对象的 UML 状态图。每个圆角框代表一个状态，每条箭头代表从一个状态到另一个状态的转移。每条箭头都带有一个标签，标明引发该转移的事件。对象的行为定义了可能发生的事件类型。在这个例子中，\texttt{Car} 对象的状态由该对象 \texttt{speed} 和 \texttt{heading} 成员变量的当前取值来刻画。实心圆是起点，带圆圈的实心圆是终点。
+
+\myGraphic{0.172}{images/CH04_F14_Mak.png}{图 4.14 一张 UML 状态图，展示一个 \texttt{Car} 对象在运行期间的状态变化。每个框代表一个状态，每条箭头代表从一个状态到另一个状态的转移。每条转移都用引发该转移的行为（事件）加以标注。这样的图让我们直观地看到某个特定对象在运行期间发生了什么，并有助于确保我们用正确的成员变量和成员函数设计了该类。}
+
+图中的每个事件都会使 \texttt{Car} 对象改变状态。例如，启动发动机把对象的初始状态从停放（parked）变为怠速（idling）。随后加速又把对象的状态变为“向北行驶”。
+
+图 4.15 是一张状态图，可帮助在一个假设的学校模拟应用中设计一个 \texttt{Student} 类。它包含更多关于对象运行时状态转移的信息。实心菱形是决策分支点和合并点，决策条件是方括号中的标签。粗横条表示转移分叉和汇合的位置。该图展示了一名学生选课时的状态变化。
+
+\myGraphic{0.907}{images/CH04_F15_Mak.png}{图 4.15 一名学生选课的状态图。实心菱形是决策分支点和合并点。粗横条表示转移分叉和汇合的位置。这样的图有助于在一个假设的学校模拟应用中，用正确的成员变量和成员函数设计一个 \texttt{Student} 类。}
+
+\myGraphic{0.893}{images/CH04_F15_UN06_Mak.png}{}
+
+\section{UML 序列图：对象如何交互［选读］}
+
+UML 序列图同样提供动态信息。它在较高层次上展示一个用例期间各对象之间的运行时交互。它有助于确保我们正确地分配了成员函数并设计了类关系。图 4.16 是第 2 章中我们的图书目录应用的一张序列图。
+
+该用例是客户搜索与目标图书属性匹配的图书。左上角的小人图代表客户。图顶部、小人图右侧的各框代表由这些类实例化出的对象。按照惯例，每个类名带下划线，表示它是一个由该类实例化出的对象。时间自上而下推进。客户和每个对象都有一条生命线，用竖直虚线表示。生命线上的每个竖直矩形代表客户或对象在该用例中处于活动状态的时间。带标注的水平箭头代表对象之间的交互。对象的行为（即它们的成员函数）决定了这些交互。对象通过调用成员函数来实现这些交互。
+
+\myGraphic{0.918}{images/CH04_F16_Mak.png}{图 4.16 一张 UML 序列图，展示客户搜索与目标图书属性匹配的图书。它在较高层次上展示该用例所涉及的各对象之间的运行时交互，时间自上而下推进。这样的图有助于确保我们正确地设计了类关系。}
+
+在这个场景中，客户首先与一个 \texttt{Form} 对象交互，填写目标图书属性，然后按下“提交”按钮。这会通知 \texttt{Catalogue} 对象开始一次图书搜索。与此同时，\texttt{Catalogue} 对象向客户显示新书。搜索过程与 \texttt{Book} 对象交互，后者转而又与 \texttt{Attributes} 对象进行匹配。匹配成功的属性会使得相应的 \texttt{Book} 对象被返回。最后，\texttt{Catalogue} 对象向客户显示这些图书。
+
+图 4.17 是序列图的另一个例子，这一个用于一个假设的银行 ATM（自动取款机）应用。
+
+\myGraphic{0.918}{images/CH04_F17_Mak.png}{图 4.17 一个 UML 序列图示例，用于一个假设的银行应用中客户从银行 ATM 取现的用例}
+
+该用例是客户取现。在这第二个场景中，一位 ATM 客户首先与 \texttt{Console} 对象交互，按下“取款”选项。这一操作通知 \texttt{Display} 对象显示一条确认消息。接着客户与 \texttt{Keypad} 对象交互，输入取款金额。\texttt{Keypad} 对象通知 \texttt{Bank} 对象，与此同时，它还通知 \texttt{Display} 对象显示银行广告。\texttt{Bank} 对象请求 \texttt{CheckingAccount} 对象核实取款金额。如果 \texttt{CheckingAccount} 对象接受该取款，\texttt{Bank} 对象就通知 \texttt{Console} 对象启动出钞。与前面的序列图一样，这张图有助于确保我们正确地分配了成员函数并设计了类关系。
+
+\section{设计规格说明与软件验证}
+
+UML 类图、状态图和序列图都属于设计规格说明的内容。这是由开发团队编写的一份技术文档，用于描述并论证应用的设计。该文档可以包含实现细节，供应用的当前和未来开发者阅读。
+
+设计规格说明可以包含一份内部测试计划。与第 3 章描述的外部测试计划中的黑盒测试不同，内部单元测试可以针对并施压于某一段特定的代码。例如，一个单元测试可以向某个类的成员函数传入不同的参数值，并验证返回值。开发者应当运行单元测试。在代码发生改动之后，尤其是在每个开发迭代结束时，回归测试通过重新运行先前的单元测试，确保先前可用的代码没有被意外破坏（即代码没有出现退化）。内部测试验证我们正确地把应用开发出来——即它没有缺陷（在测试所能展示的范围内），并且满足所有需求。测试是软件 V\&V（验证与确认）中的验证部分。
+
+如图 4.1 所示，设计规格说明应当设计冻结里程碑处冻结，但当然，晚到的改动可能获得项目经理的批准，代价是可能推迟项目完成。每当开发产品的后续版本时，我们必须更新该文档。
+
+软件组织决定设计规格说明的格式和内容。它也可能有别的名称，例如“内部维护规格说明”。无论叫什么名字，它的首要用途都是描述应用是如何设计的。这份文档未来的读者可能包括该应用的原始设计者，他们也许需要被提醒当初为什么把代码设计成那样。
+
+\section*{小结}
+
+\begin{itemize}
+\item 开发一个应用的项目由多名开发者组成的团队并行执行的多个活动构成。设计几乎贯穿整个项目，且主要发生在“设计—编码—测试”的开发迭代期间。
+\item 设计良好的类是内聚的，并遵循单一职责原则。
+\item 设计良好的类是松耦合的，并遵循最少知识原则。
+\item UML 类图提供关于应用各个类及其关系的信息。每张类图显示类名，并可选地显示其成员变量和成员函数。显示多少信息取决于该图属于应用设计的高层描述还是低层描述。
+\item 在两张类图之间绘制的不同类型箭头表示类之间的关系：依赖、聚合、组合或泛化。
+\item UML 状态图聚焦于单个对象在运行时的状态变化。一个事件使对象从一个状态转移到另一个状态，而这些事件由对象的行为定义。直观地看到某个特定对象在运行期间发生了什么，有助于确保该对象的类设计良好，具有正确的成员变量和成员函数。
+\item UML 序列图展示对象之间在运行时的较高层次交互。一个对象在交互过程中的行为由其成员函数决定。直观地看到这些动态交互，有助于确保各个类设计良好，具有正确的成员函数和恰当的关系。
+\item 设计规格说明为应用的当前和未来开发者描述并论证其设计。它包含 UML 类图、序列图和状态图。此外，它还可以包含一份用于内部测试的测试计划。
+\item 对于软件 V\&V 中的验证部分，软件开发者会在开发迭代期间执行内部测试，包括单元测试和回归测试。
+\end{itemize}

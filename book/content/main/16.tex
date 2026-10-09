@@ -1,0 +1,1154 @@
+\begin{myChapterIntro}{本章涵盖}
+\begin{itemize}
+\item 多个执行线程
+\item 保护共享资源
+\item 同步多个执行线程
+\end{itemize}
+\end{myChapterIntro}
+
+懂得如何设计和开发多线程应用，使我们能够利用计算机处理多个执行\emph{线程}（thread）的能力。线程是计算机执行程序时在代码中所走的路径。多线程意味着计算机同时运行多条路径。
+
+如果恰当地设计多线程应用，它们就能更好地利用当今的多核计算机（即拥有多个 CPU 的计算机）。有些应用本质上就要求同时执行多项操作，我们只能把它们设计成多线程的。
+
+\myGraphic{0.893}{images/CH16_F01_UN01_Mak.png}{}
+
+本章介绍多线程应用的设计。我们先从一个简单的打印示例入手，它展示了使用\emph{互斥量}（mutex）的必要性：互斥量是一种软件对象，它利用\emph{互斥}（mutual exclusion）来保护被共享的数据，方式是在任一时刻只允许一个线程修改该数据。接着，我们将以不同的方式使用互斥量来解决一个经典的读者—写者问题示例。然后，我们会借助另一种称为\emph{条件变量}（condition variable）的软件对象来解决一个经典的生产者—消费者问题示例，从而更精细地同步多个线程的执行。
+
+\section{事情是如何同时发生的？}
+
+早期计算机都只有一个中央处理器（CPU），而且是单线程的——它一次只能在一个程序中运行一条路径。后来，具备复杂操作系统支持的计算机实现了\emph{并发执行}（concurrent execution），即单个 CPU 在多个线程之间快速切换（因此有了\emph{多线程}这一术语）。在多个线程之间切换称为\emph{上下文切换}（context switching）。计算机由此给人一种在同时执行多个线程的假象。
+
+现代计算机是多核的，可以实现\emph{并行执行}（parallel execution）：不同的核心（CPU）各自同时执行一个或多个线程。因此，一台计算机可以同时执行的线程数可以超过它所拥有的 CPU 数。程序无论何时启动，都会在其主线程中运行。任何线程都可以\emph{派生}（spawn，即创建并启动）子线程。
+
+\begin{mySidebar}{并发与并行}
+
+要理解\emph{并发}（concurrency）与\emph{并行}（parallelism）的区别，一个很好的类比是筹办一场晚宴。你可以独自完成所有工作：打扫房子、做饭、摆餐桌等等。当你在一天当中（快速地或以其他方式）在各种任务之间切换时，你就是在并发地做这些事。你必须仔细安排自己的工作，才能按时完成所有任务。
+
+但如果你请朋友过来帮忙，每人负责一项任务，那么这些工作就可以同时并行地完成。如果每个朋友都能同时处理多项任务，就能同时完成更多的工作。你必须协调好朋友们，使他们的工作保持同步。不能让他们同时处理太多任务，否则效率会下降。
+
+无论你是独自完成所有工作，还是请朋友帮忙，都必须保护共享资源（shared resource），例如清洁用品、炊具、正在准备的食材等等。你肯定不希望朋友们为谁能用拖把而争吵，也不希望他们试图用同一口锅同时烹饪一顿饭的不同部分。例如，当你只允许一个朋友在同一时间使用煎锅、而不让其他人使用时，你就是在对煎锅实施互斥。
+
+设计多线程应用时，无论线程是并发执行还是并行执行，你的代码都必须管理和同步这些线程，并且必须保护各种共享资源，例如内存中的数据或外部文件。
+\end{mySidebar}
+
+无论同时执行是以并发方式、并行方式还是两者兼有地发生，多线程程序都必须保护共享资源。如果多个线程试图访问某个共享资源（内存中的某些数据、文件、打印机等），它们必须妥善共享该资源，不能相互干扰。例如，如果多个线程同时修改一个共享变量的值，该变量的最终值会是什么？这种情况称为\emph{竞态条件}（race condition）：变量的值取决于恰好最后一个修改它的线程。竞态条件是多线程应用调试中的一大噩梦。
+
+对我们的大多数应用来说，我们并不操心多线程，而是让运行时系统（例如计算机的操作系统）来管理线程。例如，当一个线程被挂起以等待某个 I/O 操作完成时，运行时系统会自动执行一次上下文切换，转到另一个线程。但我们也可以设计显式执行多线程并保护各种共享资源的程序。正如我们将看到的，有些应用本质上就要求同时执行多项操作，因此必须设计成多线程的。本章将使用 C++ 多线程库。
+
+图 16.1 表明，设计和编写多线程应用时，我们必须意识到，应用的各个线程都共享它的内部资源（内存中的代码和数据）以及外部资源（如打印机和文件）。因此，一个主要的设计关切就是如何妥善管理这种共享。运行时系统会为每个线程分配它自己的运行时栈，并让它看起来拥有自己的一套机器寄存器。取决于机器硬件，后者可以通过在上下文切换期间保存和恢复寄存器内容来实现，也可以通过设置多组寄存器来实现。
+
+\myGraphic{0.328}{images/CH16_F01_Mak.png}{图 16.1 一个含有三个线程的多线程应用。这些线程共享应用的内部资源（内存中的代码和数据）以及外部资源（如打印机和文件）。运行时系统为每个线程分配它自己的运行时栈，并让它看起来拥有自己的一套机器寄存器。}
+
+\section{互斥量实施互斥}
+
+多线程程序中只要有共享资源，就可能存在在不同线程中执行、访问该共享资源的语句。这类语句构成了与该资源相关联的\emph{临界区}（critical region，也称作 \emph{critical section}）。各线程可以使用相同的临界区代码（记住，程序的代码由各线程共享），也可以在各自的临界区中拥有不同的语句。无论多个线程使用同一个临界区，还是每个线程拥有各自独有的临界区，每个临界区都包含访问该共享资源的语句。
+
+多线程程序必须保护共享资源。例如，如果一个线程正在修改该资源，它就必须阻止其他线程进入各自的临界区去读取或写入该资源。这称为\emph{互斥}。
+
+\myGraphic{0.857}{images/CH16_F01_UN02_Mak.png}{}
+
+在图 16.2 中，线程 A 和线程 B 都可以访问变量 \texttt{X}，也就是那个共享资源。因此，每个线程都有一个包含引用 \texttt{X} 的语句的临界区。当线程 A 进入它的临界区修改 \texttt{X} 的值时，我们必须阻止线程 B 进入它的临界区去修改 \texttt{X} 的值。只有在线程 A 离开它的临界区之后，线程 B 才能进入它的临界区。多线程库中一个称为\emph{互斥量}（mutex，取自 \emph{mut}ual \emph{ex}clusion）的对象负责实施这种互斥。各线程对互斥量加锁和解锁。
+
+\myGraphic{0.879}{images/CH16_F02_Mak.png}{图 16.2 线程 A 和线程 B 的临界区修改同一个共享资源，即变量 \texttt{X}。一个互斥量对象守卫着这些临界区。成功锁定互斥量的线程可以进入它的临界区。试图锁定一个已被锁定的互斥量会使该线程阻塞。正要离开其临界区的线程必须解锁互斥量，好让另一个线程能够锁定它。}
+
+如果同一时刻有多个线程想进入各自的临界区，而互斥量未被锁定，运行时系统可以决定哪个线程能够锁定互斥量并进入，我们的程序也可以显式选择线程。由于我们无法总是预测运行时系统会选哪个线程，多线程程序的每次运行表现都可能不同。遗憾的是，这种随机性会使多线程程序在出错时变得出了名地难调试。
+
+图 16.3 展示了一个互斥量如何在一个线程内守卫临界区。
+
+\myGraphic{0.711}{images/CH16_F03_Mak.png}{图 16.3 互斥量守卫一个临界区。它一次只允许一个线程处于其临界区中。}
+
+无论不同线程对某个特定共享资源使用的是同一个临界区代码，还是每个线程各自拥有该资源的临界区代码，我们都用同一个互斥量来守卫该共享资源的每个临界区。运行时，如果线程 B 想进入它的临界区（图 16.2），它首先尝试锁定互斥量。如果互斥量已被线程 A 锁定，线程 B 就会阻塞（挂起执行）。一旦线程 A 解锁互斥量，线程 B 便可以再次尝试锁定它。（可能还有其他线程被阻塞在同一个互斥量上。）如果线程 B 成功锁定互斥量，它就进入自己的临界区。当线程 B 在其临界区中执行完毕后，它必须解锁互斥量，让另一个线程有机会锁定它并进入自己的临界区。互斥量通过守卫临界区来实施互斥，从而保护共享资源。
+
+\begin{mySidebar}{底层 pthread 库}
+
+C++ 多线程库构建在从 C 语言继承而来的古老的 \texttt{pthread}（Posix thread）库之上。在 Linux 平台上编译多线程程序时，必须在命令行上指定 \texttt{pthread} 库，例如编译本章的示例打印程序：
+
+\begin{codebox}
+g++ -std=c++0x *.cpp -o printing -lpthread
+\end{codebox}
+
+在 macOS 平台上则不需要：
+
+\begin{codebox}
+g++ -std=c++0x *.cpp -o printing
+\end{codebox}
+
+此外，在 Windows 平台上也不需要：
+
+\begin{codebox}
+cl /EHsc *.cpp /link /out:printing
+\end{codebox}
+\end{mySidebar}
+
+\subsection{16.2.1 保护共享资源的完整性}
+
+借助一个简单的打印示例，我们可以演示多线程、共享资源、临界区以及实施互斥的互斥量。示例的第一个版本创建三个线程（图 16.4），分别赋给线程变量 \texttt{hello\_thread}、\texttt{use\_thread} 和 \texttt{go\_thread}。每个线程都执行函数 \texttt{print()}，但每个线程还向该函数传入不同的字符串实参。
+
+\myGraphic{0.980}{images/CH16_F04_Mak.png}{图 16.4 三个线程同时向共享的打印流（未受保护的共享资源）打印。}
+
+函数 \texttt{print()} 一次一个字符地写入打印流。因此打印流是这三个线程共享的资源，但在本版本的示例中它未受保护。
+
+\begin{codeboxt}{代码清单 16.1（程序 16.1 Printing-Unprotected）\texttt{printing-unprotected.\allowbreak{}cpp}}
+#include <iostream>
+#include <string>
+#include <thread>
+
+using namespace std;
+
+const int COUNT = 5;
+
+void print(string text);
+
+int main(void)
+{
+    thread hello_thread(print, "Hello, world!\n");   ①
+    thread use_thread(print, "Use good design!\n");  ①
+    thread go_thread(print, "Go multithreaded\n");   ①
+
+    hello_thread.join();                             ②
+    use_thread.join();                               ②
+    go_thread.join();                                ②
+
+    cout << endl << "Program done." << endl;
+    return 0;
+}
+
+void print(string text)                              ③
+{
+    for (int i = 0; i < COUNT; i++)
+    {
+        for (const char &ch : text) cout << ch;      ④
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 派生（创建并启动）每个线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 等待每个线程完成。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 每个线程所执行的函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 临界区：一次一个字符地打印实参字符串。}\par
+
+程序一创建每个线程，该线程就开始执行函数 \texttt{print()}。该函数在三个线程中同时执行，每个线程要打印的字符串实参各不相同。因此，以 \texttt{cout} 形式出现的打印流是各线程之间的共享资源，而每个线程的临界区就是该函数内层那个一次一个字符地打印其字符串实参的 \texttt{for} 循环。
+
+与此同时，派生出这三个线程的程序主线程通过调用 \texttt{join()} 等待它们各自完成。只有在这三个线程都结束后，主线程才能终止。
+
+以下是一个示例输出：
+
+\begin{codebox}
+Hello, GUse good designo w!
+Use good designorld!
+Hello, !
+Use goowmorlddultithreaded
+Go mu !
+Helltithlo, world!
+design!Hreade
+Usllo, ee good
+Go multithreaded
+d Go mworld!
+design!
+ultithreaUsedHello, world!
+ed
+Go multithread good design!
+ed
+
+Program done.
+\end{codebox}
+
+真是一团乱！我们没有保护共享资源。每个线程都可以自由地在自己的临界区中执行，三个线程同时如此，于是输出就混杂在一起了。每次运行程序都会得到不同的结果，因为程序并不控制线程启动的顺序，也不控制它们写入 \texttt{cout} 的顺序。这两种顺序都由运行时系统决定。
+
+在多线程打印示例的第二个版本中，我们可以通过引入一个互斥量来守卫临界区，从而保护共享的打印流资源，解决它的问题（图 16.5）。互斥量一开始处于未锁定状态。每个线程在进入临界区之前都尝试锁定互斥量。如果互斥量已被另一个线程锁定，该线程就会阻塞。当锁定了互斥量的那个线程解锁它之后，被阻塞的线程便再次尝试锁定互斥量。会有一个线程成功锁定互斥量、解除阻塞，并进入临界区打印它的字符串。该线程在打印完毕、准备离开临界区时必须解锁互斥量。因此，同一时刻只有一个线程能够位于临界区内打印它的字符串。
+
+\myGraphic{0.980}{images/CH16_F05_Mak.png}{图 16.5 用一个互斥量守卫各线程的临界区后，同一时刻只有一个线程能够向打印流（也就是共享资源）打印。当一个线程想进入它的临界区时，它尝试锁定互斥量。如果成功，它就可以进入临界区并打印。如果不成功，它就阻塞，直到另一个线程解锁互斥量为止。然后，该线程可以再次尝试锁定互斥量。线程在离开临界区之前必须解锁互斥量。当互斥量被解锁时，运行时系统决定哪个被阻塞的线程能够锁定它。}
+
+在下一个示例程序中，这个互斥量是 \texttt{print\_mutex}。
+
+\begin{codeboxt}{代码清单 16.2（程序 16.2 Printing-MT）：\texttt{printing-mt.cpp}}
+#include <iostream>
+#include <string>
+#include <thread>
+#include <mutex>
+
+using namespace std;
+
+const int COUNT = 5;
+
+mutex print_mutex;                                  ①
+
+void print(string text);
+
+int main(void)
+{
+    thread hello_thread(print, "Hello, world!\n");
+    thread use_thread(print, "Use good design!\n");
+    thread go_thread(print, "Go multithreaded!\n");
+
+    hello_thread.join();
+    use_thread.join();
+    go_thread.join();
+
+    cout << endl << "Program done." << endl;
+    return 0;
+}
+
+void print(string text)
+{
+    for (int i = 0; i < COUNT; i++)
+    {
+        print_mutex.lock();                         ②
+        {
+            for (const char &ch : text) cout << ch; ③
+        }
+        print_mutex.unlock();                       ④
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 打印互斥量}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 在进入临界区之前尝试锁定打印互斥量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 该临界区访问共享资源 cout。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 解锁打印互斥量。}\par
+
+我们特意用花括号把 \texttt{print\_mutex.lock()} 与 \texttt{print\_mutex.unlock()} 之间的代码括起来并缩进，以强调这段代码就是由该互斥量守卫的临界区。
+
+现在，输出合理多了：
+
+\begin{codebox}
+Hello, world!
+Go multithreaded!
+Go multithreaded!
+Go multithreaded!
+Go multithreaded!
+Use good design!
+Use good design!
+Go multithreaded!
+Use good design!
+Use good design!
+Use good design!
+Hello, world!
+Hello, world!
+Hello, world!
+Hello, world!
+
+Program done.
+\end{codebox}
+
+和之前一样，线程启动的顺序以及它们写入 \texttt{cout} 的顺序都由运行时系统决定。但有了互斥量之后，同一时刻只能有一个线程处于它的临界区中。因此，每次一个线程都可以完整地写出它的字符串实参，而不会被另一个线程插进来输出。
+
+\subsection{16.2.2 经典的读者—写者问题}
+
+一个更贴近现实的多线程应用示例是经典的读者—写者问题。我们的下一个示例模拟一个可以设置为不同值的计量表（meter）。多名技术员（写者）各自多次尝试设置该计量表的值。与此同时，几名记录员（读者）尝试读取并记录计量表的当前设定值。因此，计量表是一个共享资源（图 16.6）。
+
+\myGraphic{0.467}{images/CH16_F06_Mak.png}{图 16.6 三名技术员同时尝试设置计量表的值；与此同时，三名记录员尝试读取并记录计量表的当前设定值。因此，计量表是共享资源。同一时刻只应有一名技术员在设置计量表，而且当技术员正在设置时不应有任何记录员读取它。不过，只要没有技术员在设置计量表，多名记录员就可以同时读取它。}
+
+计量表是各技术员线程与记录员线程之间的共享资源，因此我们将使用一个名为 \texttt{meter\_mutex} 的互斥量来保护它。图 16.7 以简化的方式展示了这一点。
+
+\myGraphic{0.700}{images/CH16_F07_Mak.png}{图 16.7 各技术员线程和记录员线程各自循环，并尝试进入自己的临界区以访问计量表（共享资源）。互斥量阻止同一时刻有多于一个技术员线程设置计量表。同一个互斥量还阻止记录员在技术员线程正在设置计量表时读取并记录计量表的值。}
+
+读者—写者问题以一种特殊的方式保护其共享资源。同一时刻只能有一个写者修改该资源。在我们的示例中，写者就是各技术员线程，同一时刻只能有一个技术员线程设置共享的计量表。不过，只要当前没有写者在修改该共享资源，多个不修改资源的读者就可以同时读取该资源。之所以允许这样做，是因为在读取计量表期间，它的值不会改变。在我们的示例中，记录员就是读者线程。
+
+C++ 还包含另外三个多线程类（\texttt{shared\_mutex}、\texttt{unique\_lock} 和 \texttt{shared\_lock}）来处理读者—写者问题。从类 \texttt{unique\_lock} 和 \texttt{shared\_lock} 实例化出的对象借助互斥量，提供了额外的加锁方式。
+
+当用一个 \texttt{unique\_lock} 对象锁定某个 \texttt{shared\_mutex} 对象时，其他线程无法再用 \texttt{unique\_lock} 或 \texttt{shared\_lock} 对象锁定同一个互斥量。然而，当用一个 \texttt{shared\_lock} 对象锁定某个 \texttt{shared\_mutex} 对象时，其他线程也可以用 \texttt{shared\_lock} 对象锁定同一个互斥量，但没有其他线程能用 \texttt{unique\_lock} 对象锁定该互斥量。总结如下
+
+\begin{itemize}
+\item \texttt{unique\_lock}——同一时刻只有一个线程能对某个 \texttt{shared\_mutex} 对象持有独占锁。其他线程无法锁定该互斥量。这一特性可以阻止其他线程在某个线程修改共享资源时读取或写入该资源。
+\item \texttt{shared\_lock}——多个线程可以同时对某个 \texttt{shared\_mutex} 对象持有共享锁。这使得多个线程可以读取那个想必不会变化的共享资源。然而，只要有任何一个读者线程持有某个 \texttt{shared\_mutex} 对象的共享锁，就没有其他线程能对该互斥量持有独占锁去尝试修改资源。
+\end{itemize}
+
+我们的应用用一个线程模拟每名技术员，每个线程都有一个访问计量表的临界区。每个技术员线程可以把计量表随机地设置为第 1、2、3 或 4 档。设置计量表每档需要 1 秒——例如，把计量表设置为第 3 档需要 3 秒。应用通过让线程每档休眠 1 秒来模拟这一点。设置完计量表之后，线程会休眠（即挂起执行）一个随机的秒数，10 到 20 秒不等，以模拟技术员休息。
+
+应用用一个线程模拟每名记录员，每个线程也都有一个访问计量表的临界区。每个记录员线程需要 3 秒来读取并记录计量表的当前设定值，应用通过让线程在读取计量表后休眠 3 秒来模拟这一点。记录完计量表之后，线程会休眠一个随机的秒数，1 到 15 秒不等，以模拟记录员休息。
+
+一个计时器在程序实时运行时跟踪已经过的秒数。当一个技术员线程设置计量表时，输出会显示该线程的 id（例如 \texttt{TECH \#2}）、它开始设置时的秒数（例如 \texttt{@15}），以及完成设置所经历的秒数计数（例如第 3 档显示 \texttt{1 2 3}）。当一个记录员线程读取计量表时，输出会显示该线程的 id（例如 \texttt{LOGGER \#3}）、它开始读取时的秒数，以及它读到的计量表设定值。
+
+由于随机性，应用的每次运行都可能产生不同的输出。示例输出：
+
+\begin{codebox}
+TECH #1 @00: 1 2 3
+TECH #2 @03: 1 2
+TECH #3 @05: 1
+                         LOGGER #1 @06: logging 1
+                         LOGGER #3 @06: logging 1
+                         LOGGER #2 @06: logging 1
+TECH #1 @15: 1 2 3
+                         LOGGER #1 @18: logging 3
+TECH #2 @21: 1
+                         LOGGER #2 @22: logging 1
+                         LOGGER #3 @23: logging 1
+TECH #3 @26: 1 2 3 4
+                         LOGGER #1 @30: logging 4
+                         LOGGER #2 @30: logging 4
+                         LOGGER #3 @30: logging 4
+TECH #1 @36: 1 2 3
+TECH #1 @39: done!
+                         LOGGER #2 @40: logging 3
+TECH #2 @43: 1 2 3
+TECH #2 @46: done!
+                         LOGGER #3 @46: logging 3
+                         LOGGER #1 @46: logging 3
+TECH #3 @49: 1 2 3
+TECH #3 @52: done!
+                         LOGGER #2 @52: logging 3
+                         LOGGER #1 @52: logging 3
+                         LOGGER #3 @63: logging 3
+ 
+Program done!
+\end{codebox}
+
+从输出可以看出，当一个技术员线程正在设置计量表时，没有任何其他线程——既没有技术员也没有记录员——能够运行。不过，多个记录员线程可以同时启动（例如在 \texttt{@06} 时刻）或相互重叠地运行（例如在 \texttt{@22} 和 \texttt{@23} 时刻）。只要有任何一个记录员线程在运行，就没有技术员线程能运行。
+
+\myGraphic{0.854}{images/CH16_F07_UN03_Mak.png}{}
+
+类 \texttt{Meter} 有两个私有成员函数：\texttt{set\_meter(),} 由各技术员线程执行，\texttt{log\_meter(),} 由各记录员线程执行，如下面的清单所示。私有成员变量 \texttt{setting} 的值就是计量表的当前设定值。互斥量 \texttt{meter\_mutex} 和 \texttt{print\_mutex} 分别通过守卫各自的临界区来保护共享的计量表对象和打印流。成员函数 \texttt{elapsed\_seconds()} 计算并返回已经过的时间（以秒为单位）。
+
+\begin{codeboxt}{代码清单 16.3（程序 16.3 Reader-Writer）：\texttt{Meter.h}}
+#include <thread>
+#include <shared_mutex>
+#include <time.h>
+
+using namespace std;
+using namespace std::chrono;
+
+class Meter
+{
+public:
+    Meter()
+        : setting(0), active_technicians_count(TECHNICIANS_COUNT)
+    {
+        srand(time(0));
+        start_time = steady_clock::now();
+    }
+
+    void run();
+private:
+    const int MAX_SETTING_LEVEL         =  4;
+    const int TECHNICIANS_COUNT         =  3;
+    const int TECHNICIAN_TURNS          =  3;
+    const int MIN_TECHNICIAN_SLEEP_TIME = 10;
+    const int MAX_TECHNICIAN_SLEEP_TIME = 20;
+    const int MAX_LOGGER_SLEEP_TIME     = 15;
+    const int LOGGERS_COUNT             =  3;
+    const int LOGGING_TIME              =  3;
+    const int LOGGER_PRINT_MARGIN       = 25;
+
+    int setting;                            ①
+    int active_technicians_count;
+
+    shared_mutex meter_mutex;               ②
+    mutex print_mutex;                      ③
+
+    void set_meter(const int thread_id);    ④
+    void log_meter(const int thread_id);    ⑤
+
+    steady_clock::time_point start_time;    ⑥
+    
+    int elapsed_seconds()                   ⑦
+    {
+        return duration_cast<seconds>(
+                        steady_clock::now() - start_time).count();
+    }
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 计量表的当前设定值}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 用于保护计量表的共享互斥量}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 用于保护打印的普通互斥量}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 由各技术员线程执行的成员函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 由记录员线程执行的成员函数}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 起始时间}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 计算已经过的时间（以秒为单位）。}\par
+
+成员函数 \texttt{run()} 运行模拟（代码清单 16.4）。它启动各技术员线程和各记录员线程，然后等待这些线程完成。
+
+每个技术员线程一经创建，就开始执行成员函数 \texttt{set\_meter()}。由于它是成员函数，我们必须用完全限定名来指定它的地址：\texttt{\&Meter::set\_meter}。第二个实参 \texttt{this} 是该函数将要操作的对象，第三个实参 \texttt{i + 1} 的值是该线程的 id。类似地，每个记录员线程一经创建，就开始执行成员函数 \texttt{log\_meter()}。创建这些线程之后，函数 \texttt{run()} 等待它们完成。
+
+\begin{codeboxt}{代码清单 16.4（程序 16.3 Reader–Writer）\texttt{Meter.cpp}（第 1 部分，共 4 部分）}
+#include <iostream>
+#include <chrono>
+#include <thread>
+#include <shared_mutex>
+
+using namespace std;
+
+void Meter::run()
+{
+    thread technicians[TECHNICIANS_COUNT];
+    thread loggers[LOGGERS_COUNT];
+
+    for (int i = 0; i < TECHNICIANS_COUNT; i++)
+    {
+        technicians[i] = thread(&Meter::set_meter, this, i + 1); ①
+    }
+
+    for (int i = 0; i < LOGGERS_COUNT; i++)
+    {
+        loggers[i] = thread(&Meter::log_meter, this, i + 1);     ②
+    }
+
+    for (int i = 0; i < TECHNICIANS_COUNT; i++)
+    {
+        technicians[i].join();                                   ③
+    }
+
+    for (int i = 0; i < LOGGERS_COUNT; i++)
+    {
+        loggers[i].join();                                       ④
+    }
+}
+
+...
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 创建每个技术员线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 创建每个记录员线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 等待各技术员线程完成。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 等待各记录员线程完成。}\par
+
+每个技术员线程执行成员函数 \texttt{set\_meter()}（代码清单 16.5）。外层的 \texttt{for} 循环执行 \texttt{TECHNICIAN\_TURNS} 次，循环体包含临界区。
+
+\texttt{unique\_lock} 对象 \texttt{writing\_lock} 尝试锁定 \texttt{shared\_mutex}。如果一个技术员线程成功获取了该互斥量上的独占锁，那么其他任何线程——无论技术员还是记录员——都无法锁定该互斥量，持有该锁的线程便可以进入它的临界区。设置完计量表之后，技术员线程会休眠一个随机的秒数。
+
+当对象 \texttt{writing\_lock} 离开作用域时，它会自动解锁 \texttt{meter\_mutex}。因此，我们把它放进一个单独的块中，这样当程序退出该块时，共享互斥量就被解锁：
+
+\begin{codebox}
+{
+    unique_lock writing_lock(meter_mutex);
+    {
+        //用于设置计量表的临界区
+    }
+}
+\end{codebox}
+
+\myGraphic{0.704}{images/CH16_F07_UN04_Mak.png}{}
+
+\begin{codeboxt}{代码清单 16.5（程序 16.3 Reader–Writer）：\texttt{Meter.cpp}（第 2 部分，共 4 部分）}
+...
+
+void Meter::set_meter(const int thread_id)
+{
+    for (int turn = 1; turn <= TECHNICIAN_TURNS; turn++)
+    {
+        {
+            unique_lock<shared_mutex> writing_lock(meter_mutex);    ①
+            {
+                printf("TECH #%d @%02d:", thread_id,
+                                          elapsed_seconds());
+
+                    int level = rand()%MAX_SETTING_LEVEL + 1;       ②
+                    setting = level;                                ②
+
+                    for (int n = 1; n <= level; n++)
+                    {
+                        this_thread::sleep_for(chrono::seconds(1)); ③
+
+                        cout << setw(2) << n;
+                        cout.flush();
+                    }
+                    cout << endl;
+
+                if (turn == TECHNICIAN_TURNS)                       ④
+                {
+                    printf("TECH #%d @%02d: done!\n",
+                           thread_id, elapsed_seconds());
+                    active_technicians_count--;
+                }
+            }
+        }                                                           ⑤
+
+        if (turn < TECHNICIAN_TURNS)
+        {
+            int sleep_time =
+                    rand()%(  MAX_TECHNICIAN_SLEEP_TIME
+                            - MIN_TECHNICIAN_SLEEP_TIME + 1)
+                    + MIN_TECHNICIAN_SLEEP_TIME;
+            this_thread::sleep_for(chrono::seconds(sleep_time));    ⑥
+        }
+    }
+}
+...
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 尝试获取 meter\_mutex 上的独占锁。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 随机选择一个设定档位。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 每档休眠 1 秒。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 这个技术员线程是否已完成？}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 退出该块时解锁 meter\_mutex。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 休眠一个随机的秒数。}\par
+
+记录员线程执行成员函数 \texttt{log\_meter()}（代码清单 16.6）。\texttt{while} 循环包含记录并读取计量表的临界区，它会一直循环，直到所有技术员线程都结束。读取并记录完计量表之后，记录员线程会休眠一个随机的秒数。
+
+\texttt{shared\_lock} 对象 \texttt{reading\_lock} 以共享锁的方式锁定 \texttt{meter\_mutex}。多个记录员线程可以同时锁定一个共享互斥量，但前提是没有技术员线程已经以独占方式锁定它。
+
+由于多个记录员线程都要尝试打印，我们需要 \texttt{print\_mutex} 来保护共享的打印资源，就像前一个示例那样。这次我们使用一个 \texttt{lock\_guard} 对象 \texttt{printing\_lock}。它的优势是
+
+\begin{codebox}
+ {
+     lock_guard<mutex> printing_lock(print_mutex);
+     {
+         //用于打印的临界区
+     }
+ }
+\end{codebox}
+
+相较于
+
+\begin{codebox}
+ print_mutex.lock();
+ {
+     //用于打印的临界区
+ }
+ print_mutex.unlock();
+\end{codebox}
+
+在于，\texttt{lock\_guard} 对象在离开作用域时会自动解锁 \texttt{print\_mutex}。
+
+\begin{codeboxt}{代码清单 16.6（程序 16.3 Reader–Writer）：\texttt{Meter.cpp}（第 3 部分，共 4 部分）}
+...
+
+void Meter::log_meter(const int thread_id)
+{
+    while (true)                                                     ①
+
+    {
+        int setting_read;
+        int time_started;
+
+        {
+            shared_lock<shared_mutex> reading_lock(meter_mutex);     ②
+            {
+                setting_read = setting;                              ③
+                time_started = elapsed_seconds();
+
+                this_thread::sleep_for(                              ④
+                                    chrono::seconds(LOGGING_TIME));  ④
+                {
+                    lock_guard<mutex> printing_lock(print_mutex);    ⑤
+                    {
+                        printf("%*sLOGGER #%d @%02d: logging %d\n",
+                               LOGGER_PRINT_MARGIN, " ",
+                               thread_id, time_started,
+                               setting_read);
+                    }
+                    if (active_technicians_count == 0) break;        ⑥
+                }                                                    ⑦
+            }
+        }                                                            ⑧
+
+        this_thread::sleep_for(                                      ⑨
+            chrono::seconds(rand()%MAX_LOGGER_SLEEP_TIME + 1));      ⑨
+    }
+}
+
+...
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 循环，直到所有技术员线程都结束。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 尝试以共享方式锁定 meter\_mutex。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 读取计量表的设定值。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 休眠 LOGGING\_TIME 秒。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 尝试锁定 print\_mutex。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 如果所有技术员线程都已结束，则退出循环。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 退出该块时解锁 print\_mutex。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 退出该块时解锁 meter\_mutex。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 休眠一个随机的秒数。}\par
+
+每个技术员线程都会修改变量 \texttt{active\_\allowbreak{}technicians\_\allowbreak{}count}，而每个记录员线程都会检查该变量。因此，\texttt{active\_\allowbreak{}technicians\_\allowbreak{}count} 也是一个共享资源。每个技术员线程在它的临界区内修改该变量，记录员线程也在它的临界区内检查该变量。我们不希望记录员线程在技术员线程正在修改该变量值时去检查它的值。测试程序只是创建 \texttt{Meter} 对象并调用它的 \texttt{run()} 成员函数。
+
+\begin{codeboxt}{代码清单 16.7（程序 16.3 Reader–Writer）：\texttt{tester.cpp}}
+#include <iostream>
+#include "Meter.h"
+
+using namespace std;
+
+int main()
+{
+    Meter meter;
+    meter.run();
+
+    cout << endl << "Program done!" << endl;
+    return 0;
+}
+\end{codeboxt}
+
+\myGraphic{0.746}{images/CH16_F07_UN05_Mak.png}{}
+
+\section{条件变量同步线程}
+
+有些多线程应用要求线程之间进行更高程度的同步。仅有互斥量和锁可能还不够。
+
+经典的多线程生产者—消费者应用有多个生产者线程和消费者线程。生产者线程同时把值放进一个数据容器（例如队列）中，而消费者线程同时从队列中取出值（图 16.8）。显然，队列是一个共享资源。
+
+\myGraphic{0.318}{images/CH16_F08_Mak.png}{图 16.8 多个生产者同时把值放进队列，多个消费者同时从队列中取出值。队列就是共享资源。}
+
+生产者线程的临界区是把值放进队列的代码，消费者线程的临界区是从队列中取出值的代码。我们需要一个互斥量来守卫这些临界区，保护共享的队列。
+
+然而，这个应用要求线程之间进行更好的同步。假设函数 \texttt{data.size()} 返回共享队列中当前值的个数，而常量 \texttt{CAPACITY} 是该队列有限的容量：
+
+\begin{itemize}
+\item \texttt{data.size() == CAPACITY}——如果队列当前已满，生产者线程必须等待，直到队列不再满时才能放入值。
+\item \texttt{data.size() == 0}——如果队列当前为空，消费者线程必须等待，直到队列不再为空时才能取出值。
+\item data.size() == 1——如果队列刚刚变为非空，也就是说，一个生产者线程向原本为空的队列中放入了一个值，那么该生产者线程必须通知所有正在等待队列变为非空的消费者线程。
+\item \texttt{data.\allowbreak{}size(\allowbreak{})\allowbreak{} == CAPACITY–1}——如果队列刚刚变为未满，也就是说，一个消费者线程从原本已满的队列中取出了一个值，那么该消费者线程必须通知所有正在等待队列变为未满的生产者线程。
+\end{itemize}
+
+\subsection{16.3.1 条件变量如何同步线程}
+
+C++ 多线程库提供了\emph{条件变量}（condition variable），借助这类对象，我们可以在比仅靠互斥量和锁更高的程度上同步生产者线程和消费者线程。图 16.9 表明，每个线程都从 \texttt{queue\_mutex}（保护共享队列的那个互斥量）创建一个局部的独占锁对象 \texttt{queue\_lock}，用以守卫它的临界区。两个条件变量 \texttt{producer\_cv} 和 \texttt{consumer\_cv} 协同工作，同步这些线程。生产者线程和消费者线程分别循环地把值放入共享队列、从共享队列中取出条目。
+
+\myGraphic{0.783}{images/CH16_F09_Mak.png}{图 16.9 生产者线程和消费者线程各自从 \texttt{queue\_mutex} 创建一个局部的独占锁对象 \texttt{queue\_lock} 来守卫它的临界区。两个条件变量 \texttt{producer\_cv} 和 \texttt{consumer\_cv} 协同工作，同步生产者线程和消费者线程。生产者线程循环地把值放入共享队列，消费者线程循环地从共享队列中取出值。队列已满时，生产者线程无法把值放入队列。队列为空时，消费者线程无法从队列中取出值。}
+
+每个线程首先从共享队列的互斥量创建一个局部的独占锁对象 \texttt{queue\_lock}：
+
+\begin{codebox}
+unique_lock<mutex> queue_lock(shared_queue.get_mutex());
+\end{codebox}
+
+锁对象为互斥量添加了一些行为，以便与条件变量配合使用。
+
+创建锁对象之后，每个线程都有一个 \texttt{while} 循环来控制对某个条件变量的等待。例如，只要队列已满这一\emph{条件}为真，生产者线程就必须在放入条目之前等待条件变量 \texttt{producer\_cv}：
+
+\begin{codebox}
+while (shared_queue.is_full()) producer_cv.wait(queue_lock);
+\end{codebox}
+
+在条件变量上调用 \texttt{wait()}（并传入锁对象）会挂起该线程。线程会一直保持挂起，直到该条件变量被另一个线程\emph{通知}（即被唤醒，以便重新检查条件）。
+
+当某个条件变量被通知时，正在等待它的线程会醒来，并使用 \texttt{queue\_lock} 尝试锁定队列互斥量。如果加锁成功，线程随后执行以下操作：
+
+\begin{enumerate}
+\item 检查该条件。
+\item 如果该条件仍然为真， a. 解锁队列互斥量。 b. 留在 \texttt{while} 循环中并继续等待。
+\item 如果该条件为假， a. 退出 \texttt{while} 循环。 b. 在队列互斥量仍处于锁定状态的情况下进入临界区。
+\end{enumerate}
+
+当 \texttt{queue\_lock} 离开作用域时，它会自动解锁队列互斥量。在适当的时候，它还可以对另一个条件变量调用 \texttt{notify\_all()}，以通知所有正在等待该条件变量的线程（图 16.9）。例如，如果一个消费者线程刚刚使队列变为未满，它就必须通知所有正在等待 \texttt{producer\_cv} 的生产者线程：
+
+\begin{codebox}
+if (shared_queue.just_became_not_full()) producer_cv.notify_all();
+\end{codebox}
+
+\subsection{16.3.2 经典的生产者—消费者问题}
+
+现在我们已经有了实现经典的多线程生产者—消费者应用所需的一些工具。以下是两个生产者和三个消费者的示例输出：
+
+\begin{codebox}
+Producer #1   Producer #2   Consumer #1   Consumer #2   Consumer #3   
+   1 (1)   
+                              -1 (0)   
+                 2 (1)   
+                              -2 (0)   
+   3 (1)   
+                                            -3 (0)   
+                 4 (1)   
+                                                          -4 (0)   
+   5 (1)   
+                                                          -5 (0)   
+                 6 (1)   
+                 7 (2)   
+                              -6 (1)   
+                 8 (2)   
+                 Done!
+                                                          -7 (1)   
+                              -8 (0)   
+   9 (1)   
+  10 (2)   
+   Done!
+                                            -9 (1)   
+                                                         -10 (0)   
+                                             Done!
+                                                           Done!
+                               Done!
+\end{codebox}
+
+线程启动的顺序以及它们执行的时机由运行时系统控制。每一行显示一个生产者线程放入共享队列的值，或一个消费者线程从队列中取出的值。括号中的数字表示线程放入或取出值之后队列中的条目数。输出把消费者线程取出的值显示为负数，以便与生产者线程插入的值区分开。每个生产者线程在终止之前插入五个值。所有生产者线程都结束、且队列中不再有任何值之后，消费者线程才终止。\texttt{SharedQueue} 对象就是共享资源，如下面的清单所示。
+
+\begin{codeboxt}{代码清单 16.8（程序 16.4 ProducerConsumer）：\texttt{SharedQueue.h}}
+#include <queue>
+#include <mutex>
+
+using namespace std;
+
+class SharedQueue
+{
+public:
+    SharedQueue(const int cap) : capacity(cap) {}
+
+    mutex& get_mutex() { return queue_mutex; }
+
+    void enter(const int value) { data.push(value); }
+
+    int remove()
+    {
+        int value = data.front();
+        data.pop();
+        return value;
+    }
+
+    int size() const { return data.size(); }
+
+    bool is_empty() const { return data.size() == 0; }
+    bool is_full()  const { return data.size() == capacity; }
+
+    bool just_became_not_empty() const
+    {
+        return data.size() == 1;
+    }
+
+    bool just_became_not_full() const
+    {
+        return data.size() == capacity - 1;
+    }
+
+private:
+    size_t capacity;
+    queue<int> data;     ①
+
+    mutex queue_mutex;   ②
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 存放值的共享队列}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 队列互斥量}\par
+
+接口 \texttt{ProducerConsumer} 规定了 \texttt{Producer} 和 \texttt{Consumer} 对象的一些共同行为。成员函数 \texttt{get\_count()} 返回一个对象派生出的线程数，成员函数 \texttt{get\_active\_count()} 返回这些线程中有多少仍然处于活动状态。取值函数 \texttt{get\_cv()} 返回该对象为其线程所用的条件变量的引用。成员函数 \texttt{start()} 派生线程。
+
+\begin{codeboxt}{代码清单 16.9（程序 16.4 ProducerConsumer）：\texttt{ProducerConsumer.h}}
+#include <condition_variable>
+
+using namespace std;
+
+class ProducerConsumer
+{
+public:
+    virtual ~ProducerConsumer() {}
+
+    virtual int get_count()        const = 0;
+    virtual int get_active_count() const = 0;
+    virtual condition_variable& get_cv() = 0;
+
+    virtual void start() = 0;
+};
+\end{codeboxt}
+
+类 \texttt{Producer} 实现接口 \texttt{ProducerConsumer,}，因此它必须实现成员函数 \texttt{get\_count()}、\texttt{get\_active\_count()}、\texttt{get\_cv()} 和 \texttt{start()}（代码清单 16.10）。由 \texttt{Producer} 对象派生出的每个生产者线程都执行成员函数 \texttt{produce()}。传给构造函数的实参包括：\texttt{producer\_count}，表示生产者线程的数目；\texttt{producer\_times}，表示每个线程将产生一个值放入队列的次数；以及 \texttt{producer\_rate}，表示线程产生值的频率。构造函数还接收一个 \texttt{SharedQueue} 对象的引用。设值函数 \texttt{set\_consumer()}允许 \texttt{Producer} 对象设置一个指向 \texttt{Consumer} 对象的指针。
+
+\begin{codeboxt}{代码清单 16.10（程序 16.4 ProducerConsumer）：\texttt{Producer.h}}
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+#include "ProducerConsumer.h"
+#include "SharedQueue.h"
+
+using namespace std;
+
+class Consumer;
+
+class Producer : public ProducerConsumer
+{
+public:
+    Producer(const int producer_count, int producer_times,
+             int producer_rate, SharedQueue& sq);
+    ~Producer();
+
+    int get_count() const override { return producer_count; }
+
+    int get_active_count() const override
+    {
+        return active_producers_count.load();
+    }
+
+    condition_variable& get_cv() override { return producer_cv; }
+
+    void set_consumer(Consumer * const cons)
+    {
+        consumer = cons;
+    }
+
+    void start() override;
+
+    void produce(const int thread_id);    ①
+
+private:
+    int producer_count;
+    int producer_times;
+    int producer_rate;
+
+    SharedQueue& shared_queue;            ②
+    Consumer *consumer;                   ③
+
+    thread *threads;                      ④
+    condition_variable producer_cv;       ⑤
+
+    atomic<int> data_value;
+    atomic<int> active_producers_count;
+
+    void print_spaces(const int thread_id) const;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由每个生产者线程执行}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 对共享队列的引用}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 指向 Consumer 对象的指针}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 指向生产者线程数组的指针}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 生产者的条件变量}\par
+
+成员变量 \texttt{data\_value} 和 \texttt{active\_\allowbreak{}producers\_\allowbreak{}count} 都是原子整数。原子对象包装了一个整数值，使多个线程可以同时对该值执行某些基本操作，而不会有任何损坏或竞态条件的风险。我们的应用将执行自增 \texttt{data\_value++} 和自减 \texttt{active\_\allowbreak{}producers\_\allowbreak{}count--}。
+
+要访问原子整数的当前值，我们必须调用它的 \texttt{load()} 成员函数。这在取值函数 \texttt{get\_active\_count()} 中可以看到：
+
+\begin{codebox}
+return active_producers_count.load();
+\end{codebox}
+
+成员函数 \texttt{print\_spaces()} 用于帮助格式化输出。
+
+同样，类 \texttt{Consumer} 实现 \texttt{ProducerConsumer} 接口，如下面的清单所示。传给构造函数的实参包括：\texttt{consumer\_count}，表示消费者线程的数目；\texttt{consumer\_rate}，表示线程消费值的频率；以及一个 \texttt{SharedQueue} 对象的引用。由 \texttt{Consumer} 对象派生出的每个消费者线程都执行成员函数 \texttt{consume()}。
+
+\begin{codeboxt}{代码清单 16.11（程序 16.4 ProducerConsumer）：\texttt{Consumer.h}}
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+
+#include "ProducerConsumer.h"
+#include "SharedQueue.h"
+
+using namespace std;
+
+class Producer;
+class Consumer : public ProducerConsumer
+{
+public:
+    Consumer(const int consumers_count, const int consumer_rate,
+             SharedQueue& sq);
+    ~Consumer();
+
+    int get_count() const override { return consumer_count; }
+
+    int get_active_count() const override
+    {
+        return active_consumers_count.load();
+    }
+
+    condition_variable& get_cv() override { return consumer_cv; }
+
+    void set_producer(Producer * const prod)
+    {
+        producer = prod;
+    }
+
+    void start() override;
+
+    void consume(const int thread_id);     ①
+
+private:
+    int consumer_count;
+    int consumer_rate;
+
+    SharedQueue& shared_queue;             ②
+    Producer *producer;                    ③
+
+    thread *threads;                       ④
+    condition_variable consumer_cv;        ⑤
+
+    atomic<int> active_consumers_count;
+
+    void print_spaces(const int thread_id) const;
+};
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 由每个消费者线程执行}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 对共享队列的引用}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 指向 Producer 对象的指针}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 指向消费者线程数组的指针}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 消费者的条件变量}\par
+
+类 \texttt{Producer} 的构造函数创建 \texttt{threads} 数组，并通过在这些原子整数对象上调用 \texttt{store()}，初始化原子整数对象 \texttt{active\_\allowbreak{}producers\_\allowbreak{}count} 和 \texttt{data\_value} 的底层整数值。析构函数等待所有线程完成，然后删除 \texttt{threads} 数组。
+
+\begin{codeboxt}{代码清单 16.12（程序 16.4 ProducerConsumer）：\texttt{Producer.cpp}（第 1 部分，共 2 部分）}
+#include <iostream>
+#include <thread>
+#include <shared_mutex>
+#include <condition_variable>
+
+#include "Producer.h"
+#include "Consumer.h"
+
+using namespace std;
+
+Producer::Producer(const int pc, int times, int rate,
+                   SharedQueue& sq)
+    : producer_count(pc), producer_times(times), producer_rate(rate),
+      shared_queue(sq), consumer(nullptr),
+      queue_mutex(sq.get_mutex())
+{
+    threads = new thread[producer_count];
+
+    active_producers_count.store(producer_count);
+}
+Producer::~Producer()
+{
+    for (int i = 0; i < producer_count; i++)
+    {
+        threads[i].join();
+    }
+
+    delete[] threads;
+}
+
+void Producer::print_spaces(const int thread_id) const
+{
+    for (int i = 1; i < thread_id; i++) cout << "              ";
+}
+
+...
+\end{codeboxt}
+
+成员函数 \texttt{start()} 派生生产者线程（代码清单 16.13）
+
+每个生产者线程执行成员函数 \texttt{produce()}。在每轮循环开始时，线程会休眠一个随机的秒数。它使用 \texttt{queue\_mutex} 创建 \texttt{queue\_lock}。\texttt{while} 循环检查该条件。只要共享队列已满这一条件为真，线程就会等待条件变量 \texttt{producer\_cv}。每次该条件变量被通知时，线程都会尝试锁定 \texttt{queue\_lock}。如果加锁成功，\texttt{while} 循环就可以再次检查该条件。如果该条件仍然为真（另一个生产者线程又使队列变满了），线程就解锁 \texttt{queue\_lock}，并留在 \texttt{while} 循环中。
+
+如果该条件为假，生产者线程就退出 \texttt{while} 循环并进入它的临界区，在那里向队列中放入一个新值。在原子变量 \texttt{data\_value} 上调用 \texttt{load()} 可以取回它的底层整数值。如果队列刚刚变为非空，生产者线程就通知所有正在等待条件变量 \texttt{consumer\_cv} 的消费者线程。线程在离开临界区之前必须解锁 \texttt{queue\_lock}。最后一个完成的生产者线程还会通知任何正在等待的消费者线程。
+
+\begin{codeboxt}{代码清单 16.13（程序 16.4 ProducerConsumer）：\texttt{Producer.cpp}（第 2 部分，共 2 部分）}
+...
+
+void Producer::start()
+{
+    for (int i = 0; i < producer_count; i++)
+    {
+        threads[i] = thread(&Producer::produce, this, i + 1);        ①
+    }
+}
+
+void Producer::produce(const int thread_id)
+{
+    condition_variable& consumer_cv = consumer->get_cv();            ②
+
+    for (int i = 0; i < producer_times; i++)
+    {
+        this_thread::sleep_for(                                      ③
+                            chrono::seconds(rand()%producer_rate));  ③
+
+        {
+            unique_lock<mutex> queue_lock(shared_queue.get_mutex()); ④
+            {
+                while (shared_queue.is_full())                       ⑤
+                {                                                    ⑤
+                    producer_cv.wait(queue_lock);                    ⑤
+                }                                                    ⑤
+
+                data_value++;
+                shared_queue.enter(data_value.load());               ⑥
+
+                print_spaces(thread_id);
+                printf("%4d (%1d)   \n",
+                       data_value.load(), shared_queue.size());
+
+                if (shared_queue.just_became_not_empty())
+                {
+                    consumer_cv.notify_all();                        ⑦
+                }
+            }
+        }                                                            ⑧
+    }
+
+    active_producers_count--;                                        ⑨
+
+    print_spaces(thread_id);
+    printf("   Done!\n");
+
+    if (active_producers_count.load() == 0)
+    {
+        consumer_cv.notify_all();                                    ⑩
+    }
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 派生生产者线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 消费者的控制变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 休眠一个随机的秒数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 从队列互斥量创建独占锁 queue\_lock。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 只要队列仍然已满，就等待条件变量 producer\_cv。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 向共享队列中放入一个新值。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 如果队列刚刚变为非空，则通知正在等待 consumer\_cv 的消费者线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 退出该块时解锁队列互斥量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 递减活动生产者线程的数目。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑩ 如果最后一个生产者线程已完成，则通知正在等待 consumer\_cv 的消费者线程。}\par
+
+类 \texttt{Consumer} 的构造函数创建 \texttt{threads} 数组，并初始化原子整数对象 \texttt{active\_\allowbreak{}consumers\_\allowbreak{}count} 的底层整数值。析构函数等待所有线程完成，然后删除 \texttt{threads} 数组。成员函数 \texttt{print\_spaces()} 用于帮助格式化输出。
+
+\begin{codeboxt}{代码清单 16.14（程序 16.4 ProducerConsumer）：\texttt{Consumer.cpp}（第 1 部分，共 2 部分）}
+#include <iostream>
+#include <thread>
+#include <shared_mutex>
+#include <condition_variable>
+
+#include "Producer.h"
+#include "Consumer.h"
+
+using namespace std;
+
+Consumer::Consumer(const int cc, int rate, SharedQueue& sq)
+    : consumer_count(cc), consumer_rate(rate),
+      shared_queue(sq), producer(nullptr)
+
+{
+    threads = new thread[consumer_count];
+    active_consumers_count.store(consumer_count);
+}
+
+Consumer::~Consumer()
+{
+    for (int i = 0; i < consumer_count; i++)
+    {
+        threads[i].join();
+    }
+
+    delete[] threads;
+}
+
+void Consumer::print_spaces(const int thread_id) const
+{
+    int k = producer->get_count() + thread_id;
+    for (int i = 1; i < k; i++) cout << "              ";
+}
+
+...
+\end{codeboxt}
+
+成员函数 \texttt{start()} 派生消费者线程（代码清单 16.15）
+
+每个消费者线程执行成员函数 \texttt{consume()}。在每轮循环开始时，线程会休眠一个随机的秒数。它使用 \texttt{queue\_mutex} 创建 \texttt{queue\_lock}。\texttt{while} 循环检查该条件。只要共享队列为空、且仍有活动生产者线程这一条件为真，消费者线程就会等待条件变量 \texttt{consumer\_cv}。每次该条件变量被通知时，线程都会尝试锁定 \texttt{queue\_lock}。如果加锁成功，\texttt{while} 循环就可以再次检查该条件。如果该条件仍然为真（另一个消费者线程又使队列变空了，并且至少还有一个生产者线程仍处于活动状态），线程就解锁 \texttt{queue\_lock}，并留在 \texttt{while} 循环中。
+
+如果该条件为假，消费者线程就退出 \texttt{while} 循环并进入它的临界区，在那里从队列中取出值。如果队列刚刚变为未满，线程就通知所有正在等待条件变量 \texttt{producer\_cv} 的生产者线程。线程在离开临界区之前必须解锁 \texttt{queue\_lock}。
+
+\begin{codeboxt}{代码清单 16.15（程序 16.4 ProducerConsumer）：\texttt{Consumer.cpp}（第 2 部分，共 2 部分）}
+...
+
+void Consumer::start()
+{
+    for (int i = 0; i < consumer_count; i++)
+    {
+        threads[i] = thread(&Consumer::consume, this, i + 1);       ①
+    }
+}
+
+void Consumer::consume(const int thread_id)
+{
+    condition_variable& producer_cv = producer->get_cv();            ②
+
+    while (true)
+    {
+        this_thread::sleep_for(                                      ③
+                            chrono::seconds(rand()%consumer_rate));  ③
+        {
+            unique_lock<mutex> queue_lock(shared_queue.get_mutex()); ④
+
+            {
+                while (   shared_queue.is_empty()                    ⑤
+                       && (producer->get_active_count() > 0))        ⑤
+                {                                                    ⑤
+                   consumer_cv.wait(queue_lock);                     ⑤
+                }                                                    ⑤
+
+                if (shared_queue.is_empty()) break;                  ⑥
+
+                int value = shared_queue.remove();                   ⑦
+
+                print_spaces(thread_id);
+                printf("%4d (%1d)   \n",
+                       -value, shared_queue.size());
+
+                if (shared_queue.just_became_not_full())
+                {
+                    producer_cv.notify_all();                        ⑧
+                }
+            }
+        }                                                            ⑨
+    }
+
+    active_consumers_count--;                                        ⑩
+
+    print_spaces(thread_id);
+    printf("   Done!\n");
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 派生消费者线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② 生产者的控制变量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 休眠一个随机的秒数。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 从队列互斥量创建独占锁 queue\_lock。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑤ 只要队列仍然为空、且存在活动生产者线程，就等待条件变量 consumer\_cv。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑥ 如果队列为空，则全部完成。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑦ 从共享队列中取出一个值。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑧ 如果队列刚刚变为未满，则通知正在等待 producer\_cv 的生产者线程。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑨ 退出该块时解锁队列互斥量。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ⑩ 递减活动消费者线程的数目。}\par
+
+测试程序打印标题，创建 \texttt{Producer} 和 \texttt{Consumer} 对象，并让每个对象互相指向对方。然后它调用每个对象的 \texttt{start()} 成员函数，这将创建并启动生产者线程和消费者线程。这会生成与本节开头所示类似的输出。
+
+\begin{codeboxt}{代码清单 16.16（程序 16.4 ProducerConsumer）：\texttt{tester.cpp}}
+#include <iostream>
+#include <time.h>
+
+#include "SharedQueue.h"
+#include "Producer.h"
+#include "Consumer.h"
+
+using namespace std;
+
+int main()
+{
+    const int QUEUE_CAPACITY = 8;
+
+    const int PRODUCER_COUNT = 2;
+    const int PRODUCER_TIMES = 5;
+    const int PRODUCER_RATE  = 3;
+
+    const int CONSUMER_COUNT = 3;
+    const int CONSUMER_RATE  = 5;
+
+    for (int i = 1; i <= PRODUCER_COUNT; i++)
+    {
+        cout << "Producer #" << i << "   ";
+    }
+    for (int i = 1; i <= CONSUMER_COUNT; i++)
+    {
+        cout << "Consumer #" << i << "   ";
+    }
+    cout << endl;
+
+    srand(time(0));
+
+    SharedQueue shared_queue(QUEUE_CAPACITY);         ①
+
+    Producer producer(PRODUCER_COUNT, PRODUCER_TIMES, ②
+                      PRODUCER_RATE shared_queue);    ②
+    Consumer consumer(CONSUMER_COUNT, CONSUMER_RATE,  ②
+                      shared_queue);                  ②
+
+    producer.set_consumer(&consumer);                 ③
+    consumer.set_producer(&producer);                 ③
+
+    producer.start();                                 ④
+    consumer.start();                                 ④
+
+    return 0;
+}
+\end{codeboxt}
+\noindent{\fontsize{9bp}{12bp}\selectfont ① 共享队列}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ② Producer 和 Consumer 对象}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ③ 让这些对象互相指向对方。}\par
+\noindent{\fontsize{9bp}{12bp}\selectfont ④ 启动各线程。}\par
+
+\section{关于多线程的最后一点说明}
+
+本章只是对一个重要的软件设计主题做了极为简短的介绍。正确地设计和开发多线程应用是一项重大挑战。由于线程创建和执行的顺序通常由运行时系统决定，时序问题会导致应用在两次运行之间出现随机且无法复现的行为。调试随之变成一场噩梦。另一个调试难题是死锁（deadlock）。当所有线程都被阻塞、整个应用挂起时，就发生了死锁。
+
+即使多线程设计得当，增加线程数也并不意味着应用的执行时间会趋近于零！互斥量和条件变量本身就有性能开销。上下文切换的开销可能压过拥有更多线程所带来的好处。如果目标是在不增加复杂度的前提下提升性能，那么多线程应用的设计可能是一场微妙的平衡术。
+
+\section*{小结}
+
+\begin{itemize}
+\item 在多核计算机系统中，掌握多线程程序的设计方法很重要。设计、开发和调试多线程应用都是重大挑战。
+\item 多个线程（执行路径）可能同时试图访问应用的共享资源。我们必须保护这些共享资源。
+\item 每个线程中访问共享资源的代码就是该线程的临界区。
+\item 使用互斥量以互斥的方式守卫每个临界区。
+\item 以独占方式锁定的互斥量不允许任何其他线程锁定它。如果某个线程试图锁定一个已被独占锁定的互斥量，该线程就会被阻塞，直到该互斥量被解锁为止。然后，该线程可以再次尝试锁定该互斥量。
+\item 以共享模式锁定的互斥量允许其他线程也以共享模式同时锁定该互斥量，前提是没有线程已经以独占方式锁定它。
+\item 线程在离开临界区之前必须解锁互斥量。否则可能会发生死锁。
+\item 条件变量与互斥量配合，同步多个线程的同时操作。
+\item 只要相关联的条件保持为真，线程就会等待该条件变量。当该条件变量被另一个线程通知时，正在等待它的线程会解除阻塞，并检查该条件是否仍然为真。如果该条件为假，线程便可以进入它的临界区。否则，它继续等待。
+\end{itemize}
